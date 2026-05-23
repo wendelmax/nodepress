@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #070B14;
+  color: #F5F7FA;
+  font-family: Inter, sans-serif;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at top left, rgba(79,124,255,0.15), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(139,92,246,0.12), transparent 30%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+* {
+  border-color: rgba(255,255,255,0.06);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.16);
+}
+
+/* Post Content styles */
+.post-content p { margin-bottom: 1em; }
+.post-content ul, .post-content ol { margin-bottom: 1em; padding-left: 20px; }
+.post-content blockquote { border-left: 4px solid #c3c4c7; padding-left: 1em; margin-left: 0; color: #646970; }
+.post-content h2, .post-content h3 { margin-top: 1.5em; margin-bottom: 0.5em; }

@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  Int          @id @default(autoincrement())
+  userLogin           String       @map("user_login") @db.VarChar(60) @unique
+  userPass            String       @map("user_pass") @db.VarChar(255)
+  userNicename        String       @map("user_nicename") @db.VarChar(50) @unique
+  userEmail           String       @map("user_email") @db.VarChar(100) @unique
+  userUrl             String       @map("user_url") @db.VarChar(100)
+  userRegistered      DateTime     @default(now()) @map("user_registered")
+  userActivationKey   String       @map("user_activation_key") @db.VarChar(255)
+  userStatus          Int          @default(0) @map("user_status")
+  displayName         String       @map("display_name") @db.VarChar(250)
+
+  meta                UserMeta[]
+  posts               Post[]
+  comments            Comment[]
+
+  @@map("np_users")
+}
+
+model UserMeta {
+  umetaId   Int     @id @default(autoincrement()) @map("umeta_id")
+  userId    Int     @map("user_id")
+  metaKey   String? @map("meta_key") @db.VarChar(255)
+  metaValue String? @map("meta_value") @db.Text
+
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([metaKey])
+  @@map("np_usermeta")
+}
+
+model Post {
+  id                  Int          @id @default(autoincrement())
+  postAuthor          Int          @map("post_author")
+  postDate            DateTime     @default(now()) @map("post_date")
+  postDateGmt         DateTime     @default(now()) @map("post_date_gmt")
+  postContent         String       @map("post_content") @db.Text
+  postTitle           String       @map("post_title") @db.Text
+  postExcerpt         String       @map("post_excerpt") @db.Text
+  postStatus          String       @default("publish") @map("post_status") @db.VarChar(20)
+  commentStatus       String       @default("open") @map("comment_status") @db.VarChar(20)
+  pingStatus          String       @default("open") @map("ping_status") @db.VarChar(20)
+  postPassword        String       @map("post_password") @db.VarChar(255)
+  postName            String       @map("post_name") @db.VarChar(200)
+  toPing              String       @map("to_ping") @db.Text
+  pinged              String       @map("pinged") @db.Text
+  postModified        DateTime     @default(now()) @map("post_modified")
+  postModifiedGmt     DateTime     @default(now()) @map("post_modified_gmt")
+  postContentFiltered String       @map("post_content_filtered") @db.Text
+  postParent          Int?         @map("post_parent")
+  guid                String       @map("guid") @db.VarChar(255)
+  menuOrder           Int          @default(0) @map("menu_order")
+  postType            String       @default("post") @map("post_type") @db.VarChar(20)
+  postMimeType        String       @map("post_mime_type") @db.VarChar(100)
+  commentCount        Int          @default(0) @map("comment_count")
+
+  author              User         @relation(fields: [postAuthor], references: [id])
+  parent              Post?        @relation("PostToPost", fields: [postParent], references: [id])
+  children            Post[]       @relation("PostToPost")
+  meta                PostMeta[]
+  comments            Comment[]
+
+  @@index([postName])
+  @@index([postType, postStatus, postDate, id])
+  @@index([postParent])
+  @@index([postAuthor])
+  @@map("np_posts")
+}
+
+model PostMeta {
+  metaId    Int     @id @default(autoincrement()) @map("meta_id")
+  postId    Int     @map("post_id")
+  metaKey   String? @map("meta_key") @db.VarChar(255)
+  metaValue String? @map("meta_value") @db.Text
+
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([metaKey])
+  @@map("np_postmeta")
+}
+
+model Comment {
+  commentId          Int        @id @default(autoincrement()) @map("comment_ID")
+  commentPostId      Int        @map("comment_post_ID")
+  commentAuthor      String     @map("comment_author") @db.Text
+  commentAuthorEmail String     @map("comment_author_email") @db.VarChar(100)
+  commentAuthorUrl   String     @map("comment_author_url") @db.VarChar(200)
+  commentAuthorIp    String     @map("comment_author_IP") @db.VarChar(100)
+  commentDate        DateTime   @default(now()) @map("comment_date")
+  commentDateGmt     DateTime   @default(now()) @map("comment_date_gmt")
+  commentContent     String     @map("comment_content") @db.Text
+  commentKarma       Int        @default(0) @map("comment_karma")
+  commentApproved    String     @default("1") @map("comment_approved") @db.VarChar(20)
+  commentAgent       String     @map("comment_agent") @db.VarChar(255)
+  commentType        String     @default("comment") @map("comment_type") @db.VarChar(20)
+  commentParent      Int?       @map("comment_parent")
+  userId             Int?       @map("user_id")
+
+  post               Post       @relation(fields: [commentPostId], references: [id], onDelete: Cascade)
+  user               User?      @relation(fields: [userId], references: [id])
+  parent             Comment?   @relation("CommentToComment", fields: [commentParent], references: [commentId])
+  children           Comment[]  @relation("CommentToComment")
+  meta               CommentMeta[]
+
+  @@index([commentPostId])
+  @@index([commentApproved, commentDateGmt])
+  @@index([commentDateGmt])
+  @@index([commentParent])
+  @@index([commentAuthorEmail])
+  @@map("np_comments")
+}
+
+model CommentMeta {
+  metaId    Int     @id @default(autoincrement()) @map("meta_id")
+  commentId Int     @map("comment_id")
+  metaKey   String? @map("meta_key") @db.VarChar(255)
+  metaValue String? @map("meta_value") @db.Text
+
+  comment   Comment @relation(fields: [commentId], references: [commentId], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([metaKey])
+  @@map("np_commentmeta")
+}
+
+model Term {
+  termId    Int        @id @default(autoincrement()) @map("term_id")
+  name      String     @map("name") @db.VarChar(200)
+  slug      String     @map("slug") @db.VarChar(200)
+  termGroup Int        @default(0) @map("term_group")
+
+  taxonomies TermTaxonomy[]
+  meta       TermMeta[]
+
+  @@index([slug])
+  @@index([name])
+  @@map("np_terms")
+}
+
+model TermTaxonomy {
+  termTaxonomyId Int    @id @default(autoincrement()) @map("term_taxonomy_id")
+  termId         Int    @map("term_id")
+  taxonomy       String @map("taxonomy") @db.VarChar(32)
+  description    String @map("description") @db.Text
+  parent         Int?   @map("parent")
+  count          Int    @default(0) @map("count")
+
+  term           Term   @relation(fields: [termId], references: [termId], onDelete: Cascade)
+  relationships  TermRelationship[]
+
+  @@unique([termId, taxonomy])
+  @@index([taxonomy])
+  @@map("np_term_taxonomy")
+}
+
+model TermRelationship {
+  objectId       Int @map("object_id")
+  termTaxonomyId Int @map("term_taxonomy_id")
+  termOrder      Int @default(0) @map("term_order")
+
+  termTaxonomy   TermTaxonomy @relation(fields: [termTaxonomyId], references: [termTaxonomyId], onDelete: Cascade)
+
+  @@id([objectId, termTaxonomyId])
+  @@index([termTaxonomyId])
+  @@map("np_term_relationships")
+}
+
+model TermMeta {
+  metaId    Int     @id @default(autoincrement()) @map("meta_id")
+  termId    Int     @map("term_id")
+  metaKey   String? @map("meta_key") @db.VarChar(255)
+  metaValue String? @map("meta_value") @db.Text
+
+  term      Term    @relation(fields: [termId], references: [termId], onDelete: Cascade)
+
+  @@index([termId])
+  @@index([metaKey])
+  @@map("np_termmeta")
+}
+
+model Option {
+  optionId    Int    @id @default(autoincrement()) @map("option_id")
+  optionName  String @map("option_name") @db.VarChar(191) @unique
+  optionValue String @map("option_value") @db.Text
+  autoload    String @default("yes") @map("autoload") @db.VarChar(20)
+
+  @@index([autoload])
+  @@map("np_options")
+}
