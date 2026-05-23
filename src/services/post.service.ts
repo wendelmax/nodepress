@@ -123,7 +123,7 @@ export class PostService {
   /**
    * Create a new post.
    */
-  static async create(data: { title: string; content: string; status: string; authorId: number; type?: string; thumbnailId?: number; thumbnailUrl?: string; metaData?: Record<string, string>; postDate?: Date }) {
+  static async create(data: { title: string; content: string; status: string; authorId: number; type?: string; thumbnailId?: number; thumbnailUrl?: string; metaData?: Record<string, string>; postDate?: Date; parentId?: number | null }) {
     const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
 
     return prisma.post.create({
@@ -134,6 +134,7 @@ export class PostService {
         postName: slug,
         postAuthor: data.authorId,
         postType: data.type || 'post',
+        postParent: data.parentId ?? undefined,
         postDate: data.postDate || new Date(),
         postDateGmt: data.postDate || new Date(),
         postExcerpt: '',
@@ -157,7 +158,7 @@ export class PostService {
   /**
    * Update an existing post.
    */
-  static async update(id: number, data: { title?: string; content?: string; status?: string; type?: string; thumbnailId?: number; thumbnailUrl?: string; metaData?: Record<string, string>; postDate?: Date }) {
+  static async update(id: number, data: { title?: string; content?: string; status?: string; type?: string; thumbnailId?: number; thumbnailUrl?: string; metaData?: Record<string, string>; postDate?: Date; parentId?: number | null }) {
     // 1. Fetch current post state to create a revision
     const currentPost = await prisma.post.findUnique({ where: { id } })
     
@@ -193,6 +194,7 @@ export class PostService {
     if (data.content !== undefined) updateData.postContent = data.content
     if (data.status !== undefined) updateData.postStatus = data.status
     if (data.type !== undefined) updateData.postType = data.type
+    if (data.parentId !== undefined) updateData.postParent = data.parentId
     if (data.postDate !== undefined) {
       updateData.postDate = data.postDate
       updateData.postDateGmt = data.postDate

@@ -9,25 +9,24 @@ export default function DeletePostButton({ postId, force = false }: { postId: nu
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault()
-    const msg = force ? "Are you sure you want to permanently delete this item?" : "Move to trash?"
+    const msg = force ? "Tem certeza de que deseja excluir este item permanentemente?" : "Mover para a lixeira?"
     
     if (confirm(msg)) {
       const success = await deletePost(postId, force)
       if (success) {
         router.refresh()
       } else {
-        alert(force ? "Failed to delete post permanently" : "Failed to trash post")
+        alert(force ? "Falha ao excluir o post permanentemente" : "Falha ao mover para a lixeira")
       }
     }
   }
 
   return (
-    <a 
-      href="#" 
+    <button 
       onClick={handleDelete} 
-      style={{ textDecoration: 'none', color: '#b32d2e', cursor: 'pointer' }}
+      className="text-danger hover:text-red-400 bg-transparent border-none cursor-pointer font-medium p-0 text-xs transition-colors outline-none"
     >
-      {force ? 'Delete Permanently' : 'Trash'}
-    </a>
+      {force ? 'Excluir Permanentemente' : 'Lixeira'}
+    </button>
   )
 }

@@ -47,60 +47,54 @@ export default function MediaSelectorModal({ isOpen, onClose, onSelect }: MediaS
   if (!isOpen) return null
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        width: '80%',
-        maxWidth: '900px',
-        height: '80%',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: '4px',
-        boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '15px 20px', borderBottom: '1px solid #c3c4c7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Select Media</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#646970' }}>&times;</button>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-surface-elevated w-full max-w-5xl h-[80vh] flex flex-col rounded-2xl shadow-soft border border-border overflow-hidden animate-fadeIn">
+        
+        <div className="px-6 py-4 border-b border-border bg-white/[0.02] flex justify-between items-center">
+          <h2 className="m-0 text-lg font-bold text-text tracking-wide">Select Media</h2>
+          <button 
+            onClick={onClose} 
+            className="bg-transparent border-none text-2xl cursor-pointer text-text-muted hover:text-white transition-colors"
+          >
+            &times;
+          </button>
         </div>
         
-        <div style={{ flex: 1, padding: '20px', overflowY: 'auto', backgroundColor: '#f0f0f1' }}>
+        <div className="flex-1 p-6 overflow-y-auto bg-background">
           {isLoading ? (
-            <div>Loading media...</div>
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-text-muted">
+              <span className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+              <p>Loading media...</p>
+            </div>
           ) : mediaItems.length === 0 ? (
-            <div>No media found. Upload some in the Media Library first.</div>
+            <div className="flex flex-col items-center justify-center h-full text-text-muted">
+              <span className="text-4xl mb-3">🖼️</span>
+              <p>No media found. Upload some in the Media Library first.</p>
+            </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '15px' }}>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {mediaItems.map(item => (
                 <div 
                   key={item.id} 
                   onClick={() => onSelect(item.guid, item.postTitle)}
-                  style={{ 
-                    border: '1px solid #c3c4c7', 
-                    backgroundColor: 'white',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    aspectRatio: '1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    overflow: 'hidden'
-                  }}
+                  className="group relative aspect-square rounded-xl border border-border bg-surface/50 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-glow transition-all"
                   title={item.postTitle}
                 >
                   {item.postMimeType.startsWith('image/') ? (
-                    <Image src={item.guid} alt={item.postTitle} fill sizes="150px" style={{ objectFit: 'cover' }} />
+                    <Image 
+                      src={item.guid} 
+                      alt={item.postTitle} 
+                      fill 
+                      sizes="(max-width: 768px) 33vw, 20vw" 
+                      className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                    />
                   ) : (
-                    <div style={{ textAlign: 'center', wordBreak: 'break-all', padding: '10px' }}>📄<br/>{item.postTitle}</div>
+                    <div className="flex flex-col items-center justify-center h-full p-2 text-center break-all bg-white/5">
+                      <span className="text-2xl mb-1">📄</span>
+                      <span className="text-[10px] text-text-secondary line-clamp-2">{item.postTitle}</span>
+                    </div>
                   )}
+                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </div>
               ))}
             </div>

@@ -3,10 +3,12 @@ import Header from '../components/Header'
 import Link from 'next/link'
 import Image from 'next/image'
 import BlockRenderer from '../components/BlockRenderer'
+import Footer from '../components/Footer'
 import { HookService } from '@/services/hook.service'
 
 export default async function SinglePage({ post, options = {} }: { post: any, options?: any }) {
   const thumbnailUrl = post.meta?.find((m: any) => m.metaKey === '_thumbnail_url')?.metaValue
+  const template = post.meta?.find((m: any) => m.metaKey === '_np_template')?.metaValue || 'default'
 
   // Extract Custom Fields
   const fieldGroups = options['acf_field_groups'] ? JSON.parse(options['acf_field_groups']) : []
@@ -34,56 +36,55 @@ export default async function SinglePage({ post, options = {} }: { post: any, op
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f0f0f1', color: '#2c3338', fontFamily: 'system-ui, sans-serif' }}>
-      <Header />
+    <div className="min-h-screen bg-background text-text font-sans">
+      {template !== 'landing' && <Header />}
 
-      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
-        <article style={{ backgroundColor: 'white', padding: '40px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
+      <main className={`${template === 'full-width' ? 'w-full' : 'max-w-4xl'} mx-auto py-12 px-6`}>
+        <article className="bg-surface backdrop-blur-md rounded-3xl border border-border shadow-soft overflow-hidden">
           {thumbnailUrl && (
-            <div style={{ marginBottom: '30px' }}>
-              <Image src={thumbnailUrl} alt={post.postTitle} width={800} height={450} style={{ width: '100%', height: 'auto', borderRadius: '3px', border: '1px solid #eee' }} />
+            <div className="w-full relative h-[300px] md:h-[450px]">
+              <Image src={thumbnailUrl} alt={post.postTitle} fill className="object-cover" />
             </div>
           )}
-          <header style={{ marginBottom: '30px' }}>
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '36px', lineHeight: '1.2' }}>
-              {post.postTitle}
-            </h1>
-          </header>
+          <div className="p-8 md:p-12">
+            <header className="mb-10 text-center">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight">
+                {post.postTitle}
+              </h1>
+            </header>
 
-          <div style={{ lineHeight: '1.8', fontSize: '18px', color: '#3c434a' }}>
-            <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+            <div className="text-text-secondary leading-relaxed">
+              <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+            </div>
+
+            {customFieldsToDisplay.length > 0 && (
+              <div className="mt-12 p-6 bg-white/5 border border-border rounded-2xl">
+                <h3 className="text-lg font-semibold text-text mb-4 pb-4 border-b border-border/40">Detalhes Adicionais</h3>
+                <dl className="grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-6 text-sm">
+                  {customFieldsToDisplay.map((field, idx) => (
+                    <React.Fragment key={idx}>
+                      <dt className="font-semibold text-text-secondary md:col-span-1">{field.label}</dt>
+                      <dd className="text-text md:col-span-2">
+                        {field.type === 'url' ? (
+                          <a href={field.value} target="_blank" rel="noopener noreferrer" className="text-primary-light hover:text-white transition-colors">
+                            {field.value}
+                          </a>
+                        ) : field.type === 'textarea' ? (
+                          <span className="whitespace-pre-wrap">{field.value}</span>
+                        ) : (
+                          field.value
+                        )}
+                      </dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
+              </div>
+            )}
           </div>
-
-          {customFieldsToDisplay.length > 0 && (
-            <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#fcfcfc', border: '1px solid #e2e4e7', borderRadius: '4px' }}>
-              <h3 style={{ marginTop: 0, fontSize: '18px', borderBottom: '1px solid #e2e4e7', paddingBottom: '10px' }}>Additional Details</h3>
-              <dl style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', margin: 0, fontSize: '16px' }}>
-                {customFieldsToDisplay.map((field, idx) => (
-                  <React.Fragment key={idx}>
-                    <dt style={{ fontWeight: 600, color: '#2c3338' }}>{field.label}:</dt>
-                    <dd style={{ margin: 0, color: '#3c434a' }}>
-                      {field.type === 'url' ? (
-                        <a href={field.value} target="_blank" rel="noopener noreferrer" style={{ color: '#2271b1', textDecoration: 'none' }}>
-                          {field.value}
-                        </a>
-                      ) : field.type === 'textarea' ? (
-                        <span style={{ whiteSpace: 'pre-wrap' }}>{field.value}</span>
-                      ) : (
-                        field.value
-                      )}
-                    </dd>
-                  </React.Fragment>
-                ))}
-              </dl>
-            </div>
-          )}
         </article>
       </main>
 
-      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#646970', fontSize: '14px' }}>
-        <p>&copy; {new Date().getFullYear()}. Built with NodePress.</p>
-        <Link href="/admin" style={{ color: '#2271b1', textDecoration: 'none' }}>Site Admin</Link>
-      </footer>
+      {template !== 'landing' && <Footer />}
     </div>
   )
 }

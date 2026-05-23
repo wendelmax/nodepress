@@ -2,10 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import {
+  PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage,
+  inputCls, selectCls
+} from "@/components/admin/SettingsUI"
 
 export default function ProfileForm({ user }: { user: any }) {
   const router = useRouter()
-  
   const userRole = user.meta?.find((m: any) => m.metaKey === 'capabilities')?.metaValue || 'administrator'
 
   const [formData, setFormData] = useState({
@@ -15,184 +18,139 @@ export default function ProfileForm({ user }: { user: any }) {
     role: userRole,
     newPassword: ''
   })
-
-  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const set = (key: string, value: string) => setFormData(prev => ({ ...prev, [key]: value }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
     setStatus(null)
-
     try {
       const res = await fetch(`/api/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-
-      if (!res.ok) {
-        throw new Error('Failed to update profile')
-      }
-
-      setStatus({ type: 'success', message: 'Profile updated.' })
-      
-      // If password changed, they might need to login again, but NextAuth session doesn't strictly check password on every request if JWT is valid. 
-      // We will just clear the password field.
-      setFormData(prev => ({ ...prev, newPassword: '' }))
-      
+      if (!res.ok) throw new Error()
+      setStatus({ type: 'success', message: 'Perfil atualizado com sucesso.' })
+      set('newPassword', '')
       router.refresh()
-    } catch (error) {
-      setStatus({ type: 'error', message: 'An error occurred while updating profile.' })
+    } catch {
+      setStatus({ type: 'error', message: 'Ocorreu um erro ao atualizar o perfil.' })
     } finally {
       setIsSaving(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0', marginBottom: '20px' }}>
-        Profile
-      </h1>
+    <div className="flex flex-col gap-6 w-full max-w-3xl">
+      <PageHeader title="Meu Perfil" subtitle="Gerencie suas informações pessoais, contato e segurança da conta." />
 
-      {status && (
-        <div style={{ 
-          borderLeft: `4px solid ${status.type === 'success' ? '#00a32a' : '#d63638'}`, 
-          backgroundColor: '#fff', 
-          padding: '12px', 
-          marginBottom: '20px', 
-          boxShadow: '0 1px 1px rgba(0,0,0,.04)' 
-        }}>
-          <p style={{ margin: 0 }}>{status.message}</p>
+      {status && <StatusMessage type={status.type} text={status.message} />}
+
+      {/* Avatar preview */}
+      <div className="flex items-center gap-4 bg-surface/40 border border-border rounded-2xl p-5">
+        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center text-2xl font-black text-primary-light flex-shrink-0">
+          {user.userLogin.charAt(0).toUpperCase()}
         </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 10px 0', padding: 0 }}>Name</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '30px' }}>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', width: '200px', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>Username</label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <input 
-                  type="text" 
-                  value={user.userLogin}
-                  disabled
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px', backgroundColor: '#f0f0f1', color: '#646970' }}
-                />
-                <p style={{ fontSize: '13px', color: '#646970', margin: '4px 0 0 0' }}>Usernames cannot be changed.</p>
-              </td>
-            </tr>
-
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>Display Name Publicly As</label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <input 
-                  type="text" 
-                  value={formData.displayName}
-                  onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                />
-              </td>
-            </tr>
-
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>Role</label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px', fontSize: '13px' }}
-                >
-                  <option value="administrator">Administrator</option>
-                  <option value="editor">Editor</option>
-                  <option value="author">Author</option>
-                  <option value="contributor">Contributor</option>
-                  <option value="subscriber">Subscriber</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 10px 0', padding: 0 }}>Contact Info</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '30px' }}>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', width: '200px', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>Email <span style={{ color: '#d63638' }}>(required)</span></label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <input 
-                  type="email" 
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                />
-              </td>
-            </tr>
-
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>Website</label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <input 
-                  type="url" 
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <h2 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 10px 0', padding: 0 }}>Account Management</h2>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '30px' }}>
-          <tbody>
-            <tr style={{ borderBottom: '1px solid #f0f0f1' }}>
-              <th style={{ padding: '20px 10px 20px 0', width: '200px', fontWeight: 600, color: '#2c3338', verticalAlign: 'top' }}>
-                <label>New Password</label>
-              </th>
-              <td style={{ padding: '20px 10px' }}>
-                <input 
-                  type="password" 
-                  value={formData.newPassword}
-                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  placeholder="Leave blank to keep current password"
-                  style={{ width: '100%', maxWidth: '400px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                />
-                <p style={{ fontSize: '13px', color: '#646970', margin: '4px 0 0 0' }}>If you would like to change the password type a new one. Otherwise leave this blank.</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div style={{ marginTop: '20px' }}>
-          <button 
-            type="submit" 
-            disabled={isSaving}
-            style={{ 
-              backgroundColor: '#2271b1', 
-              color: 'white', 
-              border: 'none', 
-              padding: '6px 12px', 
-              borderRadius: '3px', 
-              cursor: isSaving ? 'not-allowed' : 'pointer', 
-              fontSize: '13px' 
-            }}
-          >
-            {isSaving ? 'Updating Profile...' : 'Update Profile'}
-          </button>
+        <div>
+          <div className="font-bold text-text">{user.displayName || user.userLogin}</div>
+          <div className="text-xs text-text-muted mt-0.5">@{user.userLogin}</div>
+          <div className="mt-1.5">
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-accent-purple/10 border border-accent-purple/20 text-accent-purple capitalize">
+              {userRole}
+            </span>
+          </div>
         </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        {/* Name section */}
+        <SettingsSection title="Identidade" icon="👤">
+          <FieldRow label="Usuário" hint="Nomes de usuário não podem ser alterados.">
+            <input
+              type="text"
+              value={user.userLogin}
+              disabled
+              className={`${inputCls} opacity-50 cursor-not-allowed bg-white/5`}
+            />
+          </FieldRow>
+
+          <FieldRow label="Nome de Exibição">
+            <input
+              type="text"
+              value={formData.displayName}
+              onChange={e => set('displayName', e.target.value)}
+              className={inputCls}
+              placeholder="Seu nome público"
+            />
+          </FieldRow>
+
+          <FieldRow label="Papel">
+            <select
+              value={formData.role}
+              onChange={e => set('role', e.target.value)}
+              className={selectCls}
+            >
+              <option value="administrator">Administrador</option>
+              <option value="editor">Editor</option>
+              <option value="author">Autor</option>
+              <option value="contributor">Colaborador</option>
+              <option value="subscriber">Assinante</option>
+            </select>
+          </FieldRow>
+        </SettingsSection>
+
+        {/* Contact section */}
+        <SettingsSection title="Informações de Contato" icon="📬">
+          <FieldRow label="E-mail" required>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={e => set('email', e.target.value)}
+              className={inputCls}
+              placeholder="seu@email.com"
+            />
+          </FieldRow>
+
+          <FieldRow label="Website">
+            <input
+              type="url"
+              value={formData.url}
+              onChange={e => set('url', e.target.value)}
+              className={inputCls}
+              placeholder="https://seusite.com"
+            />
+          </FieldRow>
+        </SettingsSection>
+
+        {/* Password section */}
+        <SettingsSection title="Segurança" icon="🔐">
+          <FieldRow label="Nova Senha" hint="Deixe em branco para manter a senha atual.">
+            <div className="relative max-w-md">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.newPassword}
+                onChange={e => set('newPassword', e.target.value)}
+                placeholder="Deixe em branco para manter a atual"
+                className={`${inputCls} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors text-xs"
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
+          </FieldRow>
+        </SettingsSection>
+
+        <SaveButton isSaving={isSaving} label="Atualizar Perfil" />
       </form>
     </div>
   )

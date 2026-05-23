@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { title, content, status, type, thumbnailId, thumbnailUrl, metaData, postDate } = body
+    const { title, content, status, type, thumbnailId, thumbnailUrl, metaData, postDate, parentId } = body
 
     if (!title) {
       return NextResponse.json({ code: 'rest_missing_callback_param', message: 'Missing parameter(s): title', data: { status: 400 } }, { status: 400 })
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
       status: finalStatus,
       type: type || 'post',
       postDate: finalDate,
+      parentId: parentId ? parseInt(parentId) : null,
       thumbnailId: thumbnailId || null,
       thumbnailUrl: thumbnailUrl || null,
       metaData: metaData || undefined,

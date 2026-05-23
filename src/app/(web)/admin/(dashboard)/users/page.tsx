@@ -5,57 +5,94 @@ export default async function UsersListPage() {
   const users = await UserService.getAll()
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0' }}>Users</h1>
+    <div className="flex flex-col gap-6 w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border/40 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text leading-none">Usuários</h1>
+          <p className="text-xs text-text-secondary mt-1.5">{users.length} usuário{users.length !== 1 ? 's' : ''} cadastrado{users.length !== 1 ? 's' : ''}.</p>
+        </div>
+        <Link
+          href="/admin/users/new"
+          className="flex items-center gap-2 bg-primary-gradient text-white font-semibold text-xs px-4 py-2.5 rounded-xl hover:shadow-neon transition-all duration-200"
+        >
+          + Novo Usuário
+        </Link>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #c3c4c7', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-        <thead>
-          <tr style={{ borderBottom: '1px solid #c3c4c7', textAlign: 'left' }}>
-            <th style={{ padding: '8px 10px', color: '#2c3338', fontWeight: 400, fontSize: '14px', borderRight: '1px solid #c3c4c7', width: '25%' }}>Username</th>
-            <th style={{ padding: '8px 10px', color: '#2c3338', fontWeight: 400, fontSize: '14px', borderRight: '1px solid #c3c4c7', width: '25%' }}>Name</th>
-            <th style={{ padding: '8px 10px', color: '#2c3338', fontWeight: 400, fontSize: '14px', borderRight: '1px solid #c3c4c7', width: '25%' }}>Email</th>
-            <th style={{ padding: '8px 10px', color: '#2c3338', fontWeight: 400, fontSize: '14px', borderRight: '1px solid #c3c4c7', width: '15%' }}>Role</th>
-            <th style={{ padding: '8px 10px', color: '#2c3338', fontWeight: 400, fontSize: '14px', width: '10%', textAlign: 'center' }}>Posts</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id} style={{ borderBottom: '1px solid #f0f0f1' }} className="table-row">
-              <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px', verticalAlign: 'top', fontWeight: 600 }}>
-                <Link href={`/admin/users/${user.id}`} style={{ color: '#2271b1', textDecoration: 'none' }}>
-                  {user.userLogin}
-                </Link>
-                <div style={{ fontSize: '13px', marginTop: '4px' }}>
-                  <Link href={`/admin/users/${user.id}`} style={{ textDecoration: 'none', color: '#2271b1' }}>Edit</Link>
-                </div>
-              </td>
-              <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px', verticalAlign: 'top' }}>
-                {user.displayName || '—'}
-              </td>
-              <td style={{ padding: '10px', color: '#2271b1', fontSize: '13px', verticalAlign: 'top' }}>
-                <a href={`mailto:${user.userEmail}`} style={{ color: '#2271b1', textDecoration: 'none' }}>{user.userEmail}</a>
-              </td>
-              <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px', verticalAlign: 'top', textTransform: 'capitalize' }}>
-                {user.meta?.find((m: any) => m.metaKey === 'capabilities')?.metaValue || 'Administrator'}
-              </td>
-              <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px', verticalAlign: 'top', textAlign: 'center' }}>
-                <Link href={`/admin/edit?author=${user.id}`} style={{ color: '#2271b1', textDecoration: 'none' }}>
-                  {user._count.posts}
-                </Link>
-              </td>
-            </tr>
-          ))}
-          {users.length === 0 && (
-            <tr>
-              <td colSpan={5} style={{ padding: '10px', textAlign: 'center', color: '#646970', fontSize: '13px' }}>
-                No users found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {/* Table */}
+      <div className="bg-surface/40 border border-border rounded-2xl overflow-hidden">
+        {users.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+            <span className="text-4xl opacity-30">👤</span>
+            <p className="text-sm text-text-muted">Nenhum usuário encontrado.</p>
+          </div>
+        ) : (
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border/60">
+                <th className="text-left px-5 py-3 text-text-secondary font-semibold">Usuário</th>
+                <th className="text-left px-5 py-3 text-text-secondary font-semibold hidden md:table-cell">Nome</th>
+                <th className="text-left px-5 py-3 text-text-secondary font-semibold hidden lg:table-cell">E-mail</th>
+                <th className="text-left px-5 py-3 text-text-secondary font-semibold hidden sm:table-cell">Papel</th>
+                <th className="text-center px-5 py-3 text-text-secondary font-semibold">Posts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user, i) => {
+                const role = user.meta?.find((m: any) => m.metaKey === 'capabilities')?.metaValue || 'Administrator'
+                return (
+                  <tr
+                    key={user.id}
+                    className={`border-b border-border/30 hover:bg-white/[0.02] transition-colors group ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-sm font-bold text-primary-light">
+                          {user.userLogin.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <Link
+                            href={`/admin/users/${user.id}`}
+                            className="font-semibold text-text hover:text-primary transition-colors"
+                          >
+                            {user.userLogin}
+                          </Link>
+                          <div className="flex gap-2 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link
+                              href={`/admin/users/${user.id}`}
+                              className="text-primary-light hover:underline"
+                            >
+                              Editar
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-text-secondary hidden md:table-cell">{user.displayName || '—'}</td>
+                    <td className="px-5 py-3 hidden lg:table-cell">
+                      <a href={`mailto:${user.userEmail}`} className="text-primary-light hover:underline">{user.userEmail}</a>
+                    </td>
+                    <td className="px-5 py-3 hidden sm:table-cell">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-accent-purple/10 text-accent-purple border border-accent-purple/20 capitalize">
+                        {role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <Link
+                        href={`/admin/edit?author=${user.id}`}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary-light font-bold hover:bg-primary/20 transition-colors"
+                      >
+                        {user._count.posts}
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

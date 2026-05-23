@@ -4,6 +4,7 @@ import CommentSection from '../components/CommentSection'
 import Link from 'next/link'
 import Image from 'next/image'
 import BlockRenderer from '../components/BlockRenderer'
+import Footer from '../components/Footer'
 import { HookService } from '@/services/hook.service'
 
 export default async function SinglePost({ post, categories = [], tags = [], initialComments = [], options = {} }: { post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: any }) {
@@ -36,98 +37,99 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f0f0f1', color: '#2c3338', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="min-h-screen bg-background text-text font-sans">
       <Header />
 
-      <main style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px' }}>
-        <article style={{ backgroundColor: 'white', padding: '40px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
+      <main className="max-w-4xl mx-auto py-12 px-6">
+        <article className="bg-surface backdrop-blur-md rounded-3xl border border-border shadow-soft overflow-hidden">
           {thumbnailUrl && (
-            <div style={{ marginBottom: '30px' }}>
-              <Image src={thumbnailUrl} alt={post.postTitle} width={800} height={450} style={{ width: '100%', height: 'auto', borderRadius: '3px', border: '1px solid #eee' }} />
+            <div className="w-full relative h-[300px] md:h-[450px]">
+              <Image src={thumbnailUrl} alt={post.postTitle} fill className="object-cover" />
             </div>
           )}
-          <header style={{ marginBottom: '30px' }}>
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '36px', lineHeight: '1.2' }}>
-              {post.postTitle}
-            </h1>
-            {!isPage && (
-              <div style={{ fontSize: '14px', color: '#646970' }}>
-                Published on {new Date(post.postDate).toLocaleDateString()} by <strong>{post.author?.displayName || post.author?.userLogin || 'Admin'}</strong>
+          <div className="p-8 md:p-12">
+            <header className="mb-10 text-center">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight tracking-tight mb-4">
+                {post.postTitle}
+              </h1>
+              {!isPage && (
+                <div className="flex items-center justify-center gap-3 text-sm text-text-muted">
+                  <span>Publicado em {new Date(post.postDate).toLocaleDateString()}</span>
+                  <span>•</span>
+                  <span>por <strong className="text-white">{post.author?.displayName || post.author?.userLogin || 'Admin'}</strong></span>
+                </div>
+              )}
+            </header>
+
+            <div className="text-text-secondary leading-relaxed">
+              <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+            </div>
+
+            {customFieldsToDisplay.length > 0 && (
+              <div className="mt-12 p-6 bg-white/5 border border-border rounded-2xl">
+                <h3 className="text-lg font-semibold text-text mb-4 pb-4 border-b border-border/40">Detalhes Adicionais</h3>
+                <dl className="grid grid-cols-1 md:grid-cols-3 gap-y-4 gap-x-6 text-sm">
+                  {customFieldsToDisplay.map((field, idx) => (
+                    <React.Fragment key={idx}>
+                      <dt className="font-semibold text-text-secondary md:col-span-1">{field.label}</dt>
+                      <dd className="text-text md:col-span-2">
+                        {field.type === 'url' ? (
+                          <a href={field.value} target="_blank" rel="noopener noreferrer" className="text-primary-light hover:text-white transition-colors">
+                            {field.value}
+                          </a>
+                        ) : field.type === 'textarea' ? (
+                          <span className="whitespace-pre-wrap">{field.value}</span>
+                        ) : (
+                          field.value
+                        )}
+                      </dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
               </div>
             )}
-          </header>
 
-          <div style={{ lineHeight: '1.8', fontSize: '18px', color: '#3c434a' }}>
-            <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+            {!isPage && (categories.length > 0 || tags.length > 0) && (
+              <footer className="mt-12 pt-8 border-t border-border/40">
+                {categories.length > 0 && (
+                  <div className="flex items-center gap-3 mb-4 flex-wrap">
+                    <strong className="text-sm text-text-secondary">Categorias:</strong>
+                    {categories.map((c) => (
+                      <Link key={c.id} href={`/category/${c.slug}`} className="px-3 py-1 bg-white/5 border border-border rounded-full text-xs text-text hover:bg-white/10 hover:border-primary/50 transition-colors">
+                        {c.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+                {tags.length > 0 && (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <strong className="text-sm text-text-secondary">Tags:</strong>
+                    {tags.map((t) => (
+                      <Link key={t.id} href={`/tag/${t.slug}`} className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs text-primary-light hover:bg-primary/20 hover:border-primary/40 transition-colors">
+                        #{t.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </footer>
+            )}
+
+            {!isPage && post.commentStatus === 'open' && (
+              <div className="mt-12 pt-8 border-t border-border/40">
+                <CommentSection postId={post.id} initialComments={initialComments} />
+              </div>
+            )}
           </div>
-
-          {customFieldsToDisplay.length > 0 && (
-            <div style={{ marginTop: '40px', padding: '20px', backgroundColor: '#fcfcfc', border: '1px solid #e2e4e7', borderRadius: '4px' }}>
-              <h3 style={{ marginTop: 0, fontSize: '18px', borderBottom: '1px solid #e2e4e7', paddingBottom: '10px' }}>Additional Details</h3>
-              <dl style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px', margin: 0, fontSize: '16px' }}>
-                {customFieldsToDisplay.map((field, idx) => (
-                  <React.Fragment key={idx}>
-                    <dt style={{ fontWeight: 600, color: '#2c3338' }}>{field.label}:</dt>
-                    <dd style={{ margin: 0, color: '#3c434a' }}>
-                      {field.type === 'url' ? (
-                        <a href={field.value} target="_blank" rel="noopener noreferrer" style={{ color: '#2271b1', textDecoration: 'none' }}>
-                          {field.value}
-                        </a>
-                      ) : field.type === 'textarea' ? (
-                        <span style={{ whiteSpace: 'pre-wrap' }}>{field.value}</span>
-                      ) : (
-                        field.value
-                      )}
-                    </dd>
-                  </React.Fragment>
-                ))}
-              </dl>
-            </div>
-          )}
-
-          {!isPage && (categories.length > 0 || tags.length > 0) && (
-            <footer style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #f0f0f1', fontSize: '14px', color: '#646970' }}>
-              {categories.length > 0 && (
-                <div style={{ marginBottom: '10px' }}>
-                  <strong style={{ color: '#2c3338' }}>Categories:</strong>{' '}
-                  {categories.map((c, idx) => (
-                    <span key={c.id}>
-                      <Link href={`/category/${c.slug}`} style={{ color: '#2271b1', textDecoration: 'none' }}>{c.name}</Link>
-                      {idx < categories.length - 1 ? ', ' : ''}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {tags.length > 0 && (
-                <div>
-                  <strong style={{ color: '#2c3338' }}>Tags:</strong>{' '}
-                  {tags.map((t, idx) => (
-                    <span key={t.id}>
-                      <Link href={`/tag/${t.slug}`} style={{ color: '#2271b1', textDecoration: 'none' }}>{t.name}</Link>
-                      {idx < tags.length - 1 ? ', ' : ''}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </footer>
-          )}
-
-          {!isPage && post.commentStatus === 'open' && (
-            <CommentSection postId={post.id} initialComments={initialComments} />
-          )}
         </article>
         
-        <div style={{ marginTop: '30px' }}>
-          <Link href="/" style={{ color: '#2271b1', textDecoration: 'none', fontWeight: 600 }}>
-            &larr; Back to Home
+        <div className="mt-8">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-text-secondary hover:text-white transition-colors">
+            <span className="text-primary-light">&larr;</span> Voltar para Home
           </Link>
         </div>
       </main>
 
-      <footer style={{ textAlign: 'center', padding: '40px 20px', color: '#646970', fontSize: '14px' }}>
-        <p>&copy; {new Date().getFullYear()}. Built with NodePress.</p>
-        <Link href="/admin" style={{ color: '#2271b1', textDecoration: 'none' }}>Site Admin</Link>
-      </footer>
+      <Footer />
     </div>
   )
 }

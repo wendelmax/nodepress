@@ -1,6 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import {
+  PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, LoadingSpinner, inputCls
+} from "@/components/admin/SettingsUI"
+
+type Msg = { type: 'success' | 'error'; text: string } | null
+
+const PERMALINK_OPTIONS = [
+  { value: '/%postname%/', label: 'Nome do post', example: (url: string) => `${url}/meu-post` },
+  { value: '/%year%/%monthnum%/%postname%/', label: 'Mês e nome', example: (url: string) => `${url}/2026/05/meu-post` },
+]
 
 export default function OptionsPermalinkPage() {
   const [structure, setStructure] = useState("/%postname%/")
@@ -8,27 +18,22 @@ export default function OptionsPermalinkPage() {
   const [siteUrl, setSiteUrl] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null)
+  const [msg, setMsg] = useState<Msg>(null)
 
   useEffect(() => {
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
-        if (!data.error && data.permalink_structure) {
+        if (data.permalink_structure) {
           const val = data.permalink_structure
-          
-          if (["/%postname%/", "/%year%/%monthnum%/%postname%/"].includes(val)) {
+          if (PERMALINK_OPTIONS.some(o => o.value === val)) {
             setStructure(val)
           } else {
             setStructure("custom")
             setCustomStructure(val)
           }
         }
-        if (data.siteurl) {
-          setSiteUrl(data.siteurl.replace(/\/$/, ''))
-        } else {
-          setSiteUrl(window.location.origin)
-        }
+        setSiteUrl(data.siteurl?.replace(/\/$/, '') || (typeof window !== 'undefined' ? window.location.origin : ''))
       })
       .finally(() => setIsLoading(false))
   }, [])
@@ -36,144 +41,97 @@ export default function OptionsPermalinkPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSaving(true)
-    setMessage(null)
-
+    setMsg(null)
     const finalStructure = structure === "custom" ? customStructure : structure
-
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ permalink_structure: finalStructure })
       })
-
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'Permalink structure updated.' })
-      } else {
-        setMessage({ type: 'error', text: 'Failed to update.' })
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred.' })
+      setMsg({ type: res.ok ? 'success' : 'error', text: res.ok ? 'Estrutura de permalink atualizada com sucesso!' : 'Falha ao atualizar.' })
+    } catch {
+      setMsg({ type: 'error', text: 'Ocorreu um erro ao salvar.' })
     } finally {
       setIsSaving(false)
-      setTimeout(() => setMessage(null), 3000)
+      setTimeout(() => setMsg(null), 4000)
     }
   }
 
-  if (isLoading) return <div style={{ padding: '20px' }}>Loading...</div>
+  if (isLoading) return <LoadingSpinner />
 
   return (
-    <div style={{ maxWidth: '800px' }}>
-      <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0', marginBottom: '20px' }}>
-        Permalink Settings
-      </h1>
+    <div className="flex flex-col gap-6 w-full max-w-3xl">
+      <PageHeader
+        title="Configurações de Permalink"
+        subtitle="Defina a estrutura da URL para posts e páginas do seu site NodePress."
+      />
 
-      {message && (
-        <div style={{ 
-          borderLeft: `4px solid ${message.type === 'success' ? '#00a32a' : '#d63638'}`, 
-          backgroundColor: '#fff', 
-          padding: '12px', 
-          marginBottom: '20px', 
-          boxShadow: '0 1px 1px rgba(0,0,0,.04)' 
-        }}>
-          <p style={{ margin: 0 }}>{message.text}</p>
-        </div>
-      )}
+      {msg && <StatusMessage type={msg.type} text={msg.text} />}
 
-      <p style={{ color: '#646970', marginBottom: '20px' }}>
-        NodePress offers you the ability to create a custom URL structure for your permalinks and archives. Custom URL structures can improve the aesthetics, usability, and forward-compatibility of your links.
-      </p>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <SettingsSection title="Configurações Comuns" icon="🔗">
+          <p className="text-xs text-text-muted">
+            Escolha a estrutura de URL que melhor se adapta ao seu conteúdo. Estruturas limpas melhoram SEO e usabilidade.
+          </p>
 
-      <form onSubmit={handleSubmit}>
-        <h2 style={{ fontSize: '14px', marginBottom: '10px' }}>Common Settings</h2>
-        
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <tbody>
-            <tr>
-              <td style={{ padding: '10px 0', width: '30px' }}>
-                <input 
-                  type="radio" 
-                  name="permalink_structure" 
-                  value="/%postname%/"
-                  checked={structure === "/%postname%/"}
-                  onChange={(e) => setStructure(e.target.value)}
-                  id="permalink-postname"
-                />
-              </td>
-              <th style={{ fontWeight: 'normal', color: '#2c3338' }}>
-                <label htmlFor="permalink-postname"><strong>Post name</strong></label>
-              </th>
-              <td style={{ color: '#646970' }}>
-                <code>{siteUrl || window.location.origin}/sample-post</code>
-              </td>
-            </tr>
+          <div className="flex flex-col gap-2.5">
+            {PERMALINK_OPTIONS.map(opt => (
+              <label
+                key={opt.value}
+                className={`flex items-center justify-between gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
+                  structure === opt.value
+                    ? 'border-primary/40 bg-primary/5 shadow-glow'
+                    : 'border-border bg-surface/30 hover:border-border-strong'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="permalink_structure"
+                    value={opt.value}
+                    checked={structure === opt.value}
+                    onChange={e => setStructure(e.target.value)}
+                    className="accent-primary"
+                  />
+                  <span className="text-xs font-semibold text-text">{opt.label}</span>
+                </div>
+                <code className="text-[10px] text-text-muted bg-background px-2.5 py-1 rounded-lg border border-border font-mono">
+                  {opt.example(siteUrl)}
+                </code>
+              </label>
+            ))}
 
-            <tr>
-              <td style={{ padding: '10px 0' }}>
-                <input 
-                  type="radio" 
-                  name="permalink_structure" 
-                  value="/%year%/%monthnum%/%postname%/"
-                  checked={structure === "/%year%/%monthnum%/%postname%/"}
-                  onChange={(e) => setStructure(e.target.value)}
-                  id="permalink-month"
-                />
-              </td>
-              <th style={{ fontWeight: 'normal', color: '#2c3338' }}>
-                <label htmlFor="permalink-month"><strong>Month and name</strong></label>
-              </th>
-              <td style={{ color: '#646970' }}>
-                <code>{siteUrl || window.location.origin}/2026/05/sample-post</code>
-              </td>
-            </tr>
-
-            <tr>
-              <td style={{ padding: '10px 0' }}>
-                <input 
-                  type="radio" 
-                  name="permalink_structure" 
+            {/* Custom */}
+            <label className={`flex flex-col gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${
+              structure === 'custom'
+                ? 'border-primary/40 bg-primary/5 shadow-glow'
+                : 'border-border bg-surface/30 hover:border-border-strong'
+            }`}>
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="permalink_structure"
                   value="custom"
                   checked={structure === "custom"}
-                  onChange={(e) => setStructure(e.target.value)}
-                  id="permalink-custom"
+                  onChange={e => setStructure(e.target.value)}
+                  className="accent-primary"
                 />
-              </td>
-              <th style={{ fontWeight: 'normal', color: '#2c3338' }}>
-                <label htmlFor="permalink-custom"><strong>Custom Structure</strong></label>
-              </th>
-              <td>
-                <input 
-                  type="text" 
-                  value={structure === "custom" ? customStructure : (["/%postname%/", "/%year%/%monthnum%/%postname%/"].includes(structure) ? structure : '')}
-                  onChange={(e) => {
-                    setStructure("custom")
-                    setCustomStructure(e.target.value)
-                  }}
-                  onFocus={() => setStructure("custom")}
-                  style={{ width: '100%', maxWidth: '300px', padding: '6px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <span className="text-xs font-semibold text-text">Estrutura Personalizada</span>
+              </div>
+              <input
+                type="text"
+                value={structure === "custom" ? customStructure : ''}
+                onChange={e => { setStructure("custom"); setCustomStructure(e.target.value) }}
+                onFocus={() => setStructure("custom")}
+                placeholder="/%postname%/"
+                className={`${inputCls} max-w-sm ml-6`}
+              />
+            </label>
+          </div>
+        </SettingsSection>
 
-        <div style={{ marginTop: '30px' }}>
-          <button 
-            type="submit" 
-            disabled={isSaving}
-            style={{ 
-              backgroundColor: '#2271b1', 
-              color: 'white', 
-              border: 'none', 
-              padding: '6px 12px', 
-              borderRadius: '3px', 
-              cursor: isSaving ? 'not-allowed' : 'pointer', 
-              fontSize: '13px' 
-            }}
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
+        <SaveButton isSaving={isSaving} />
       </form>
     </div>
   )

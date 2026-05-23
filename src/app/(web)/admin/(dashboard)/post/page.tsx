@@ -18,7 +18,7 @@ export default async function EditPostPage({
 
   const post = await PostService.getById(postId)
 
-  if (!post || (post.postType !== 'post' && post.postType !== 'page')) {
+  if (!post) {
     return notFound()
   }
 
@@ -47,7 +47,8 @@ export default async function EditPostPage({
     thumbnailId: thumbnailIdMeta ? parseInt(thumbnailIdMeta) : null,
     thumbnailUrl: thumbnailUrlMeta || null,
     metaData,
-    postDate: post.postDate
+    postDate: post.postDate,
+    postParent: post.postParent
   }
 
   const options = await OptionService.getOptions(['acf_field_groups'])

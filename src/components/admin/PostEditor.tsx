@@ -1,12 +1,18 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { usePosts } from "@/hooks/usePosts"
 import { useTaxonomies } from "@/hooks/useTaxonomies"
 import dynamic from 'next/dynamic'
+import { Card } from "@/components/admin/Card"
+import { GlassButton } from "@/components/admin/GlassButton"
 
-const BlockEditor = dynamic(() => import('./BlockEditor'), { ssr: false, loading: () => <div style={{ height: '400px', border: '1px solid #ccc', padding: '20px' }}>Loading editor...</div> })
+const BlockEditor = dynamic(() => import('./BlockEditor'), { 
+  ssr: false, 
+  loading: () => <div className="h-[400px] border border-border rounded-2xl bg-white/[0.01] flex items-center justify-center text-xs text-text-muted">Carregando editor...</div> 
+})
 
 interface PostEditorProps {
   postId?: number;
@@ -21,6 +27,7 @@ interface PostEditorProps {
     thumbnailUrl?: string | null;
     metaData?: Record<string, string>;
     postDate?: Date;
+    postParent?: number | null;
   };
   fieldGroups?: any[];
 }
@@ -35,6 +42,9 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
     ? new Date(initialData.postDate.getTime() - (initialData.postDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16)
     : ""
   const [postDate, setPostDate] = useState(initialDateStr)
+
+  const [parentId, setParentId] = useState<number | null>(initialData?.postParent || null)
+  const [availablePages, setAvailablePages] = useState<any[]>([])
 
   const [selectedCategories, setSelectedCategories] = useState<number[]>(initialData?.categories || [])
   const [selectedTags, setSelectedTags] = useState<number[]>(initialData?.tags || [])
@@ -66,10 +76,21 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
         })
         .catch(err => console.error("Failed to fetch revisions", err))
     }
-  }, [postId, isEditing])
+
+    if (postType !== 'post') {
+      fetch(`/api/posts?type=${postType}&per_page=100`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setAvailablePages(data.filter(p => p.id !== postId))
+          }
+        })
+        .catch(err => console.error("Failed to fetch parent candidates", err))
+    }
+  }, [postId, isEditing, postType])
 
   const handleRestore = async (revisionId: number) => {
-    if (!confirm('Are you sure you want to restore this revision? Your current unsaved changes will be lost.')) return
+    if (!confirm('Tem certeza que deseja restaurar esta revisão? As alterações não salvas serão perdidas.')) return
     
     setIsRestoring(true)
     try {
@@ -82,239 +103,338 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
       if (res.ok) {
         window.location.reload()
       } else {
-        alert('Failed to restore revision.')
+        alert('Falha ao restaurar revisão.')
       }
     } catch (err) {
-      alert('Error restoring revision.')
+      alert('Erro ao restaurar revisão.')
     } finally {
       setIsRestoring(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const handleSubmitForm = async (forcedStatus?: string) => {
+    const finalStatus = forcedStatus || status
+    
     const result = await savePost(postId, {
       title,
       content,
-      status,
+      status: finalStatus,
       type: postType,
       categories: selectedCategories,
       tags: selectedTags,
       thumbnailId,
       thumbnailUrl,
       metaData: customMeta,
-      postDate: postDate ? new Date(postDate).toISOString() : undefined
+      postDate: postDate ? new Date(postDate).toISOString() : undefined,
+      parentId
     })
 
     if (result) {
-      router.push(postType === 'page' ? "/admin/edit?post_type=page" : "/admin/edit")
+      router.push(postType === 'page' ? "/admin/pages" : "/admin/posts")
       router.refresh()
     } else {
-      alert(`Failed to ${isEditing ? 'update' : 'create'} ${postType}.`)
+      alert(`Falha ao ${isEditing ? 'atualizar' : 'criar'} o ${postType === 'page' ? 'página' : 'post'}.`)
     }
   }
 
-  return (
-    <div>
-      <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0', marginBottom: '20px' }}>
-        {isEditing ? `Edit ${postType === 'page' ? 'Page' : 'Post'}` : `Add New ${postType === 'page' ? 'Page' : 'Post'}`}
-      </h1>
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    handleSubmitForm()
+  }
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '20px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: '15px' }}>
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-8 w-full">
+      {/* ── Page Header Actions ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/40 pb-6 mb-2">
+        <div className="flex items-center gap-3">
+          <Link href={postType === 'page' ? "/admin/pages" : "/admin/posts"} className="text-text-secondary hover:text-white transition-colors text-lg no-underline font-semibold leading-none">
+            ←
+          </Link>
+          <h1 className="text-2xl font-bold text-text leading-tight">
+            {isEditing ? `Editar ${postType === 'page' ? 'Página' : 'Post'}` : `Novo ${postType === 'page' ? 'Página' : 'Post'}`}
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => { setStatus("draft"); handleSubmitForm("draft"); }}
+            disabled={isSaving}
+            className="h-10 px-5 rounded-xl bg-white/5 border border-border hover:bg-white/10 text-text-secondary hover:text-white font-medium text-xs transition-all cursor-pointer leading-none outline-none"
+          >
+            Salvar rascunho
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="h-10 px-6 rounded-xl bg-primary-gradient text-white hover:shadow-neon font-bold text-xs transition-all cursor-pointer leading-none outline-none border-none"
+          >
+            {isSaving ? 'Salvando...' : (isEditing ? 'Atualizar' : 'Publicar')}
+          </button>
+        </div>
+      </div>
+
+      {/* Main Grid */}
+      <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
+        {/* Left Column (Main Editor, Custom Fields, SEO) */}
+        <div className="flex-1 w-full flex flex-col gap-8">
+          {/* Title Area */}
+          <div className="w-full">
             <input 
               type="text" 
-              placeholder="Add title" 
+              placeholder="Adicione um título incrível..." 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              style={{ width: '100%', padding: '10px', fontSize: '20px', border: '1px solid #c3c4c7', borderRadius: '3px' }}
-            />
-          </div>
-          <div style={{ backgroundColor: 'white' }}>
-            <BlockEditor 
-              value={content} 
-              onChange={setContent} 
-              placeholder="Start writing or type / to choose a block"
+              className="w-full bg-transparent text-4xl md:text-5xl font-semibold outline-none border-none text-text placeholder:text-text-muted leading-tight"
             />
           </div>
 
-          {/* Render Custom Field Groups */}
+          {/* Block Editor */}
+          <div className="rounded-2xl border border-border bg-surface-elevated overflow-hidden shadow-soft w-full">
+            {/* Toolbar Header */}
+            <div className="flex items-center gap-3 border-b border-border bg-white/[0.02] px-5 py-3.5">
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Editor de Blocos</span>
+              <div className="w-px h-4 bg-border/60 mx-1" />
+              {/* Fake styling helper dots */}
+              <div className="flex gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-red-500/40" />
+                <span className="w-2 h-2 rounded-full bg-yellow-500/40" />
+                <span className="w-2 h-2 rounded-full bg-green-500/40" />
+              </div>
+              <div className="ml-auto">
+                <Link href="/admin/options-ai" className="px-3.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 text-xs font-semibold transition-colors no-underline">
+                  ✨ Escrever com IA
+                </Link>
+              </div>
+            </div>
+            {/* Write Area */}
+            <div className="p-6 md:p-8 bg-transparent min-h-[400px]">
+              <BlockEditor 
+                value={content} 
+                onChange={setContent} 
+                placeholder="Comece a escrever ou digite / para escolher um bloco..."
+              />
+            </div>
+          </div>
+
+          {/* Render Custom Field Groups (ACF) */}
           {fieldGroups.filter(g => g.postType === postType).map(group => (
-            <div key={group.id} style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '15px', marginTop: '20px', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-              <h2 style={{ fontSize: '14px', margin: '0 0 15px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>
-                {group.title}
+            <Card key={group.id} className="p-6 flex flex-col gap-5">
+              <h2 className="text-lg font-semibold text-text flex items-center gap-2 leading-none">
+                <span>📋</span> {group.title}
               </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div className="flex flex-col gap-4">
                 {group.fields.map((field: any) => (
-                  <div key={field.name}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '5px', color: '#2c3338' }}>
+                  <div key={field.name} className="flex flex-col gap-2">
+                    <label className="text-xs font-semibold text-text-secondary">
                       {field.label}
                     </label>
                     {field.type === 'textarea' ? (
                       <textarea
                         value={customMeta[field.name] || ''}
                         onChange={(e) => setCustomMeta({ ...customMeta, [field.name]: e.target.value })}
-                        style={{ width: '100%', padding: '8px', border: '1px solid #8c8f94', borderRadius: '3px', minHeight: '80px', fontFamily: 'inherit' }}
+                        className="w-full bg-white/[0.03] border border-border rounded-xl p-4 text-xs text-text outline-none focus:border-primary/50 transition-all resize-none min-h-[90px] font-sans"
                       />
                     ) : (
                       <input
                         type={field.type === 'url' ? 'url' : field.type === 'number' ? 'number' : 'text'}
                         value={customMeta[field.name] || ''}
                         onChange={(e) => setCustomMeta({ ...customMeta, [field.name]: e.target.value })}
-                        style={{ width: '100%', padding: '8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
+                        className="w-full h-11 bg-white/[0.03] border border-border rounded-xl px-4 text-xs text-text outline-none focus:border-primary/50 transition-all"
                       />
                     )}
                   </div>
                 ))}
               </div>
-            </div>
+            </Card>
           ))}
 
           {/* Render SEO Settings Box */}
-          <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '15px', marginTop: '20px', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-            <h2 style={{ fontSize: '14px', margin: '0 0 15px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>
-              SEO Settings
+          <Card className="p-6 flex flex-col gap-5">
+            <h2 className="text-lg font-semibold text-text flex items-center gap-2 leading-none">
+              <span>🔍</span> Configurações de SEO
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '5px', color: '#2c3338' }}>
-                  SEO Title
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-text-secondary">
+                  Palavra-chave foco / Título SEO
                 </label>
                 <input
                   type="text"
                   value={customMeta['_seo_title'] || ''}
                   onChange={(e) => setCustomMeta({ ...customMeta, '_seo_title': e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-                  placeholder={title || "Post Title"}
+                  className="w-full h-11 bg-white/[0.03] border border-border rounded-xl px-4 text-xs text-text outline-none focus:border-primary/50 transition-all"
+                  placeholder={title || "Título do Post"}
                 />
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '5px', color: '#2c3338' }}>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-semibold text-text-secondary">
                   Meta Description
                 </label>
                 <textarea
                   value={customMeta['_seo_description'] || ''}
                   onChange={(e) => setCustomMeta({ ...customMeta, '_seo_description': e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #8c8f94', borderRadius: '3px', minHeight: '60px', fontFamily: 'inherit' }}
-                  placeholder="Optimized description for search engines..."
+                  className="w-full bg-white/[0.03] border border-border rounded-xl p-4 text-xs text-text outline-none focus:border-primary/50 transition-all resize-none min-h-[70px] font-sans"
+                  placeholder="Escreva uma descrição resumida para atrair cliques no Google..."
                 />
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
-        <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Publish Box */}
-          <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '12px' }}>
-            <h2 style={{ fontSize: '14px', margin: '0 0 10px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>Publish</h2>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: '100%', padding: '4px', border: '1px solid #8c8f94', borderRadius: '3px' }}>
-                <option value="publish">Publish</option>
-                <option value="draft">Draft</option>
-                <option value="private">Private</option>
-              </select>
+        {/* Right Column (Sidebar Settings Drawer) */}
+        <div className="w-full xl:w-[320px] flex flex-col gap-6 shrink-0">
+          {/* Summary / Publish Box */}
+          <div className="rounded-2xl border border-border bg-white/[0.02] p-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-border/40 pb-2">
+              <h3 className="text-xs font-bold text-text uppercase tracking-wider">Resumo</h3>
+              <span className="text-text-muted text-xs">▼</span>
             </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Publish Date</label>
-              <input 
-                type="datetime-local" 
-                value={postDate} 
-                onChange={(e) => setPostDate(e.target.value)}
-                style={{ width: '100%', padding: '4px', border: '1px solid #8c8f94', borderRadius: '3px', fontSize: '13px' }}
-              />
-              <span style={{ fontSize: '11px', color: '#646970', display: 'block', marginTop: '4px' }}>
-                Leave empty to publish immediately, or set a future date to schedule.
-              </span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f0f0f1', paddingTop: '10px' }}>
-              <button 
-                type="submit" 
-                disabled={isSaving}
-                style={{ backgroundColor: '#2271b1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '3px', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
-                {isSaving ? 'Saving...' : (isEditing ? 'Update' : 'Publish')}
-              </button>
+            
+            <div className="flex flex-col gap-3.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Visibilidade:</span>
+                <span className="font-semibold text-primary">Público</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Status:</span>
+                <select 
+                  value={status} 
+                  onChange={(e) => setStatus(e.target.value)} 
+                  className="bg-white/5 border border-border rounded-lg text-text hover:text-white px-2.5 py-1.5 font-medium cursor-pointer outline-none text-xs transition-colors duration-150"
+                >
+                  <option value="publish">Publicado</option>
+                  <option value="draft">Rascunho</option>
+                  <option value="private">Privado</option>
+                </select>
+              </div>
+
+              {postType !== 'post' && (
+                <>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <span className="text-text-secondary">Página Pai:</span>
+                    <select 
+                      value={parentId || ''} 
+                      onChange={(e) => setParentId(e.target.value ? parseInt(e.target.value) : null)} 
+                      className="w-full bg-white/5 border border-border rounded-xl px-3 py-1.5 text-xs text-text outline-none focus:border-primary/40 transition-colors"
+                    >
+                      <option value="">(Sem pai)</option>
+                      {availablePages.map(p => (
+                        <option key={p.id} value={p.id}>{p.postTitle}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <span className="text-text-secondary">Template:</span>
+                    <select 
+                      value={customMeta['_np_template'] || 'default'} 
+                      onChange={(e) => setCustomMeta({ ...customMeta, '_np_template': e.target.value })} 
+                      className="w-full bg-white/5 border border-border rounded-xl px-3 py-1.5 text-xs text-text outline-none focus:border-primary/40 transition-colors"
+                    >
+                      <option value="default">Padrão</option>
+                      <option value="full-width">Largura Total (Sem Sidebar)</option>
+                      <option value="landing">Landing Page (Sem Header/Footer)</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-text-secondary">Data de Publicação:</span>
+                <input 
+                  type="datetime-local" 
+                  value={postDate} 
+                  onChange={(e) => setPostDate(e.target.value)}
+                  className="w-full bg-white/5 border border-border rounded-xl px-3 py-1.5 text-xs text-text outline-none focus:border-primary/40 transition-colors"
+                />
+                <span className="text-[10px] text-text-muted leading-relaxed">
+                  Deixe em branco para publicar imediatamente ou defina uma data futura para agendar.
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Revisions Box */}
           {revisions.length > 0 && (
-            <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '12px' }}>
-              <h2 style={{ fontSize: '14px', margin: '0 0 10px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>
-                Revisions ({revisions.length})
-              </h2>
-              <div style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px' }}>
-                  {revisions.map(rev => (
-                    <li key={rev.id} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #f0f0f1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ color: '#646970' }}>
-                        {new Date(rev.postDate).toLocaleString()}
-                      </div>
-                      <button 
-                        type="button" 
-                        disabled={isRestoring}
-                        onClick={() => handleRestore(rev.id)}
-                        style={{ color: '#2271b1', background: 'none', border: 'none', cursor: isRestoring ? 'not-allowed' : 'pointer', padding: 0, textDecoration: 'underline', fontSize: '13px' }}>
-                        Restore
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+            <div className="rounded-2xl border border-border bg-white/[0.02] p-5 flex flex-col gap-3">
+              <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                <h3 className="text-xs font-bold text-text uppercase tracking-wider">Revisões ({revisions.length})</h3>
+                <span className="text-text-muted text-xs">▼</span>
+              </div>
+              <div className="max-h-[150px] overflow-y-auto flex flex-col gap-2.5">
+                {revisions.map(rev => (
+                  <div key={rev.id} className="flex justify-between items-center text-xs border-b border-border/20 last:border-none pb-2">
+                    <span className="text-text-muted">{new Date(rev.postDate).toLocaleString('pt-BR')}</span>
+                    <button 
+                      type="button" 
+                      disabled={isRestoring}
+                      onClick={() => handleRestore(rev.id)}
+                      className="text-primary hover:text-primary-light bg-transparent border-none cursor-pointer p-0 underline text-xs font-medium"
+                    >
+                      Restaurar
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {/* Featured Image Box */}
-          <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '12px' }}>
-            <h2 style={{ fontSize: '14px', margin: '0 0 10px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>Featured Image</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="rounded-2xl border border-border bg-white/[0.02] p-5 flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b border-border/40 pb-2">
+              <h3 className="text-xs font-bold text-text uppercase tracking-wider">Imagem Destacada</h3>
+              <span className="text-text-muted text-xs">▼</span>
+            </div>
+            <div className="flex flex-col gap-3.5">
               {thumbnailUrl ? (
                 <>
-                  <img src={thumbnailUrl} alt="Featured" style={{ width: '100%', height: 'auto', border: '1px solid #ddd', borderRadius: '3px' }} />
+                  <img src={thumbnailUrl} alt="Destacada" className="w-full h-auto rounded-xl border border-border bg-white/[0.01]" />
                   <button 
                     type="button" 
                     onClick={() => { setThumbnailId(null); setThumbnailUrl(null); }}
-                    style={{ color: '#d63638', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, fontSize: '13px', textDecoration: 'underline' }}
+                    className="text-danger hover:text-red-400 bg-transparent border-none cursor-pointer text-left p-0 text-xs font-semibold underline leading-none"
                   >
-                    Remove featured image
+                    Remover imagem destacada
                   </button>
                 </>
               ) : (
-                <>
-                  <label style={{ display: 'block', color: '#2271b1', cursor: 'pointer', textDecoration: 'underline', fontSize: '13px' }}>
-                    {isUploadingThumbnail ? 'Uploading...' : 'Set featured image'}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      style={{ display: 'none' }}
-                      disabled={isUploadingThumbnail}
-                      onChange={async (e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setIsUploadingThumbnail(true)
-                          const formData = new FormData()
-                          formData.append('file', e.target.files[0])
-                          try {
-                            const res = await fetch('/api/media', { method: 'POST', body: formData })
-                            const data = await res.json()
-                            if (res.ok && data.id) {
-                              setThumbnailId(data.id)
-                              setThumbnailUrl(data.guid)
-                            } else {
-                              alert('Upload failed.')
-                            }
-                          } catch (err) {
-                            alert('Error uploading featured image.')
-                          } finally {
-                            setIsUploadingThumbnail(false)
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/40 rounded-2xl py-8 px-4 cursor-pointer text-center bg-white/[0.01] hover:bg-white/[0.03] transition-all">
+                  <span className="text-3xl mb-2">🖼️</span>
+                  <span className="text-xs font-semibold text-primary hover:text-primary-light">
+                    {isUploadingThumbnail ? 'Carregando...' : 'Definir imagem destacada'}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden"
+                    disabled={isUploadingThumbnail}
+                    onChange={async (e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setIsUploadingThumbnail(true)
+                        const formData = new FormData()
+                        formData.append('file', e.target.files[0])
+                        try {
+                          const res = await fetch('/api/media', { method: 'POST', body: formData })
+                          const data = await res.json()
+                          if (res.ok && data.id) {
+                            setThumbnailId(data.id)
+                            setThumbnailUrl(data.guid)
+                          } else {
+                            alert('Falha no upload.')
                           }
+                        } catch (err) {
+                          alert('Erro no upload.')
+                        } finally {
+                          setIsUploadingThumbnail(false)
                         }
-                      }}
-                    />
-                  </label>
-                </>
+                      }
+                    }}
+                  />
+                </label>
               )}
             </div>
           </div>
@@ -322,57 +442,60 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
           {postType === 'post' && (
             <>
               {/* Categories Box */}
-              <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '12px' }}>
-                <h2 style={{ fontSize: '14px', margin: '0 0 10px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>Categories</h2>
-                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', backgroundColor: '#fcfcfc' }}>
+              <div className="rounded-2xl border border-border bg-white/[0.02] p-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <h3 className="text-xs font-bold text-text uppercase tracking-wider">Categorias</h3>
+                  <span className="text-text-muted text-xs">▼</span>
+                </div>
+                <div className="max-h-[150px] overflow-y-auto flex flex-col gap-2 p-1">
                   {availableCategories.length === 0 ? (
-                    <span style={{ fontSize: '12px', color: '#646970' }}>No categories found. Create one in Categories menu.</span>
+                    <span className="text-text-muted text-xs">Nenhuma categoria encontrada.</span>
                   ) : availableCategories.map(cat => (
-                    <div key={cat.id} style={{ marginBottom: '4px' }}>
-                      <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedCategories.includes(cat.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedCategories([...selectedCategories, cat.id])
-                            else setSelectedCategories(selectedCategories.filter(id => id !== cat.id))
-                          }}
-                        />
-                        {cat.name}
-                      </label>
-                    </div>
+                    <label key={cat.id} className="flex items-center gap-2.5 text-xs text-text-secondary hover:text-white cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedCategories.includes(cat.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedCategories([...selectedCategories, cat.id])
+                          else setSelectedCategories(selectedCategories.filter(id => id !== cat.id))
+                        }}
+                        className="rounded bg-white/5 border border-border text-primary focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                      />
+                      {cat.name}
+                    </label>
                   ))}
                 </div>
               </div>
 
               {/* Tags Box */}
-              <div style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', padding: '12px' }}>
-                <h2 style={{ fontSize: '14px', margin: '0 0 10px 0', borderBottom: '1px solid #f0f0f1', paddingBottom: '8px' }}>Tags</h2>
-                <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '8px', backgroundColor: '#fcfcfc' }}>
+              <div className="rounded-2xl border border-border bg-white/[0.02] p-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <h3 className="text-xs font-bold text-text uppercase tracking-wider">Tags</h3>
+                  <span className="text-text-muted text-xs">▼</span>
+                </div>
+                <div className="max-h-[150px] overflow-y-auto flex flex-col gap-2 p-1">
                   {availableTags.length === 0 ? (
-                    <span style={{ fontSize: '12px', color: '#646970' }}>No tags found. Create one in Tags menu.</span>
+                    <span className="text-text-muted text-xs">Nenhuma tag encontrada.</span>
                   ) : availableTags.map(tag => (
-                    <div key={tag.id} style={{ marginBottom: '4px' }}>
-                      <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedTags.includes(tag.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedTags([...selectedTags, tag.id])
-                            else setSelectedTags(selectedTags.filter(id => id !== tag.id))
-                          }}
-                        />
-                        {tag.name}
-                      </label>
-                    </div>
+                    <label key={tag.id} className="flex items-center gap-2.5 text-xs text-text-secondary hover:text-white cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedTags.includes(tag.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedTags([...selectedTags, tag.id])
+                          else setSelectedTags(selectedTags.filter(id => id !== tag.id))
+                        }}
+                        className="rounded bg-white/5 border border-border text-primary focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                      />
+                      {tag.name}
+                    </label>
                   ))}
                 </div>
               </div>
             </>
           )}
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   )
 }
-

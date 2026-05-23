@@ -66,11 +66,29 @@ export function useMedia() {
     }
   }
 
+  const deleteMedia = async (id: number): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/media?id=${id}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        setMediaList(prev => prev.filter(item => item.id !== id))
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error("Failed to delete media", error)
+      return false
+    }
+  }
+
   return {
     mediaList,
     isLoading,
     isUploading,
     uploadMedia,
+    deleteMedia,
     refreshMedia: fetchMedia
   }
 }
+

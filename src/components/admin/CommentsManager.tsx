@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/admin/SettingsUI"
 
 interface Comment {
   commentId: number
@@ -14,26 +15,36 @@ interface Comment {
   post: { id: number; postTitle: string; postName: string }
 }
 
+function StatusBadge({ approved }: { approved: string }) {
+  if (approved === '1') return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-success/10 border border-success/20 text-success">
+      ● Aprovado
+    </span>
+  )
+  if (approved === 'spam') return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-danger/10 border border-danger/20 text-danger">
+      ⚠ Spam
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
+      ○ Pendente
+    </span>
+  )
+}
+
 export default function CommentsManager() {
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchComments = async () => {
-    await Promise.resolve()
     setIsLoading(true)
     const res = await fetch("/api/comments")
-    if (res.ok) {
-      const data = await res.json()
-      setComments(data)
-    }
+    if (res.ok) setComments(await res.json())
     setIsLoading(false)
   }
 
-  useEffect(() => {
-    Promise.resolve().then(() => {
-      fetchComments()
-    })
-  }, [])
+  useEffect(() => { Promise.resolve().then(fetchComments) }, [])
 
   const handleStatusChange = async (id: number, status: string) => {
     const res = await fetch(`/api/comments/${id}/status`, {
@@ -41,85 +52,117 @@ export default function CommentsManager() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
     })
-
-    if (res.ok) {
-      setComments(comments.map(c => c.commentId === id ? { ...c, commentApproved: status } : c))
-    }
+    if (res.ok) setComments(comments.map(c => c.commentId === id ? { ...c, commentApproved: status } : c))
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to permanently delete this comment?")) return
+    if (!confirm("Tem certeza que deseja apagar permanentemente este comentário?")) return
     const res = await fetch(`/api/comments/${id}`, { method: 'DELETE' })
-    if (res.ok) {
-      setComments(comments.filter(c => c.commentId !== id))
-    }
+    if (res.ok) setComments(comments.filter(c => c.commentId !== id))
   }
 
-  if (isLoading) return <div style={{ padding: '20px' }}>Loading comments...</div>
+  if (isLoading) return <LoadingSpinner />
 
   return (
-    <div>
-      <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0', marginBottom: '20px' }}>
-        Comments
-      </h1>
+    <div className="flex flex-col gap-6 w-full">
+      {/* Header */}
+      <div className="border-b border-border/40 pb-4">
+        <h1 className="text-2xl font-bold text-text leading-none">💬 Comentários</h1>
+        <p className="text-xs text-text-secondary mt-1.5">
+          {comments.length} comentário{comments.length !== 1 ? 's' : ''} encontrado{comments.length !== 1 ? 's' : ''}.
+        </p>
+      </div>
 
       {comments.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '20px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
-          No comments found.
+        <div className="flex flex-col items-center justify-center py-16 text-center gap-2 bg-surface/40 border border-border rounded-2xl">
+          <span className="text-4xl opacity-30">💬</span>
+          <p className="text-sm text-text-muted">Nenhum comentário encontrado.</p>
         </div>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #c3c4c7', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #c3c4c7' }}>
-              <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 400, color: '#2c3338' }}>Author</th>
-              <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 400, color: '#2c3338' }}>Comment</th>
-              <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 400, color: '#2c3338' }}>In Response To</th>
-              <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 400, color: '#2c3338' }}>Submitted On</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comments.map((comment) => (
-              <tr 
-                key={comment.commentId} 
-                style={{ 
-                  borderBottom: '1px solid #f0f0f1',
-                  backgroundColor: comment.commentApproved === '0' ? '#fdf2e8' : (comment.commentApproved === 'spam' ? '#fcf0f1' : 'transparent')
-                }}
-              >
-                <td style={{ padding: '10px', verticalAlign: 'top', width: '20%' }}>
-                  <strong>{comment.commentAuthor}</strong><br/>
-                  <a href={`mailto:${comment.commentAuthorEmail}`} style={{ color: '#2271b1', textDecoration: 'none', fontSize: '13px' }}>{comment.commentAuthorEmail}</a>
-                </td>
-                <td style={{ padding: '10px', verticalAlign: 'top', width: '40%' }}>
-                  <p style={{ margin: '0 0 10px 0', color: '#3c434a' }}>{comment.commentContent}</p>
-                  <div style={{ display: 'flex', gap: '10px', fontSize: '13px' }}>
-                    {comment.commentApproved === '1' ? (
-                      <button onClick={() => handleStatusChange(comment.commentId, '0')} style={{ background: 'none', border: 'none', color: '#d63638', cursor: 'pointer', padding: 0 }}>Unapprove</button>
-                    ) : (
-                      <button onClick={() => handleStatusChange(comment.commentId, '1')} style={{ background: 'none', border: 'none', color: '#00a32a', cursor: 'pointer', padding: 0 }}>Approve</button>
-                    )}
-                    <span style={{ color: '#c3c4c7' }}>|</span>
-                    <button onClick={() => handleStatusChange(comment.commentId, 'spam')} style={{ background: 'none', border: 'none', color: '#d63638', cursor: 'pointer', padding: 0 }}>Spam</button>
-                    <span style={{ color: '#c3c4c7' }}>|</span>
-                    <button onClick={() => handleDelete(comment.commentId)} style={{ background: 'none', border: 'none', color: '#d63638', cursor: 'pointer', padding: 0 }}>Trash</button>
+        <div className="flex flex-col gap-3">
+          {comments.map(comment => (
+            <div
+              key={comment.commentId}
+              className={`p-4 rounded-2xl border transition-all duration-150 ${
+                comment.commentApproved === '0'
+                  ? 'border-yellow-500/20 bg-yellow-500/[0.03]'
+                  : comment.commentApproved === 'spam'
+                  ? 'border-danger/20 bg-danger/[0.03]'
+                  : 'border-border bg-surface/40'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                {/* Author */}
+                <div className="flex items-start gap-3 sm:w-48 flex-shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 font-bold text-sm text-primary-light">
+                    {comment.commentAuthor.charAt(0).toUpperCase()}
                   </div>
-                </td>
-                <td style={{ padding: '10px', verticalAlign: 'top', width: '20%' }}>
-                  {comment.post ? (
-                    <Link href={`/${comment.post.postName}`} style={{ color: '#2271b1', textDecoration: 'none', fontSize: '13px', fontWeight: 600 }}>
-                      {comment.post.postTitle}
-                    </Link>
-                  ) : (
-                    <span style={{ color: '#646970', fontSize: '13px' }}>(Post deleted)</span>
-                  )}
-                </td>
-                <td style={{ padding: '10px', verticalAlign: 'top', width: '20%', fontSize: '13px', color: '#646970' }}>
-                  {new Date(comment.commentDate).toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-xs text-text">{comment.commentAuthor}</div>
+                    <a href={`mailto:${comment.commentAuthorEmail}`} className="text-[10px] text-primary-light hover:underline truncate block max-w-[120px]">
+                      {comment.commentAuthorEmail}
+                    </a>
+                    <div className="mt-1.5">
+                      <StatusBadge approved={comment.commentApproved} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-text-secondary leading-relaxed line-clamp-3">{comment.commentContent}</p>
+
+                  {/* Meta */}
+                  <div className="flex flex-wrap items-center gap-3 mt-2.5">
+                    {comment.post ? (
+                      <Link href={`/${comment.post.postName}`} className="text-[10px] text-text-muted hover:text-primary-light transition-colors">
+                        Em: <span className="font-semibold">{comment.post.postTitle}</span>
+                      </Link>
+                    ) : (
+                      <span className="text-[10px] text-text-muted">(Post apagado)</span>
+                    )}
+                    <span className="text-[10px] text-text-muted">
+                      {new Date(comment.commentDate).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-border/30">
+                    {comment.commentApproved === '1' ? (
+                      <button
+                        onClick={() => handleStatusChange(comment.commentId, '0')}
+                        className="text-[10px] font-semibold text-text-muted hover:text-danger transition-colors"
+                      >
+                        Reprovar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleStatusChange(comment.commentId, '1')}
+                        className="text-[10px] font-semibold text-success hover:text-success/70 transition-colors"
+                      >
+                        Aprovar
+                      </button>
+                    )}
+                    <span className="text-border">·</span>
+                    <button
+                      onClick={() => handleStatusChange(comment.commentId, 'spam')}
+                      className="text-[10px] font-semibold text-text-muted hover:text-danger transition-colors"
+                    >
+                      Spam
+                    </button>
+                    <span className="text-border">·</span>
+                    <button
+                      onClick={() => handleDelete(comment.commentId)}
+                      className="text-[10px] font-semibold text-danger hover:text-danger/70 transition-colors"
+                    >
+                      Apagar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

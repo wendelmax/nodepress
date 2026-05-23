@@ -24,6 +24,14 @@ const ALLOWED_OPTIONS = [
   'ai_model',
   'ai_base_url',
   'site_analytics',
+  // Storage driver configuration
+  'storage_driver',
+  's3_access_key',
+  's3_secret_key',
+  's3_bucket',
+  's3_region',
+  's3_endpoint',
+  's3_public_url',
 ]
 
 export class OptionService {

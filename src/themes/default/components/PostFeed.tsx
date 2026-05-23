@@ -11,34 +11,38 @@ export default function PostFeed({ posts }: PostFeedProps) {
   }
 
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {posts.map((post: any) => {
         const thumbnailUrl = post.meta?.find((m: any) => m.metaKey === '_thumbnail_url')?.metaValue
         return (
-          <article key={post.id} style={{ backgroundColor: 'white', padding: '30px', marginBottom: '30px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
+          <article key={post.id} className="group flex flex-col bg-surface backdrop-blur-md rounded-2xl border border-border shadow-soft hover:shadow-glow hover:-translate-y-1 transition-all duration-300 overflow-hidden">
             {thumbnailUrl && (
-              <div style={{ marginBottom: '20px' }}>
+              <div className="w-full relative h-48 overflow-hidden">
                 <Link href={post.permalink || `/${post.postName}`}>
-                  <Image src={thumbnailUrl} alt={post.postTitle} width={800} height={450} style={{ width: '100%', height: 'auto', borderRadius: '3px', border: '1px solid #eee' }} />
+                  <Image src={thumbnailUrl} alt={post.postTitle} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                 </Link>
               </div>
             )}
-            <h2 style={{ margin: '0 0 10px 0', fontSize: '28px' }}>
-              <Link href={post.permalink || `/${post.postName}`} style={{ color: '#2271b1', textDecoration: 'none' }}>
-                {post.postTitle}
+            <div className="p-6 flex flex-col flex-grow">
+              <h2 className="text-xl font-bold text-white mb-2 leading-snug">
+                <Link href={post.permalink || `/${post.postName}`} className="hover:text-primary-light transition-colors">
+                  {post.postTitle}
+                </Link>
+              </h2>
+              <div className="text-xs font-semibold text-text-muted mb-4 uppercase tracking-wider">
+                {new Date(post.postDate).toLocaleDateString()} • {post.author.displayName || post.author.userLogin}
+              </div>
+              <div 
+                className="text-sm text-text-secondary line-clamp-3 leading-relaxed mb-6 flex-grow"
+                dangerouslySetInnerHTML={{ __html: post.postExcerpt || post.postContent }}
+              />
+              <Link href={post.permalink || `/${post.postName}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-light transition-colors mt-auto">
+                Ler mais <span>→</span>
               </Link>
-            </h2>
-            <div style={{ fontSize: '13px', color: '#646970', marginBottom: '20px' }}>
-              Published on {post.postDate.toLocaleDateString()} by {post.author.displayName || post.author.userLogin}
             </div>
-            <div 
-              style={{ lineHeight: '1.6', fontSize: '16px' }}
-              className="post-content"
-              dangerouslySetInnerHTML={{ __html: post.postExcerpt || post.postContent }}
-            />
           </article>
         )
       })}
-    </>
+    </div>
   )
 }

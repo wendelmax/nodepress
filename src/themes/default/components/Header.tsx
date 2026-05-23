@@ -13,29 +13,51 @@ export default async function Header() {
   const menuItems = await MenuService.getMenuItemsBySlug('primary')
 
   return (
-    <header style={{ backgroundColor: 'white', borderBottom: '1px solid #c3c4c7' }}>
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '30px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '36px', color: '#1d2327' }}>
-          <Link href="/" style={{ color: '#1d2327', textDecoration: 'none' }}>
-            {siteTitle}
-          </Link>
-        </h1>
-        <p style={{ marginTop: '10px', color: '#646970', marginBottom: '20px' }}>{tagline}</p>
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border/40 shadow-soft">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-primary-gradient flex items-center justify-center text-xl text-white shadow-glow group-hover:animate-pulseGlow transition-all">
+            ⚡
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-text leading-tight group-hover:text-primary-light transition-colors">
+              {siteTitle}
+            </h1>
+            <p className="text-[11px] text-text-muted font-medium tracking-wide uppercase">
+              {tagline}
+            </p>
+          </div>
+        </Link>
 
         {/* Navigation Menu */}
-        {menuItems.length > 0 && (
-          <nav>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
-              {menuItems.map(item => (
-                <li key={item.id}>
-                  <Link href={item.url} style={{ color: '#2271b1', textDecoration: 'none', fontWeight: 600, fontSize: '15px' }}>
-                    {item.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        )}
+        <div className="flex items-center gap-8">
+          {menuItems.length > 0 && (
+            <nav>
+              <ul className="flex items-center gap-6">
+                {menuItems.map(item => (
+                  <li key={item.id}>
+                    <Link 
+                      href={item.url} 
+                      className="text-sm font-semibold text-text-secondary hover:text-white transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-primary after:transition-all hover:after:w-full pb-1"
+                    >
+                      {item.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
+          
+          {/* CTA Button */}
+          <Link 
+            href="/admin" 
+            className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-border text-sm font-semibold text-text hover:bg-white/10 hover:border-border-strong hover:shadow-glow transition-all"
+          >
+            Painel Admin
+            <span className="text-primary-light">→</span>
+          </Link>
+        </div>
       </div>
     </header>
   )

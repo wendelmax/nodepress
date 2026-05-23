@@ -117,23 +117,23 @@ export default function FieldGroupEditor() {
     }))
   }
 
-  if (isLoading) return <div style={{ padding: '20px' }}>Loading...</div>
+  if (isLoading) return <div className="p-6 text-text-muted flex items-center gap-2"><span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span> Loading...</div>
 
   return (
-    <div style={{ maxWidth: '900px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0 }}>Custom Fields</h1>
-        <div>
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+        <h1 className="text-2xl font-bold text-text leading-tight">Custom Fields</h1>
+        <div className="flex gap-3">
           <button 
             onClick={addGroup}
-            style={{ border: '1px solid #2271b1', color: '#2271b1', background: 'white', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer', marginRight: '10px' }}
+            className="px-4 py-2 rounded-xl bg-white/5 border border-border text-text-secondary hover:text-white hover:bg-white/10 text-sm font-semibold transition-all"
           >
             Add New Group
           </button>
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            style={{ backgroundColor: '#2271b1', color: 'white', border: 'none', padding: '5px 12px', borderRadius: '3px', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+            className="px-5 py-2 rounded-xl bg-primary-gradient text-white font-bold text-sm hover:shadow-neon transition-all border-none"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
@@ -141,109 +141,112 @@ export default function FieldGroupEditor() {
       </div>
 
       {groups.length === 0 ? (
-        <div style={{ backgroundColor: 'white', padding: '40px', textAlign: 'center', border: '1px solid #c3c4c7', color: '#646970' }}>
+        <div className="bg-background-secondary border border-border p-10 rounded-2xl text-center text-text-muted shadow-soft">
           No Field Groups found. Click &quot;Add New Group&quot; to create one.
         </div>
       ) : (
-        groups.map((group) => (
-          <div key={group.id} style={{ backgroundColor: 'white', border: '1px solid #c3c4c7', marginBottom: '20px', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-            <div style={{ padding: '15px', borderBottom: '1px solid #f0f0f1', display: 'flex', justifyContent: 'space-between', backgroundColor: '#fcfcfc' }}>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                <input 
-                  type="text" 
-                  value={group.title} 
-                  onChange={(e) => updateGroup(group.id, 'title', e.target.value)}
-                  style={{ fontSize: '16px', fontWeight: 600, padding: '4px 8px', border: '1px solid #8c8f94', width: '250px' }}
-                />
-                <select 
-                  value={group.postType}
-                  onChange={(e) => updateGroup(group.id, 'postType', e.target.value)}
-                  style={{ padding: '5px', border: '1px solid #8c8f94' }}
-                >
-                  <option value="post">Show on Posts</option>
-                  <option value="page">Show on Pages</option>
-                </select>
-              </div>
-              <button 
-                onClick={() => removeGroup(group.id)}
-                style={{ color: '#d63638', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-              >
-                Delete Group
-              </button>
-            </div>
-
-            <div style={{ padding: '15px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '15px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #f0f0f1', textAlign: 'left', color: '#646970', fontSize: '13px' }}>
-                    <th style={{ padding: '8px', width: '30%' }}>Field Label</th>
-                    <th style={{ padding: '8px', width: '30%' }}>Field Name (DB Key)</th>
-                    <th style={{ padding: '8px', width: '30%' }}>Field Type</th>
-                    <th style={{ padding: '8px', width: '10%' }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.fields.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ padding: '15px', textAlign: 'center', color: '#8c8f94' }}>No fields in this group.</td>
-                    </tr>
-                  ) : (
-                    group.fields.map((field, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #f0f0f1' }}>
-                        <td style={{ padding: '8px' }}>
-                          <input 
-                            type="text" 
-                            value={field.label}
-                            onChange={(e) => updateField(group.id, idx, 'label', e.target.value)}
-                            style={{ width: '100%', padding: '4px', border: '1px solid #8c8f94' }}
-                          />
-                        </td>
-                        <td style={{ padding: '8px' }}>
-                          <input 
-                            type="text" 
-                            value={field.name}
-                            onChange={(e) => updateField(group.id, idx, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
-                            style={{ width: '100%', padding: '4px', border: '1px solid #8c8f94', backgroundColor: '#f0f0f1' }}
-                          />
-                        </td>
-                        <td style={{ padding: '8px' }}>
-                          <select 
-                            value={field.type}
-                            onChange={(e) => updateField(group.id, idx, 'type', e.target.value)}
-                            style={{ width: '100%', padding: '4px', border: '1px solid #8c8f94' }}
-                          >
-                            <option value="text">Text</option>
-                            <option value="textarea">Textarea</option>
-                            <option value="number">Number</option>
-                            <option value="url">URL</option>
-                          </select>
-                        </td>
-                        <td style={{ padding: '8px', textAlign: 'center' }}>
-                          <button 
-                            onClick={() => removeField(group.id, idx)}
-                            style={{ color: '#d63638', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}
-                            title="Remove field"
-                          >
-                            &times;
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-
-              <div style={{ textAlign: 'right' }}>
+        <div className="flex flex-col gap-6">
+          {groups.map((group) => (
+            <div key={group.id} className="bg-surface-elevated border border-border rounded-2xl shadow-soft overflow-hidden">
+              <div className="p-5 border-b border-border bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                  <input 
+                    type="text" 
+                    value={group.title} 
+                    onChange={(e) => updateGroup(group.id, 'title', e.target.value)}
+                    className="text-base font-semibold px-3 py-1.5 bg-background-tertiary border border-border rounded-lg focus:border-primary/50 outline-none text-text transition-colors sm:w-[250px]"
+                    placeholder="Group Title"
+                  />
+                  <select 
+                    value={group.postType}
+                    onChange={(e) => updateGroup(group.id, 'postType', e.target.value)}
+                    className="px-3 py-1.5 bg-background-tertiary border border-border rounded-lg text-sm text-text focus:border-primary/50 outline-none transition-colors"
+                  >
+                    <option value="post">Show on Posts</option>
+                    <option value="page">Show on Pages</option>
+                  </select>
+                </div>
                 <button 
-                  onClick={() => addField(group.id)}
-                  style={{ border: '1px solid #2271b1', color: '#2271b1', background: 'white', padding: '4px 8px', borderRadius: '3px', cursor: 'pointer' }}
+                  onClick={() => removeGroup(group.id)}
+                  className="text-danger hover:text-red-400 bg-transparent border-none text-sm font-semibold underline cursor-pointer self-start sm:self-auto"
                 >
-                  + Add Field
+                  Delete Group
                 </button>
               </div>
+
+              <div className="p-5 overflow-x-auto">
+                <table className="w-full min-w-[600px] border-collapse mb-5">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      <th className="p-3 w-[30%]">Field Label</th>
+                      <th className="p-3 w-[30%]">Field Name (DB Key)</th>
+                      <th className="p-3 w-[30%]">Field Type</th>
+                      <th className="p-3 w-[10%] text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.fields.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-5 text-center text-text-muted text-sm border-b border-border/50">No fields in this group.</td>
+                      </tr>
+                    ) : (
+                      group.fields.map((field, idx) => (
+                        <tr key={idx} className="border-b border-border/50 hover:bg-white/[0.01] transition-colors">
+                          <td className="p-3">
+                            <input 
+                              type="text" 
+                              value={field.label}
+                              onChange={(e) => updateField(group.id, idx, 'label', e.target.value)}
+                              className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-sm text-text focus:border-primary/50 outline-none transition-colors"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <input 
+                              type="text" 
+                              value={field.name}
+                              onChange={(e) => updateField(group.id, idx, 'name', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_'))}
+                              className="w-full px-3 py-2 bg-white/5 border border-border rounded-lg text-sm text-text-secondary font-mono focus:border-primary/50 outline-none transition-colors"
+                            />
+                          </td>
+                          <td className="p-3">
+                            <select 
+                              value={field.type}
+                              onChange={(e) => updateField(group.id, idx, 'type', e.target.value)}
+                              className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-lg text-sm text-text focus:border-primary/50 outline-none transition-colors"
+                            >
+                              <option value="text">Text</option>
+                              <option value="textarea">Textarea</option>
+                              <option value="number">Number</option>
+                              <option value="url">URL</option>
+                            </select>
+                          </td>
+                          <td className="p-3 text-center">
+                            <button 
+                              onClick={() => removeField(group.id, idx)}
+                              className="w-8 h-8 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 flex items-center justify-center transition-colors mx-auto cursor-pointer"
+                              title="Remove field"
+                            >
+                              <span className="text-lg leading-none mt-[-2px]">&times;</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => addField(group.id)}
+                    className="px-4 py-2 rounded-xl bg-primary/10 text-primary-light border border-primary/20 hover:bg-primary/20 text-sm font-semibold transition-all flex items-center gap-1.5"
+                  >
+                    <span className="text-lg leading-none mt-[-1px]">+</span> Add Field
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   )

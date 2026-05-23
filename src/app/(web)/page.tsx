@@ -3,13 +3,9 @@ import { PostService } from "@/services/post.service"
 import { OptionService } from "@/services/option.service"
 import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
-import { AnalyticsService } from "@/services/analytics.service"
 
 export default async function HomePage() {
   await checkInstallation()
-
-  // Track page view
-  await AnalyticsService.recordPageView()
 
   // Determine permalinks and homepage settings
   const options = await OptionService.getOptions(['permalink_structure', 'show_on_front', 'page_on_front'])

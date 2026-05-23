@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { getTranslation } from "@/lib/i18n"
@@ -49,76 +49,83 @@ function InstallForm() {
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0f0f1', padding: '20px' }}>
-      <div style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', padding: '30px', border: '1px solid #c3c4c7', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1d2327', margin: 0 }}>NodePress</h1>
-          <p style={{ color: '#646970', marginTop: '10px' }}>{t.installTitle}</p>
+    <div className="flex justify-center items-center min-h-screen bg-background p-5 font-sans">
+      <div className="w-full max-w-md bg-surface-elevated p-8 sm:p-10 border border-border rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md">
+        
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-gradient flex items-center justify-center text-3xl shadow-glow">⚡</div>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">NodePress</h1>
+          <p className="text-text-muted text-sm">{t.installTitle}</p>
         </div>
         
-        {error && <div style={{ color: '#d63638', marginBottom: '20px', borderLeft: '4px solid #d63638', padding: '12px', backgroundColor: '#fff8f5' }}>{error}</div>}
+        {error && (
+          <div className="text-danger mb-6 border-l-4 border-danger p-3 bg-danger/10 rounded-r-lg text-sm font-medium">
+            {error}
+          </div>
+        )}
 
-        <p style={{ color: '#3c434a', marginBottom: '20px', lineHeight: '1.5' }}>
+        <p className="text-text-secondary mb-6 leading-relaxed text-sm">
           {t.installDesc}
         </p>
 
-        <h2 style={{ fontSize: '18px', marginBottom: '10px', color: '#1d2327' }}>{t.infoNeeded}</h2>
-        <p style={{ color: '#646970', marginBottom: '20px', fontSize: '14px' }}>
+        <h2 className="text-lg font-semibold text-white mb-2">{t.infoNeeded}</h2>
+        <p className="text-text-muted mb-6 text-xs">
           {t.infoDesc}
         </p>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3338' }}>{t.siteTitle}</label>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
+            <label className="block font-semibold text-text-secondary text-sm">{t.siteTitle}</label>
             <input 
               type="text" 
               required
               value={siteTitle} 
               onChange={e => setSiteTitle(e.target.value)}
-              style={{ width: '100%', padding: '10px', fontSize: '16px', border: '1px solid #8c8f94', borderRadius: '3px' }} 
+              className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted" 
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3338' }}>{t.adminUsername}</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="block font-semibold text-text-secondary text-sm">{t.adminUsername}</label>
             <input 
               type="text" 
               required
               value={username} 
               onChange={e => setUsername(e.target.value)}
-              style={{ width: '100%', padding: '10px', fontSize: '16px', border: '1px solid #8c8f94', borderRadius: '3px' }} 
+              className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted" 
             />
-            <p style={{ fontSize: '12px', color: '#646970', marginTop: '5px' }}>{t.adminUsernameDesc}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{t.adminUsernameDesc}</p>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3338' }}>{t.adminPassword}</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="block font-semibold text-text-secondary text-sm">{t.adminPassword}</label>
             <input 
               type="password" 
               required
               value={password} 
               onChange={e => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '10px', fontSize: '16px', border: '1px solid #8c8f94', borderRadius: '3px' }} 
+              className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted" 
             />
-            <p style={{ fontSize: '12px', color: '#646970', marginTop: '5px' }}>{t.adminPasswordDesc}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{t.adminPasswordDesc}</p>
           </div>
 
-          <div style={{ marginBottom: '30px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2c3338' }}>{t.adminEmail}</label>
+          <div className="flex flex-col gap-1.5 mb-2">
+            <label className="block font-semibold text-text-secondary text-sm">{t.adminEmail}</label>
             <input 
               type="email" 
               required
               value={email} 
               onChange={e => setEmail(e.target.value)}
-              style={{ width: '100%', padding: '10px', fontSize: '16px', border: '1px solid #8c8f94', borderRadius: '3px' }} 
+              className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted" 
             />
-            <p style={{ fontSize: '12px', color: '#646970', marginTop: '5px' }}>{t.adminEmailDesc}</p>
+            <p className="text-[11px] text-text-muted mt-0.5">{t.adminEmailDesc}</p>
           </div>
 
           <button 
             type="submit" 
             disabled={isSubmitting}
-            style={{ width: '100%', padding: '12px', fontSize: '16px', backgroundColor: '#2271b1', color: 'white', border: 'none', borderRadius: '3px', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}>
+            className="w-full py-3.5 bg-primary-gradient text-white text-base font-bold rounded-xl shadow-neon hover:shadow-[0_0_20px_rgba(59,130,246,0.6)] disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+          >
             {isSubmitting ? t.installingBtn : t.installBtn}
           </button>
         </form>
@@ -129,9 +136,15 @@ function InstallForm() {
 
 export default function InstallPage() {
   return (
-    <Suspense fallback={<div style={{ textAlign: 'center', marginTop: '50px' }}>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-text-muted font-medium">Loading installer...</p>
+        </div>
+      </div>
+    }>
       <InstallForm />
     </Suspense>
   )
 }
-

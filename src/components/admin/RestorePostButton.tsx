@@ -19,11 +19,11 @@ export default function RestorePostButton({ postId }: { postId: number }) {
       if (res.ok) {
         router.refresh()
       } else {
-        alert("Failed to restore post.")
+        alert("Falha ao restaurar post.")
       }
     } catch (error) {
       console.error(error)
-      alert("Error restoring post.")
+      alert("Erro ao restaurar post.")
     } finally {
       setIsRestoring(false)
     }
@@ -33,16 +33,9 @@ export default function RestorePostButton({ postId }: { postId: number }) {
     <button 
       onClick={handleRestore} 
       disabled={isRestoring}
-      style={{ 
-        color: '#2271b1', 
-        background: 'none', 
-        border: 'none', 
-        padding: 0, 
-        cursor: isRestoring ? 'not-allowed' : 'pointer',
-        fontSize: '13px'
-      }}
+      className="text-primary hover:text-primary-light bg-transparent border-none cursor-pointer font-medium p-0 text-xs transition-colors outline-none"
     >
-      {isRestoring ? 'Restoring...' : 'Restore'}
+      {isRestoring ? 'Restaurando...' : 'Restaurar'}
     </button>
   )
 }

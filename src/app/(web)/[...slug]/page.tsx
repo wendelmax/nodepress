@@ -7,7 +7,6 @@ import { OptionService } from "@/services/option.service"
 import { CommentService } from "@/services/comment.service"
 import { generatePermalink } from "@/lib/permalinks"
 import { ThemeService } from "@/services/theme.service"
-import { AnalyticsService } from "@/services/analytics.service"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
@@ -47,9 +46,6 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
   if (!post) {
     return notFound()
   }
-
-  // Track page view
-  await AnalyticsService.recordPageView()
 
   // Handle SEO Redirection if permalink structure doesn't match the URL accessed
   const options = await OptionService.getOptions(['permalink_structure', 'page_for_posts', 'acf_field_groups'])

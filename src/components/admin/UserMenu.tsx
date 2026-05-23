@@ -52,7 +52,7 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white text-xs font-medium no-underline border-none bg-transparent w-full text-left transition-colors duration-150 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
-            <span style={{ fontSize: 13 }}>👤</span>
+            <span className="text-[13px]">👤</span>
             <span>Meu Perfil</span>
           </Link>
           
@@ -62,7 +62,7 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
             onClick={handleLogout} 
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-danger hover:bg-danger/10 text-xs font-semibold border-none bg-transparent w-full text-left transition-all duration-150 cursor-pointer"
           >
-            <span style={{ fontSize: 13 }}>🚪</span>
+            <span className="text-[13px]">🚪</span>
             <span>Sair</span>
           </button>
         </div>

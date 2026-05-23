@@ -119,18 +119,18 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+    <div className="flex flex-col lg:flex-row gap-6 items-start">
       
       {/* Left Column: Select / Create Menu & Add Items */}
-      <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="w-full lg:w-[320px] flex flex-col gap-6 shrink-0">
         
         {/* Menu Selector */}
-        <div style={{ backgroundColor: 'white', padding: '15px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Select a Menu</h3>
+        <div className="bg-background-secondary border border-border p-5 rounded-2xl shadow-soft">
+          <h3 className="text-sm font-semibold text-text mb-3">Select a Menu</h3>
           <select 
             value={selectedMenuId || ""} 
             onChange={(e) => setSelectedMenuId(Number(e.target.value))}
-            style={{ width: '100%', padding: '6px', marginBottom: '10px' }}
+            className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-xl text-sm text-text focus:outline-none focus:border-primary/50 transition-colors mb-4"
           >
             {menus.length === 0 && <option value="">No menus found</option>}
             {menus.map(m => (
@@ -138,36 +138,54 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
             ))}
           </select>
 
-          <hr style={{ border: 0, borderTop: '1px solid #eee', margin: '15px 0' }} />
+          <hr className="border-border/60 my-5" />
           
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Create New Menu</h3>
-          <form onSubmit={handleCreateMenu} style={{ display: 'flex', gap: '5px' }}>
+          <h3 className="text-sm font-semibold text-text mb-3">Create New Menu</h3>
+          <form onSubmit={handleCreateMenu} className="flex gap-2">
             <input 
               type="text" 
               placeholder="Menu Name" 
               value={newMenuName} 
               onChange={e => setNewMenuName(e.target.value)} 
-              style={{ flex: 1, padding: '4px 8px' }} 
+              className="flex-1 px-3 py-2 bg-background-tertiary border border-border rounded-xl text-sm text-text placeholder-text-muted focus:outline-none focus:border-primary/50 transition-colors"
             />
-            <button type="submit" style={{ padding: '4px 10px', background: '#f6f7f7', border: '1px solid #2271b1', color: '#2271b1', cursor: 'pointer' }}>Create</button>
+            <button type="submit" className="px-4 py-2 bg-primary/10 text-primary-light border border-primary/20 hover:bg-primary/20 rounded-xl text-sm font-semibold transition-all">
+              Create
+            </button>
           </form>
         </div>
 
         {/* Add Link */}
         {selectedMenuId && (
-          <div style={{ backgroundColor: 'white', padding: '15px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px' }}>Add Custom Link</h3>
-            <form onSubmit={handleAddLink} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="bg-background-secondary border border-border p-5 rounded-2xl shadow-soft">
+            <h3 className="text-sm font-semibold text-text mb-4">Add Custom Link</h3>
+            <form onSubmit={handleAddLink} className="flex flex-col gap-4">
               <div>
-                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', color: '#646970' }}>URL</label>
-                <input type="url" value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://" required style={{ width: '100%', padding: '6px' }} />
+                <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">URL</label>
+                <input 
+                  type="url" 
+                  value={linkUrl} 
+                  onChange={e => setLinkUrl(e.target.value)} 
+                  placeholder="https://" 
+                  required 
+                  className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-xl text-sm text-text placeholder-text-muted focus:outline-none focus:border-primary/50 transition-colors" 
+                />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', color: '#646970' }}>Link Text</label>
-                <input type="text" value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Menu Item" required style={{ width: '100%', padding: '6px' }} />
+                <label className="block text-xs font-semibold text-text-muted mb-1.5 uppercase tracking-wider">Link Text</label>
+                <input 
+                  type="text" 
+                  value={linkTitle} 
+                  onChange={e => setLinkTitle(e.target.value)} 
+                  placeholder="Menu Item" 
+                  required 
+                  className="w-full px-3 py-2 bg-background-tertiary border border-border rounded-xl text-sm text-text placeholder-text-muted focus:outline-none focus:border-primary/50 transition-colors" 
+                />
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <button type="submit" style={{ padding: '6px 12px', background: '#f6f7f7', border: '1px solid #2271b1', color: '#2271b1', cursor: 'pointer', borderRadius: '3px' }}>Add to Menu</button>
+              <div className="text-right mt-2">
+                <button type="submit" className="px-4 py-2 bg-primary-gradient text-white rounded-xl text-sm font-semibold hover:shadow-neon transition-all">
+                  Add to Menu
+                </button>
               </div>
             </form>
           </div>
@@ -175,42 +193,48 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
       </div>
 
       {/* Right Column: Menu Items Structure */}
-      <div style={{ flex: 1, backgroundColor: 'white', padding: '20px', border: '1px solid #c3c4c7', borderRadius: '3px' }}>
-        <h2 style={{ fontSize: '18px', margin: '0 0 20px 0' }}>Menu Structure</h2>
+      <div className="flex-1 w-full bg-background-secondary border border-border p-6 md:p-8 rounded-2xl shadow-soft">
+        <h2 className="text-xl font-bold text-white mb-6">Menu Structure</h2>
         {!selectedMenuId ? (
-          <p style={{ color: '#646970' }}>Select or create a menu to start editing.</p>
+          <p className="text-sm text-text-muted">Select or create a menu to start editing.</p>
         ) : isLoading ? (
-          <p style={{ color: '#646970' }}>Loading items...</p>
+          <p className="text-sm text-text-muted flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+            Loading items...
+          </p>
         ) : items.length === 0 ? (
-          <p style={{ color: '#646970' }}>This menu has no items. Add some using the sidebar.</p>
+          <p className="text-sm text-text-muted">This menu has no items. Add some using the sidebar.</p>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-3">
             {items.map((item, index) => (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fcfcfc', border: '1px solid #dcdcde', padding: '10px 15px', borderRadius: '3px' }}>
+              <div key={item.id} className="flex items-center justify-between bg-background border border-border p-4 rounded-xl group hover:border-primary/30 transition-colors">
                 <div>
-                  <strong>{item.title}</strong>
-                  <div style={{ fontSize: '12px', color: '#646970', marginTop: '4px' }}>{item.url}</div>
+                  <strong className="text-sm font-semibold text-text group-hover:text-primary-light transition-colors">{item.title}</strong>
+                  <div className="text-xs text-text-muted mt-1">{item.url}</div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="flex gap-2">
                   <button 
                     onClick={() => handleMove(index, 'up')} 
                     disabled={index === 0}
-                    style={{ background: 'none', border: '1px solid #ccc', padding: '4px 8px', cursor: index === 0 ? 'default' : 'pointer', opacity: index === 0 ? 0.3 : 1 }}
+                    className={`p-1.5 rounded-lg border flex items-center justify-center transition-colors ${index === 0 ? 'border-border/50 text-border bg-transparent cursor-not-allowed' : 'border-border text-text-secondary hover:bg-white/5 hover:text-white cursor-pointer'}`}
+                    title="Move Up"
                   >
                     ⬆️
                   </button>
                   <button 
                     onClick={() => handleMove(index, 'down')} 
                     disabled={index === items.length - 1}
-                    style={{ background: 'none', border: '1px solid #ccc', padding: '4px 8px', cursor: index === items.length - 1 ? 'default' : 'pointer', opacity: index === items.length - 1 ? 0.3 : 1 }}
+                    className={`p-1.5 rounded-lg border flex items-center justify-center transition-colors ${index === items.length - 1 ? 'border-border/50 text-border bg-transparent cursor-not-allowed' : 'border-border text-text-secondary hover:bg-white/5 hover:text-white cursor-pointer'}`}
+                    title="Move Down"
                   >
                     ⬇️
                   </button>
                   <button 
                     onClick={() => handleDeleteItem(item.id)}
-                    style={{ background: 'none', border: '1px solid #d63638', color: '#d63638', padding: '4px 8px', cursor: 'pointer' }}
+                    className="p-1.5 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                    title="Remove"
                   >
-                    Remove
+                    🗑️
                   </button>
                 </div>
               </div>

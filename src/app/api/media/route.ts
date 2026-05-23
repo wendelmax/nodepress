@@ -47,3 +47,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ code: 'internal_error', message: 'Error uploading media' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    return NextResponse.json({ code: 'rest_cannot_delete', message: 'Sorry, you are not allowed to delete media.', data: { status: 401 } }, { status: 401 })
+  }
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const idStr = searchParams.get('id')
+    if (!idStr) {
+      return NextResponse.json({ code: 'missing_id', message: 'Missing media ID.' }, { status: 400 })
+    }
+    const id = parseInt(idStr)
+    await MediaService.delete(id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Delete error:", error)
+    return NextResponse.json({ code: 'internal_error', message: 'Error deleting media' }, { status: 500 })
+  }
+}
+

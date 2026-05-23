@@ -24,7 +24,7 @@ export function usePosts() {
 
   const savePost = async (
     id: number | undefined, 
-    data: { title: string; content: string; status: string; type?: string; categories?: number[]; tags?: number[]; thumbnailId?: number | null; thumbnailUrl?: string | null; metaData?: Record<string, string>; postDate?: string }
+    data: { title: string; content: string; status: string; type?: string; categories?: number[]; tags?: number[]; thumbnailId?: number | null; thumbnailUrl?: string | null; metaData?: Record<string, string>; postDate?: string; parentId?: number | null }
   ) => {
     setIsSaving(true)
     try {

@@ -9,6 +9,7 @@ import { CommandPalette } from "@/components/admin/CommandPalette"
 import { UserMenu } from "@/components/admin/UserMenu"
 import { MobileMenuToggle } from "@/components/admin/MobileMenuToggle"
 import { OptionService } from "@/services/option.service"
+import { SidebarLink } from "@/components/admin/SidebarLink"
 import "@/plugins/registry"
 import '../admin.css'
 
@@ -25,21 +26,36 @@ export default async function AdminLayout({
     redirect("/login")
   }
 
-  const options = await OptionService.getOptions(['blogname', 'siteurl'])
+  const options = await OptionService.getOptions(['blogname', 'siteurl', 'np_cpt_registry'])
   const siteName = options['blogname'] || 'NodePress'
   const userName = session.user?.name || session.user?.email || 'Admin'
   const userInitial = userName.charAt(0).toUpperCase()
 
+  let customPostTypes: any[] = []
+  try {
+    if (options['np_cpt_registry']) {
+      customPostTypes = JSON.parse(options['np_cpt_registry'])
+    }
+  } catch (e) {}
+
+  const contentItems = [
+    { href: '/admin', label: 'Dashboard', icon: '⊞' },
+    { href: '/admin/posts', label: 'Posts', icon: '✏️' },
+    { href: '/admin/pages', label: 'Pages', icon: '📄' },
+    ...customPostTypes.filter(c => c.public).map(c => ({
+      href: `/admin/posts?type=${c.slug}`, // Redirects to edit feed with filter
+      label: c.pluralName,
+      icon: c.icon || '📌',
+      matchPaths: [`/admin/edit?post_type=${c.slug}`] // For active state handling
+    })),
+    { href: '/admin/media', label: 'Media', icon: '🖼️' },
+    { href: '/admin/comments', label: 'Comments', icon: '💬' },
+  ]
+
   const navGroups = [
     {
       label: 'Content',
-      items: [
-        { href: '/admin', label: 'Dashboard', icon: '⊞' },
-        { href: '/admin/posts', label: 'Posts', icon: '✏️' },
-        { href: '/admin/upload', label: 'Media', icon: '🖼️' },
-        { href: '/admin/pages', label: 'Pages', icon: '📄' },
-        { href: '/admin/comments', label: 'Comments', icon: '💬' },
-      ],
+      items: contentItems,
     },
     {
       label: 'Taxonomy',
@@ -57,11 +73,16 @@ export default async function AdminLayout({
       ],
     },
     {
-      label: 'Administration',
+      label: 'Settings',
       items: [
         { href: '/admin/users', label: 'Users', icon: '👤' },
-        { href: '/admin/options-general', label: 'Settings', icon: '⚙️' },
+        { href: '/admin/options-general', label: 'General', icon: '⚙️' },
+        { href: '/admin/options-reading', label: 'Reading', icon: '📖' },
+        { href: '/admin/options-permalink', label: 'Permalinks', icon: '🔗' },
+        { href: '/admin/options-seo', label: 'SEO & Analytics', icon: '📊' },
+        { href: '/admin/options-storage', label: 'Storage', icon: '🗄️' },
         { href: '/admin/options-ai', label: 'AI', icon: '🤖' },
+        { href: '/admin/options-cpt', label: 'Post Types', icon: '🧩' },
       ],
     },
   ]
@@ -85,10 +106,12 @@ export default async function AdminLayout({
             <div key={group.label} className="flex flex-col gap-1">
               <div className="text-[10px] font-bold tracking-widest uppercase text-text-muted px-3.5 mb-1">{group.label}</div>
               {group.items.map(item => (
-                <Link key={item.href} href={item.href} className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-text-secondary text-sm font-medium hover:bg-white/5 hover:text-white transition-all duration-200 no-underline">
-                  <span style={{ width: 18, textAlign: 'center', fontSize: 15 }}>{item.icon}</span>
-                  {item.label}
-                </Link>
+                <SidebarLink 
+                  key={item.href} 
+                  href={item.href} 
+                  label={item.label} 
+                  icon={item.icon} 
+                />
               ))}
             </div>
           ))}
@@ -114,7 +137,7 @@ export default async function AdminLayout({
         <div
           className="flex-1 max-w-[480px] hidden sm:flex items-center gap-2 bg-background-tertiary border border-border rounded-xl px-3 h-9 hover:border-primary/30 transition-all duration-200 cursor-default"
         >
-          <span style={{ fontSize: 14, color: 'var(--np-text-muted)' }}>🔍</span>
+          <span className="text-sm text-text-muted">🔍</span>
           <span className="text-text-muted text-xs font-medium flex-1">Search or jump to... </span>
           <kbd className="text-[10px] text-text-muted bg-white/5 px-2 py-0.5 rounded border border-border font-sans font-medium">⌘K</kbd>
         </div>
@@ -127,7 +150,7 @@ export default async function AdminLayout({
 
           {/* New Post */}
           <Link href="/admin/post-new" className="flex items-center gap-1.5 bg-primary-gradient text-white text-xs font-semibold px-4 py-2 rounded-xl hover:shadow-neon transition-all duration-200 no-underline leading-none">
-            <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+            <span className="text-base leading-none">+</span>
             <span>Novo</span>
           </Link>
 

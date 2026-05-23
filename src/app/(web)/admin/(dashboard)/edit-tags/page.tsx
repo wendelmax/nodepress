@@ -1,106 +1,138 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTaxonomies } from "@/hooks/useTaxonomies"
+import { LoadingSpinner, PageHeader, inputCls, textareaCls } from "@/components/admin/SettingsUI"
 
-export default function EditTagsPage() {
+function EditTagsContent() {
   const searchParams = useSearchParams()
   const taxonomy = (searchParams.get('taxonomy') as 'category' | 'post_tag') || 'category'
-  
   const { terms, isLoading, isSaving, createTerm } = useTaxonomies(taxonomy)
 
   const [name, setName] = useState("")
-  const [slug, setSlug] = useState("")
   const [description, setDescription] = useState("")
 
   const isCategory = taxonomy === 'category'
-  const title = isCategory ? "Categories" : "Tags"
-  const singular = isCategory ? "Category" : "Tag"
+  const title = isCategory ? "Categorias" : "Tags"
+  const singular = isCategory ? "Categoria" : "Tag"
+  const icon = isCategory ? "🗂️" : "🏷️"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    const success = await createTerm(name, slug, description)
+    const success = await createTerm(name, '', description)
     if (success) {
       setName("")
-      setSlug("")
       setDescription("")
-    } else {
-      alert("Failed to add term.")
     }
   }
 
+  if (isLoading) return <LoadingSpinner />
+
   return (
-    <div>
-      <h1 style={{ fontSize: '23px', fontWeight: 400, margin: 0, padding: '9px 15px 4px 0', marginBottom: '20px' }}>{title}</h1>
-      
-      <div style={{ display: 'flex', gap: '40px' }}>
-        {/* Left Side: Form */}
-        <div style={{ width: '300px' }}>
-          <h2 style={{ fontSize: '14px', marginBottom: '15px' }}>Add New {singular}</h2>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Name</label>
-              <input 
-                type="text" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                style={{ width: '100%', padding: '4px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-              />
-              <p style={{ fontSize: '12px', color: '#646970', margin: '4px 0' }}>The name is how it appears on your site.</p>
-            </div>
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader
+        title={`${icon} ${title}`}
+        subtitle={isCategory
+          ? "Organize seus posts em categorias para facilitar a navegação."
+          : "Use tags para relacionar posts por assuntos específicos."}
+      />
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '5px' }}>Description</label>
-              <textarea 
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                style={{ width: '100%', padding: '4px 8px', border: '1px solid #8c8f94', borderRadius: '3px' }}
-              />
-              <p style={{ fontSize: '12px', color: '#646970', margin: '4px 0' }}>The description is not prominent by default.</p>
-            </div>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* ── Add Form ── */}
+        <div className="w-full lg:w-72 flex-shrink-0">
+          <div className="bg-surface/40 border border-border rounded-2xl p-5 flex flex-col gap-4">
+            <h2 className="text-sm font-bold text-text">Adicionar {singular}</h2>
 
-            <button 
-              type="submit" 
-              disabled={isSaving}
-              style={{ backgroundColor: '#2271b1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '3px', cursor: isSaving ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
-              {isSaving ? 'Adding...' : `Add New ${singular}`}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">
+                  Nome <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className={`${inputCls} max-w-none`}
+                  placeholder={`Nome da ${singular}`}
+                />
+                <p className="text-[10px] text-text-muted">Como aparecerá no seu site.</p>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">Descrição</label>
+                <textarea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={3}
+                  className={`${textareaCls} max-w-none min-h-[70px]`}
+                  placeholder="Descrição opcional..."
+                />
+                <p className="text-[10px] text-text-muted">Não é exibida por padrão no tema.</p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSaving || !name.trim()}
+                className="w-full flex items-center justify-center gap-2 bg-primary-gradient text-white font-semibold text-xs px-4 py-2.5 rounded-xl hover:shadow-neon transition-all duration-200 disabled:opacity-60"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/60 border-t-transparent rounded-full animate-spin" />
+                    Adicionando...
+                  </>
+                ) : `+ Adicionar ${singular}`}
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Right Side: Table */}
-        <div style={{ flex: 1 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', border: '1px solid #c3c4c7', boxShadow: '0 1px 1px rgba(0,0,0,.04)' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #c3c4c7', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px', fontSize: '14px', fontWeight: 400, color: '#2c3338' }}>Name</th>
-                <th style={{ padding: '8px 10px', fontSize: '14px', fontWeight: 400, color: '#2c3338' }}>Description</th>
-                <th style={{ padding: '8px 10px', fontSize: '14px', fontWeight: 400, color: '#2c3338' }}>Slug</th>
-                <th style={{ padding: '8px 10px', fontSize: '14px', fontWeight: 400, color: '#2c3338' }}>Count</th>
-              </tr>
-            </thead>
-            <tbody>
-              {terms.map(term => (
-                <tr key={term.id} style={{ borderBottom: '1px solid #c3c4c7' }}>
-                  <td style={{ padding: '10px', color: '#2271b1', fontWeight: 600, fontSize: '14px' }}>{term.name}</td>
-                  <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px' }}>{term.description || '—'}</td>
-                  <td style={{ padding: '10px', color: '#2c3338', fontSize: '13px' }}>{term.slug}</td>
-                  <td style={{ padding: '10px', color: '#2271b1', fontSize: '13px' }}>{term.count}</td>
-                </tr>
-              ))}
-              {terms.length === 0 && (
-                <tr>
-                  <td colSpan={4} style={{ padding: '10px', color: '#646970' }}>No {title.toLowerCase()} found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* ── Terms Table ── */}
+        <div className="flex-1 w-full">
+          <div className="bg-surface/40 border border-border rounded-2xl overflow-hidden">
+            {terms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                <span className="text-4xl opacity-30">{icon}</span>
+                <p className="text-sm text-text-muted">Nenhuma {singular.toLowerCase()} encontrada.</p>
+              </div>
+            ) : (
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border/60">
+                    <th className="text-left px-5 py-3 text-text-secondary font-semibold">Nome</th>
+                    <th className="text-left px-5 py-3 text-text-secondary font-semibold hidden md:table-cell">Descrição</th>
+                    <th className="text-left px-5 py-3 text-text-secondary font-semibold hidden sm:table-cell">Slug</th>
+                    <th className="text-center px-5 py-3 text-text-secondary font-semibold">Posts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {terms.map((term, i) => (
+                    <tr key={term.id} className={`border-b border-border/30 hover:bg-white/[0.02] transition-colors ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}>
+                      <td className="px-5 py-3 font-semibold text-primary-light">{term.name}</td>
+                      <td className="px-5 py-3 text-text-muted hidden md:table-cell">{term.description || '—'}</td>
+                      <td className="px-5 py-3 text-text-muted hidden sm:table-cell font-mono">{term.slug}</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary-light font-bold">
+                          {term.count}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function EditTagsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <EditTagsContent />
+    </Suspense>
   )
 }

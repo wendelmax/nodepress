@@ -6,8 +6,18 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  devIndicators: {
-    appIsrStatus: false,
+  devIndicators: false,
+  async rewrites() {
+    return [
+      {
+        source: '/admin/posts',
+        destination: '/admin/edit?post_type=post',
+      },
+      {
+        source: '/admin/pages',
+        destination: '/admin/edit?post_type=page',
+      },
+    ];
   },
 };
 

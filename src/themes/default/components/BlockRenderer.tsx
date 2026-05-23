@@ -32,7 +32,7 @@ export default function BlockRenderer({ content }: BlockRendererProps) {
 
   // Render Editor.js JSON Blocks
   return (
-    <div className="post-content block-content">
+    <div className="prose prose-invert prose-blue max-w-none prose-headings:text-text prose-p:text-text-secondary prose-a:text-primary-light prose-strong:text-white prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-img:rounded-xl">
       {parsedContent.blocks.map((block: any, index: number) => {
         const key = block.id || `block-${index}`
 
@@ -56,21 +56,14 @@ export default function BlockRenderer({ content }: BlockRendererProps) {
 
           case 'image':
             return (
-              <figure key={key} style={{ margin: '20px 0' }}>
+              <figure key={key} className={`my-8 ${block.data.withBackground ? 'bg-surface p-6 rounded-2xl border border-border' : ''}`}>
                 <img 
                   src={block.data.file.url} 
                   alt={block.data.caption || 'Image'} 
-                  style={{ 
-                    maxWidth: '100%', 
-                    height: 'auto', 
-                    borderRadius: '4px',
-                    border: block.data.withBorder ? '1px solid #ccc' : 'none',
-                    backgroundColor: block.data.withBackground ? '#f0f0f1' : 'transparent',
-                    padding: block.data.withBackground ? '20px' : '0'
-                  }} 
+                  className={`w-full h-auto rounded-xl ${block.data.withBorder ? 'border border-border' : ''}`}
                 />
                 {block.data.caption && (
-                  <figcaption style={{ textAlign: 'center', fontSize: '14px', color: '#646970', marginTop: '10px' }} dangerouslySetInnerHTML={{ __html: block.data.caption }} />
+                  <figcaption className="text-center text-xs text-text-muted mt-3" dangerouslySetInnerHTML={{ __html: block.data.caption }} />
                 )}
               </figure>
             )

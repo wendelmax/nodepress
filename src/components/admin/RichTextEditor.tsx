@@ -40,58 +40,43 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
     setIsMediaModalOpen(false)
   }
 
-  const btnStyle = {
-    background: 'none',
-    border: '1px solid transparent',
-    padding: '4px 8px',
-    cursor: 'pointer',
-    fontSize: '14px',
-    color: '#2c3338',
-    borderRadius: '3px',
-  }
+  const btnClass = "bg-transparent border border-transparent px-2.5 py-1.5 cursor-pointer text-sm text-text-secondary rounded-lg hover:bg-white/10 hover:text-white transition-colors"
 
   return (
-    <div style={{ border: '1px solid #8c8f94', borderRadius: '3px', backgroundColor: 'white', display: 'flex', flexDirection: 'column' }}>
+    <div className="flex flex-col border border-border rounded-xl bg-surface-elevated overflow-hidden shadow-soft">
       
       {/* Toolbar */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '5px', 
-        padding: '8px', 
-        borderBottom: '1px solid #8c8f94', 
-        backgroundColor: '#f0f0f1',
-        flexWrap: 'wrap'
-      }}>
-        <button type="button" onClick={() => execCmd('bold')} style={{...btnStyle, fontWeight: 'bold'}} title="Bold">B</button>
-        <button type="button" onClick={() => execCmd('italic')} style={{...btnStyle, fontStyle: 'italic'}} title="Italic">I</button>
-        <button type="button" onClick={() => execCmd('underline')} style={{...btnStyle, textDecoration: 'underline'}} title="Underline">U</button>
+      <div className="flex flex-wrap items-center gap-1.5 p-2.5 border-b border-border bg-white/[0.02]">
+        <button type="button" onClick={() => execCmd('bold')} className={`${btnClass} font-bold`} title="Bold">B</button>
+        <button type="button" onClick={() => execCmd('italic')} className={`${btnClass} italic`} title="Italic">I</button>
+        <button type="button" onClick={() => execCmd('underline')} className={`${btnClass} underline`} title="Underline">U</button>
         
-        <div style={{ width: '1px', backgroundColor: '#c3c4c7', margin: '0 5px' }}></div>
+        <div className="w-px h-5 bg-border mx-1.5"></div>
         
-        <button type="button" onClick={() => execCmd('formatBlock', 'H2')} style={btnStyle} title="Heading 2">H2</button>
-        <button type="button" onClick={() => execCmd('formatBlock', 'H3')} style={btnStyle} title="Heading 3">H3</button>
-        <button type="button" onClick={() => execCmd('formatBlock', 'P')} style={btnStyle} title="Paragraph">P</button>
+        <button type="button" onClick={() => execCmd('formatBlock', 'H2')} className={btnClass} title="Heading 2">H2</button>
+        <button type="button" onClick={() => execCmd('formatBlock', 'H3')} className={btnClass} title="Heading 3">H3</button>
+        <button type="button" onClick={() => execCmd('formatBlock', 'P')} className={btnClass} title="Paragraph">P</button>
 
-        <div style={{ width: '1px', backgroundColor: '#c3c4c7', margin: '0 5px' }}></div>
+        <div className="w-px h-5 bg-border mx-1.5"></div>
         
-        <button type="button" onClick={() => execCmd('insertUnorderedList')} style={btnStyle} title="Bulleted List">• List</button>
-        <button type="button" onClick={() => execCmd('insertOrderedList')} style={btnStyle} title="Numbered List">1. List</button>
+        <button type="button" onClick={() => execCmd('insertUnorderedList')} className={btnClass} title="Bulleted List">• List</button>
+        <button type="button" onClick={() => execCmd('insertOrderedList')} className={btnClass} title="Numbered List">1. List</button>
         
-        <div style={{ width: '1px', backgroundColor: '#c3c4c7', margin: '0 5px' }}></div>
+        <div className="w-px h-5 bg-border mx-1.5"></div>
         
         <button type="button" onClick={() => {
           const url = prompt('Enter link URL:')
           if (url) execCmd('createLink', url)
-        }} style={btnStyle} title="Insert Link">🔗 Link</button>
+        }} className={btnClass} title="Insert Link">🔗 Link</button>
 
-        <div style={{ flex: 1 }}></div>
+        <div className="flex-1"></div>
 
         <button 
           type="button" 
           onClick={() => setIsMediaModalOpen(true)} 
-          style={{...btnStyle, backgroundColor: '#2271b1', color: 'white'}}
+          className="px-3 py-1.5 bg-primary/10 text-primary-light hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5"
         >
-          🖼️ Add Media
+          🖼️ <span className="hidden sm:inline">Add Media</span>
         </button>
       </div>
 
@@ -101,15 +86,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         contentEditable
         onInput={handleInput}
         onBlur={handleInput}
-        style={{
-          padding: '15px',
-          minHeight: '400px',
-          outline: 'none',
-          lineHeight: '1.6',
-          fontSize: '16px',
-          color: '#3c434a',
-          overflowY: 'auto'
-        }}
+        className="p-4 md:p-6 min-h-[400px] outline-none leading-relaxed text-base text-text overflow-y-auto prose prose-invert prose-blue max-w-none prose-p:text-text-secondary"
         data-placeholder={placeholder}
       />
 

@@ -93,18 +93,8 @@ export default function BlockEditor({ value, onChange, placeholder }: BlockEdito
   }, [])
 
   return (
-    <div 
-      style={{ 
-        border: '1px solid #c3c4c7', 
-        minHeight: '400px', 
-        padding: '20px', 
-        backgroundColor: 'white',
-        borderRadius: '3px',
-        fontSize: '16px',
-        fontFamily: 'system-ui, sans-serif'
-      }}
-    >
-      <div ref={holderRef} id="editorjs" />
+    <div className="min-h-[400px] text-base font-sans prose prose-invert prose-blue max-w-none w-full">
+      <div ref={holderRef} id="editorjs" className="w-full" />
     </div>
   )
 }

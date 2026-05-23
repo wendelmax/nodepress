@@ -46,7 +46,7 @@ async function handleUpdate(request: Request, idStr: string) {
 
   try {
     const body = await request.json()
-    const { title, content, status, type, thumbnailId, thumbnailUrl, categories, tags, metaData, postDate } = body
+    const { title, content, status, type, thumbnailId, thumbnailUrl, categories, tags, metaData, postDate, parentId } = body
 
     let finalStatus = status
     let finalDate: Date | undefined = undefined
@@ -66,7 +66,8 @@ async function handleUpdate(request: Request, idStr: string) {
       thumbnailId, 
       thumbnailUrl, 
       metaData, 
-      postDate: finalDate 
+      postDate: finalDate,
+      parentId: parentId !== undefined ? (parentId ? parseInt(parentId) : null) : undefined
     })
 
     // Process Categories & Tags if they are provided

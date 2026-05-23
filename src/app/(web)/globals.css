@@ -43,8 +43,3 @@ body {
   background: rgba(255,255,255,0.16);
 }
 
-/* Post Content styles */
-.post-content p { margin-bottom: 1em; }
-.post-content ul, .post-content ol { margin-bottom: 1em; padding-left: 20px; }
-.post-content blockquote { border-left: 4px solid #c3c4c7; padding-left: 1em; margin-left: 0; color: #646970; }
-.post-content h2, .post-content h3 { margin-top: 1.5em; margin-bottom: 0.5em; }

@@ -115,58 +115,29 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
       {/* Backdrop */}
       <div
         onClick={() => setOpen(false)}
-        style={{
-          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)",
-          zIndex: 9998, backdropFilter: "blur(2px)",
-        }}
+        className="fixed inset-0 bg-black/50 z-[9998] backdrop-blur-sm"
       />
 
       {/* Palette */}
-      <div style={{
-        position: "fixed",
-        top: "20%",
-        left: "50%",
-        transform: "translateX(-50%)",
-        width: "100%",
-        maxWidth: "560px",
-        backgroundColor: "#fff",
-        borderRadius: "8px",
-        boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
-        zIndex: 9999,
-        overflow: "hidden",
-      }}>
+      <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-[560px] bg-background-secondary border border-border rounded-xl shadow-[0_25px_50px_rgba(0,0,0,0.5)] z-[9999] overflow-hidden">
         {/* Search input */}
-        <div style={{ display: "flex", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid #dcdcde" }}>
-          <span style={{ marginRight: "10px", fontSize: "16px", color: "#646970" }}>🔍</span>
+        <div className="flex items-center px-4 py-3 border-b border-border bg-background-tertiary">
+          <span className="mr-3 text-base text-text-muted">🔍</span>
           <input
             ref={inputRef}
             value={query}
             onChange={e => { setQuery(e.target.value); setSelected(0) }}
             onKeyDown={handleInputKeyDown}
             placeholder="Type a command or search..."
-            style={{
-              flex: 1,
-              border: "none",
-              outline: "none",
-              fontSize: "16px",
-              color: "#1d2327",
-              backgroundColor: "transparent",
-            }}
+            className="flex-1 border-none outline-none text-base text-text bg-transparent placeholder-text-muted"
           />
-          <kbd style={{
-            fontSize: "11px",
-            color: "#646970",
-            backgroundColor: "#f0f0f1",
-            padding: "2px 6px",
-            borderRadius: "3px",
-            border: "1px solid #dcdcde",
-          }}>ESC</kbd>
+          <kbd className="text-[11px] text-text-muted bg-white/5 px-2 py-0.5 rounded border border-border">ESC</kbd>
         </div>
 
         {/* Results */}
-        <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+        <div className="max-h-[360px] overflow-y-auto py-2">
           {filtered.length === 0 && (
-            <div style={{ padding: "24px", textAlign: "center", color: "#646970", fontSize: "14px" }}>
+            <div className="p-6 text-center text-text-muted text-sm">
               No results for &quot;{query}&quot;
             </div>
           )}
@@ -175,26 +146,15 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
               key={cmd.id}
               onClick={() => runCommand(cmd)}
               onMouseEnter={() => setSelected(i)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                padding: "10px 16px",
-                border: "none",
-                backgroundColor: i === selected ? "#f0f0f1" : "transparent",
-                cursor: "pointer",
-                textAlign: "left",
-                gap: "12px",
-                transition: "background-color 0.1s",
-              }}
+              className={`flex items-center w-full px-4 py-2.5 border-none cursor-pointer text-left gap-3 transition-colors ${i === selected ? 'bg-primary/10' : 'bg-transparent'}`}
             >
-              <span style={{ fontSize: "18px", width: "24px", flexShrink: 0 }}>{cmd.icon}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "14px", fontWeight: i === selected ? 600 : 400, color: "#1d2327" }}>
+              <span className="text-lg w-6 shrink-0 text-center">{cmd.icon}</span>
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm ${i === selected ? 'font-semibold text-primary-light' : 'font-normal text-text'}`}>
                   {cmd.label}
                 </div>
                 {cmd.description && (
-                  <div style={{ fontSize: "12px", color: "#646970" }}>{cmd.description}</div>
+                  <div className="text-xs text-text-secondary mt-0.5">{cmd.description}</div>
                 )}
               </div>
             </button>
@@ -202,17 +162,10 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
         </div>
 
         {/* Footer hint */}
-        <div style={{
-          padding: "8px 16px",
-          borderTop: "1px solid #f0f0f1",
-          display: "flex",
-          gap: "16px",
-          fontSize: "11px",
-          color: "#646970",
-        }}>
-          <span><kbd style={{ backgroundColor: "#f0f0f1", padding: "1px 4px", borderRadius: "2px", border: "1px solid #dcdcde" }}>↑↓</kbd> navigate</span>
-          <span><kbd style={{ backgroundColor: "#f0f0f1", padding: "1px 4px", borderRadius: "2px", border: "1px solid #dcdcde" }}>↵</kbd> select</span>
-          <span><kbd style={{ backgroundColor: "#f0f0f1", padding: "1px 4px", borderRadius: "2px", border: "1px solid #dcdcde" }}>Ctrl+K</kbd> toggle</span>
+        <div className="px-4 py-2 border-t border-border bg-background flex gap-4 text-[11px] text-text-muted">
+          <span><kbd className="bg-white/5 px-1 rounded border border-border">↑↓</kbd> navigate</span>
+          <span><kbd className="bg-white/5 px-1 rounded border border-border">↵</kbd> select</span>
+          <span><kbd className="bg-white/5 px-1 rounded border border-border">Ctrl+K</kbd> toggle</span>
         </div>
       </div>
     </>
