@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card } from "@/components/admin/Card"
+import { HardDrive, Eye, EyeOff, Plug2, CheckCircle2, XCircle, Cloud, Server } from "lucide-react"
 
 interface StorageSettings {
   storage_driver: string
@@ -11,6 +12,7 @@ interface StorageSettings {
   s3_region: string
   s3_endpoint: string
   s3_public_url: string
+  optimize_webp: string
 }
 
 const DEFAULT_SETTINGS: StorageSettings = {
@@ -21,6 +23,7 @@ const DEFAULT_SETTINGS: StorageSettings = {
   s3_region: '',
   s3_endpoint: '',
   s3_public_url: '',
+  optimize_webp: 'true',
 }
 
 type StatusMsg = { type: 'success' | 'error' | 'info'; text: string } | null
@@ -106,7 +109,6 @@ export default function StorageSettingsPage() {
       })
       if (res.ok) {
         setSaveMsg({ type: 'success', text: 'Configurações de armazenamento salvas com sucesso! O novo provider está ativo imediatamente.' })
-        // Invalidate the cached driver on the server via a no-op OPTIONS ping
         await fetch('/api/storage/test-connection', { method: 'OPTIONS' }).catch(() => {})
       } else {
         setSaveMsg({ type: 'error', text: 'Falha ao salvar as configurações.' })
@@ -143,7 +145,7 @@ export default function StorageSettingsPage() {
         {/* ── Driver Selector ── */}
         <Card className="p-6">
           <h2 className="text-sm font-bold text-text mb-4 flex items-center gap-2">
-            <span className="text-lg">💾</span> Provider de Armazenamento
+            <HardDrive size={18} /> Provider de Armazenamento
           </h2>
 
           <div className="grid grid-cols-2 gap-3">
@@ -163,12 +165,11 @@ export default function StorageSettingsPage() {
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${!isS3 ? 'border-primary bg-primary' : 'border-border'}`}>
                   {!isS3 && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
-                <span className="text-2xl">🖥️</span>
+                <Server size={20} />
                 <span className="font-semibold text-sm text-text">Armazenamento Local</span>
               </div>
               <p className="text-[11px] text-text-muted leading-relaxed pl-7">
                 Arquivos salvos em <code className="bg-white/5 px-1 rounded text-primary-light">public/uploads/</code> no servidor.
-                Ideal para desenvolvimento.
               </p>
             </label>
 
@@ -188,11 +189,11 @@ export default function StorageSettingsPage() {
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${isS3 ? 'border-primary bg-primary' : 'border-border'}`}>
                   {isS3 && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </div>
-                <span className="text-2xl">☁️</span>
+                <Cloud size={20} />
                 <span className="font-semibold text-sm text-text">S3 / Cloud Storage</span>
               </div>
               <p className="text-[11px] text-text-muted leading-relaxed pl-7">
-                AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces e qualquer provider compatível com a API S3.
+                AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces e compatíveis.
               </p>
             </label>
           </div>
@@ -203,7 +204,7 @@ export default function StorageSettingsPage() {
           <Card className="p-6 flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-text flex items-center gap-2">
-                <span className="text-lg">⚙️</span> Configuração S3
+                <Cloud size={18} /> Configuração S3
               </h2>
 
               {/* Provider presets */}
@@ -248,7 +249,7 @@ export default function StorageSettingsPage() {
                     onClick={() => setShowSecret(v => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary text-xs transition-colors"
                   >
-                    {showSecret ? '🙈' : '👁️'}
+                    {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -291,7 +292,7 @@ export default function StorageSettingsPage() {
                     ? 'bg-success/10 border-success/20 text-success'
                     : 'bg-danger/10 border-danger/20 text-danger'
                 }`}>
-                  <span>{testMsg.type === 'success' ? '✓' : '✕'}</span>
+                  {testMsg.type === 'success' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
                   <span>{testMsg.text}</span>
                 </div>
               )}
@@ -304,15 +305,36 @@ export default function StorageSettingsPage() {
                 {isTesting ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Testando conexão...
+                    Testando...
                   </>
                 ) : (
-                  <>🔌 Testar Conexão</>
+                  <> <Plug2 size={14} /> Testar Conexão</>
                 )}
               </button>
             </div>
           </Card>
         )}
+
+        {/* ── WebP Optimization ── */}
+        <Card className="p-6">
+          <h2 className="text-sm font-bold text-text mb-4 flex items-center gap-2">
+            Otimização de Imagens
+          </h2>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={settings.optimize_webp === 'true'} 
+              onChange={e => set('optimize_webp', e.target.checked ? 'true' : 'false')}
+              className="mt-1 w-4 h-4 rounded border-border bg-black/50 text-primary focus:ring-primary/50" 
+            />
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm text-text">Converter imagens para WebP automaticamente</span>
+              <span className="text-[11px] text-text-muted mt-1 leading-relaxed">
+                Ao fazer upload de arquivos JPG ou PNG, o sistema irá automaticamente converter e comprimir a imagem para o formato WebP. Isso reduz o peso do arquivo em até 80% sem perda de qualidade, melhorando a velocidade do seu site no Google (Pagespeed).
+              </span>
+            </div>
+          </label>
+        </Card>
 
         {/* ── Info Notice ── */}
         <div className="flex items-start gap-3 bg-white/[0.02] border border-border/40 rounded-2xl p-4 text-xs text-text-muted">

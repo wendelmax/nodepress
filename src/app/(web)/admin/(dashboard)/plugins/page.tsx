@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Plug2 } from "lucide-react"
 import { LoadingSpinner, StatusMessage } from "@/components/admin/SettingsUI"
 
 interface PluginInfo {
@@ -14,14 +15,14 @@ interface PluginInfo {
 const pluginsList: PluginInfo[] = [
   {
     id: "hello-dolly",
-    name: "Hello Dolly 🎵",
+    name: "Hello Dolly",
     version: "1.0.0",
     description: "Injects a random lyric from the famous Hello Dolly song into the admin topbar. An homage to the original WordPress plugin.",
     author: "NodePress Contributors"
   },
   {
     id: "seo-optimizer",
-    name: "SEO Optimizer 🔍",
+    name: "SEO Optimizer",
     version: "1.0.0",
     description: "Automatically appends an optimized canonical SEO block to the end of every public post content before frontend rendering.",
     author: "NodePress SEO Team"
@@ -79,11 +80,9 @@ export default function PluginsPage() {
   return (
     <div className="flex flex-col gap-6 w-full max-w-3xl">
       {/* Header */}
-      <div className="border-b border-border/40 pb-4">
-        <h1 className="text-2xl font-bold text-text leading-none">🔌 Plugins</h1>
-        <p className="text-xs text-text-secondary mt-1.5">
-          Amplie as funcionalidades do NodePress. Ative ou desative ferramentas dinamicamente.
-        </p>
+      <div className="flex items-center gap-3 border-b border-border/40 pb-6 mb-8">
+        <Plug2 size={24} className="text-primary-light" />
+        <h1 className="text-2xl font-bold text-text leading-none">Plugins</h1>
       </div>
 
       {msg && <StatusMessage type={msg.type} text={msg.text} />}

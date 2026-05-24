@@ -26,20 +26,20 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
 }
 
 export const STAT_CARD_META: { id: StatCardId; label: string; icon: string }[] = [
-  { id: 'visitors',  label: 'Visitantes',    icon: '👥' },
-  { id: 'views',     label: 'Visualizações', icon: '👁️' },
-  { id: 'posts',     label: 'Posts',         icon: '📝' },
-  { id: 'comments',  label: 'Comentários',   icon: '💬' },
+  { id: 'visitors',  label: 'Visitantes',    icon: 'Users' },
+  { id: 'views',     label: 'Visualizações', icon: 'Eye' },
+  { id: 'posts',     label: 'Posts',         icon: 'FileText' },
+  { id: 'comments',  label: 'Comentários',   icon: 'MessageSquare' },
 ]
 
 export const WIDGET_META: { id: WidgetId; label: string; icon: string; col: 'left' | 'right' }[] = [
-  { id: 'traffic_chart',   label: 'Gráfico de Tráfego',      icon: '📈', col: 'left'  },
-  { id: 'recent_posts',    label: 'Posts Recentes',           icon: '✏️', col: 'left'  },
-  { id: 'recent_comments', label: 'Comentários Recentes',     icon: '💬', col: 'left'  },
-  { id: 'glance',          label: 'Visão do Site',            icon: '🔭', col: 'right' },
-  { id: 'activity',        label: 'Atividades Recentes',      icon: '⚡', col: 'right' },
-  { id: 'quick_draft',     label: 'Rascunho Rápido',          icon: '📋', col: 'right' },
-  { id: 'ai_assistant',    label: 'AI Assistant',             icon: '🤖', col: 'right' },
+  { id: 'traffic_chart',   label: 'Gráfico de Tráfego',      icon: 'LineChart', col: 'left'  },
+  { id: 'recent_posts',    label: 'Posts Recentes',           icon: 'FileText',  col: 'left'  },
+  { id: 'recent_comments', label: 'Comentários Recentes',     icon: 'MessageSquare', col: 'left'  },
+  { id: 'glance',          label: 'Visão do Site',            icon: 'Telescope', col: 'right' },
+  { id: 'activity',        label: 'Atividades Recentes',      icon: 'Zap', col: 'right' },
+  { id: 'quick_draft',     label: 'Rascunho Rápido',          icon: 'ClipboardList', col: 'right' },
+  { id: 'ai_assistant',    label: 'AI Assistant',             icon: 'Bot', col: 'right' },
 ]
 
 export const SETTINGS_KEY = 'np_dashboard_settings'

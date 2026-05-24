@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { User, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage,
   inputCls, selectCls
@@ -69,7 +70,7 @@ export default function ProfileForm({ user }: { user: any }) {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Name section */}
-        <SettingsSection title="Identidade" icon="👤">
+        <SettingsSection title="Identidade" icon={<User size={18} />}>
           <FieldRow label="Usuário" hint="Nomes de usuário não podem ser alterados.">
             <input
               type="text"
@@ -105,7 +106,7 @@ export default function ProfileForm({ user }: { user: any }) {
         </SettingsSection>
 
         {/* Contact section */}
-        <SettingsSection title="Informações de Contato" icon="📬">
+        <SettingsSection title="Informações de Contato" icon={<Mail size={18} />}>
           <FieldRow label="E-mail" required>
             <input
               type="email"
@@ -129,7 +130,7 @@ export default function ProfileForm({ user }: { user: any }) {
         </SettingsSection>
 
         {/* Password section */}
-        <SettingsSection title="Segurança" icon="🔐">
+        <SettingsSection title="Segurança" icon={<Lock size={18} />}>
           <FieldRow label="Nova Senha" hint="Deixe em branco para manter a senha atual.">
             <div className="relative max-w-md">
               <input
@@ -142,9 +143,9 @@ export default function ProfileForm({ user }: { user: any }) {
               <button
                 type="button"
                 onClick={() => setShowPassword(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors text-xs"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
               >
-                {showPassword ? '🙈' : '👁️'}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </FieldRow>

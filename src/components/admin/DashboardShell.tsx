@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+import { FileText, File, MessageSquare, Users, Search, BarChart, Sparkles, PenTool, SlidersHorizontal } from 'lucide-react'
 import { Card } from "@/components/admin/Card"
 import QuickDraft from "@/components/admin/QuickDraft"
 import {
@@ -88,7 +89,7 @@ export interface DashboardData {
     value: string
     trend: string
     up: boolean
-    icon: string
+    icon: React.ReactNode
     color: string
     spark: number[]
   }[]
@@ -100,7 +101,7 @@ export interface DashboardData {
   totalVisitors7d: number
   recentPosts: any[]
   recentComments: any[]
-  activities: { icon: string; bg: string; title: string; desc: string; time: string }[]
+  activities: { icon: React.ReactNode; bg: string; title: string; desc: string; time: string }[]
   postCount: number
   pageCount: number
   commentCount: number
@@ -131,7 +132,7 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
 
   // Load from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
-    setSettings(loadSettings())
+    Promise.resolve().then(() => setSettings(loadSettings()))
   }, [])
 
   // While loading, show skeleton
@@ -173,7 +174,7 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
             className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-border text-text-secondary hover:text-white hover:bg-white/10 hover:border-primary/30 rounded-xl text-xs font-semibold transition-all duration-200"
             title="Personalizar Dashboard"
           >
-            🎛️ Personalizar
+            <SlidersHorizontal size={16} /> Personalizar
           </button>
         </div>
       </div>
@@ -315,10 +316,10 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
               <div className="text-sm font-semibold text-text border-b border-border pb-4 mb-1">Visão do Site</div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { href: '/admin/posts',    icon: '📝', label: `${postCount} Post${postCount !== 1 ? 's' : ''}`,   sub: 'publicados',  color: 'text-primary' },
-                  { href: '/admin/pages',    icon: '📄', label: `${pageCount} Pág${pageCount !== 1 ? 's' : ''}`,    sub: 'ativas',      color: 'text-accent-cyan' },
-                  { href: '/admin/comments', icon: '💬', label: `${commentCount} Com.`,                              sub: 'aprovados',   color: 'text-success' },
-                  { href: '/admin/users',    icon: '👤', label: `${userCount} User${userCount !== 1 ? 's' : ''}`,   sub: 'cadastrados', color: 'text-accent-purple' },
+                  { href: '/admin/posts',    icon: <FileText size={18} />, label: `${postCount} Post${postCount !== 1 ? 's' : ''}`,   sub: 'publicados',  color: 'text-primary' },
+                  { href: '/admin/pages',    icon: <File size={18} />, label: `${pageCount} Pág${pageCount !== 1 ? 's' : ''}`,    sub: 'ativas',      color: 'text-accent-cyan' },
+                  { href: '/admin/comments', icon: <MessageSquare size={18} />, label: `${commentCount} Com.`,                              sub: 'aprovados',   color: 'text-success' },
+                  { href: '/admin/users',    icon: <Users size={18} />, label: `${userCount} User${userCount !== 1 ? 's' : ''}`,   sub: 'cadastrados', color: 'text-accent-purple' },
                 ].map(item => (
                   <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03] border border-border hover:bg-white/[0.06] hover:border-primary/20 transition-all duration-200 no-underline text-center">
                     <span className="text-xl">{item.icon}</span>
@@ -366,15 +367,17 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
             <Card className="p-5 flex flex-col gap-3">
               <div className="flex items-center justify-between border-b border-border pb-4 mb-1">
                 <div className="text-sm font-semibold text-text">AI Assistant</div>
-                <span className="bg-primary-gradient text-white text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider">✨ BETA</span>
+                <span className="flex items-center bg-primary-gradient text-white text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider">
+                  <Sparkles size={10} className="mr-1" /> BETA
+                </span>
               </div>
               <p className="text-xs text-text-muted leading-relaxed">Como posso te ajudar hoje?</p>
               <div className="flex flex-col gap-1.5 my-1">
                 {[
-                  { icon: '✏️', label: 'Gerar ideias de posts' },
-                  { icon: '🔍', label: 'Melhorar conteúdo SEO' },
-                  { icon: '📊', label: 'Analisar performance' },
-                  { icon: '⚙️', label: 'Configurar AI' },
+                  { icon: <Sparkles size={16} />, label: 'Gerar ideias de posts' },
+                  { icon: <Search size={16} />, label: 'Melhorar conteúdo SEO' },
+                  { icon: <BarChart size={16} />, label: 'Analisar performance' },
+                  { icon: <PenTool size={16} />, label: 'Configurar AI' },
                 ].map(s => (
                   <Link key={s.label} href="/admin/settings/ai" className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/5 border border-border hover:bg-white/10 hover:border-primary/30 text-xs font-semibold text-text-secondary hover:text-white transition-all duration-200 no-underline leading-none">
                     <span>{s.icon}</span>

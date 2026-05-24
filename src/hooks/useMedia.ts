@@ -41,7 +41,7 @@ export function useMedia() {
   }
 
   useEffect(() => {
-    fetchMedia(1)
+    Promise.resolve().then(() => fetchMedia(1))
   }, [])
 
   const loadMore = () => {

@@ -363,4 +363,24 @@ export class PostService {
       content: revision.postContent
     })
   }
+
+  /**
+   * Get all children of a specific post (e.g. form submissions, attachments).
+   */
+  static async getChildren(parentId: number, postType?: string) {
+    const where: any = { postParent: parentId }
+    if (postType) {
+      where.postType = postType
+    }
+    
+    return prisma.post.findMany({
+      where,
+      orderBy: { postDate: 'desc' },
+      include: {
+        author: {
+          select: { displayName: true, userLogin: true }
+        }
+      }
+    })
+  }
 }

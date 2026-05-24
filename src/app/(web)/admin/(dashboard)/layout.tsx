@@ -12,6 +12,9 @@ import { OptionService } from "@/services/option.service"
 import { SidebarLink } from "@/components/admin/SidebarLink"
 import { SearchTrigger } from "@/components/admin/SearchTrigger"
 import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
+import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList } from "lucide-react"
+import { AdminI18nProvider } from "@/components/admin/AdminI18nProvider"
+import { getAdminDictionary } from "@/i18n"
 import "@/plugins/registry"
 import '../admin.css'
 
@@ -28,10 +31,13 @@ export default async function AdminLayout({
     redirect("/login")
   }
 
-  const options = await OptionService.getOptions(['blogname', 'siteurl', 'np_cpt_registry'])
+  const options = await OptionService.getOptions(['blogname', 'siteurl', 'np_cpt_registry', 'site_language'])
   const siteName = options['blogname'] || 'NodePress'
   const userName = session.user?.name || session.user?.email || 'Admin'
   const userInitial = userName.charAt(0).toUpperCase()
+
+  const siteLanguage = options['site_language'] || 'pt-BR'
+  const dict = getAdminDictionary(siteLanguage)
 
   let customPostTypes: any[] = []
   try {
@@ -40,63 +46,69 @@ export default async function AdminLayout({
     }
   } catch (e) {}
 
-  const contentItems = [
-    { href: '/admin', label: 'Dashboard', icon: '⊞' },
-    { href: '/admin/posts', label: 'Posts', icon: '✏️' },
-    { href: '/admin/pages', label: 'Pages', icon: '📄' },
-    ...customPostTypes.filter(c => c.public).map(c => ({
-      href: `/admin/posts?type=${c.slug}`, // Redirects to edit feed with filter
-      label: c.pluralName,
-      icon: c.icon || '📌',
-      matchPaths: [`/admin/posts?type=${c.slug}`] // For active state handling
-    })),
-    { href: '/admin/media', label: 'Media', icon: '🖼️' },
-    { href: '/admin/comments', label: 'Comments', icon: '💬' },
-  ]
+
+  const cptMenuLinks = customPostTypes.filter(c => c.public).map(c => ({
+    href: `/admin/posts?type=${c.slug}`,
+    label: c.pluralName,
+    icon: <FileText size={18} />,
+    matchPaths: [`/admin/posts?type=${c.slug}`]
+  }))
+
+  const pluginMenuLinks = await HookService.doAction('admin_sidebar_menu')
 
   const navGroups = [
     {
-      label: 'Content',
-      items: contentItems,
-    },
-    {
-      label: 'Taxonomy',
+      label: dict.sidebar.content,
       items: [
-        { href: '/admin/categories', label: 'Categories', icon: '🏷️' },
-        { href: '/admin/tags', label: 'Tags', icon: '🔖' },
+        { href: '/admin', label: dict.sidebar.dashboard, icon: <LayoutDashboard size={18} /> },
+        { href: '/admin/posts', label: dict.sidebar.posts, icon: <FileText size={18} />, matchPaths: ['/admin/posts/new', '/admin/categories'] },
+        { href: '/admin/posts?post_type=page', label: dict.sidebar.pages, icon: <FileText size={18} />, matchPaths: ['/admin/posts/new?post_type=page'] },
+        { href: '/admin/forms', label: dict.sidebar.forms, icon: <ClipboardList size={18} />, matchPaths: ['/admin/forms/new', '/admin/forms/[id]/edit'] },
+        ...pluginMenuLinks,
+        ...cptMenuLinks,
       ],
     },
     {
-      label: 'Customization',
+      label: 'Taxonomia',
       items: [
-        { href: '/admin/themes', label: 'Themes', icon: '🎨' },
-        { href: '/admin/plugins', label: 'Plugins', icon: '🔌' },
-        { href: '/admin/menus', label: 'Menus', icon: '≡' },
+        { href: '/admin/comments', label: dict.sidebar.comments, icon: <MessageSquare size={18} /> },
+        { href: '/admin/categories', label: 'Categorias', icon: <Tag size={18} /> },
+        { href: '/admin/tags', label: 'Tags', icon: <Tag size={18} /> },
       ],
     },
     {
-      label: 'Tools',
+      label: dict.sidebar.appearance || 'Customização',
       items: [
-        { href: '/admin/tools/import-export', label: 'Import / Export', icon: '🛠️' },
+        { href: '/admin/themes', label: dict.sidebar.themes, icon: <Palette size={18} /> },
+        { href: '/admin/plugins', label: dict.sidebar.plugins, icon: <Plug size={18} /> },
+        { href: '/admin/menus', label: 'Menus', icon: <MenuIcon size={18} /> },
       ],
     },
     {
-      label: 'Settings',
+      label: dict.sidebar.tools || 'Ferramentas',
       items: [
-        { href: '/admin/users', label: 'Users', icon: '👤' },
-        { href: '/admin/settings/general', label: 'General', icon: '⚙️' },
-        { href: '/admin/settings/reading', label: 'Reading', icon: '📖' },
-        { href: '/admin/settings/permalinks', label: 'Permalinks', icon: '🔗' },
-        { href: '/admin/settings/seo', label: 'SEO & Analytics', icon: '📊' },
-        { href: '/admin/settings/storage', label: 'Storage', icon: '🗄️' },
-        { href: '/admin/settings/ai', label: 'AI', icon: '🤖' },
-        { href: '/admin/settings/cpt', label: 'Post Types', icon: '🧩' },
+        { href: '/admin/tools/import-export', label: 'Import / Export', icon: <Wrench size={18} /> },
+      ],
+    },
+    {
+      label: dict.sidebar.settings || 'Configurações',
+      items: [
+        { href: '/admin/users', label: dict.sidebar.users, icon: <Users size={18} /> },
+        { href: '/admin/settings/general', label: dict.sidebar.settings, icon: <Settings size={18} /> },
+        { href: '/admin/settings/reading', label: 'Leitura', icon: <BookOpen size={18} /> },
+        { href: '/admin/settings/permalinks', label: 'Links Permanentes', icon: <LinkIcon size={18} /> },
+        { href: '/admin/settings/seo', label: 'SEO & Analytics', icon: <Search size={18} /> },
+        { href: '/admin/settings/storage', label: 'Armazenamento', icon: <Search size={18} /> },
+        { href: '/admin/settings/ai', label: 'Inteligência Artificial', icon: <Bot size={18} /> },
+        { href: '/admin/settings/cpt', label: 'Tipos de Post (CPT)', icon: <Puzzle size={18} /> },
+        { href: '/admin/settings/fields', label: dict.sidebar.custom_fields, icon: <ClipboardList size={18} /> },
       ],
     },
   ]
 
   return (
-    <div className="font-sans min-h-screen text-text bg-background">
+    <AdminI18nProvider dictionary={dict} lang={siteLanguage}>
+      <div className="font-sans min-h-screen text-text bg-background">
       {/* ── Sidebar ── */}
       <aside className="np-sidebar fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[220px] bg-sidebar-gradient border-r border-border -translate-x-full md:translate-x-0 transition-transform duration-300">
         {/* Logo */}
@@ -153,8 +165,9 @@ export default async function AdminLayout({
           <CreateNewDropdown customPostTypes={customPostTypes.filter(c => c.public)} />
 
           {/* Notifications */}
-          <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer" title="Notifications">
-            🔔
+          <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer relative" title="Notifications">
+            <Bell size={18} />
+            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse border border-background"></span>
           </div>
 
           {/* Help */}
@@ -176,6 +189,7 @@ export default async function AdminLayout({
 
       {/* Global Command Palette */}
       <CommandPalette />
-    </div>
+      </div>
+    </AdminI18nProvider>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Music } from 'lucide-react';
 
 const lyrics = [
   "I said hello, Dolly",
@@ -23,7 +24,7 @@ export function HelloDollyWidget() {
   const [lyric, setLyric] = React.useState("");
 
   React.useEffect(() => {
-    setMounted(true);
+    Promise.resolve().then(() => setMounted(true));
     Promise.resolve().then(async () => {
       try {
         const res = await fetch("/api/options?keys=active_plugins")
@@ -42,15 +43,8 @@ export function HelloDollyWidget() {
   if (!mounted || !lyric) return null;
 
   return (
-    <div style={{
-      display: 'inline-block',
-      marginLeft: '15px',
-      color: '#c3c4c7',
-      fontSize: '13px',
-      fontStyle: 'italic',
-      userSelect: 'none'
-    }}>
-      <span aria-hidden="true">🎵</span> {lyric}
+    <div className="flex items-center justify-center p-3 text-sm text-text-secondary bg-surface-elevated border border-border rounded-xl shadow-soft">
+      <Music size={16} className="mr-2 text-primary-light" aria-hidden="true" /> {lyric}
     </div>
   );
 }

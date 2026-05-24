@@ -2,6 +2,8 @@ import prisma from '@/lib/prisma'
 import path from 'path'
 import crypto from 'crypto'
 import { StorageDriverFactory } from '@/storage/StorageDriverFactory'
+import { OptionService } from '@/services/option.service'
+import sharp from 'sharp'
 
 export class MediaService {
   /**
@@ -47,19 +49,37 @@ export class MediaService {
    * it delegates the actual file I/O to whichever driver StorageDriverFactory returns.
    */
   static async upload(file: File, authorId: number) {
-    // Generate a unique, sanitized filename to prevent collisions and path traversal
-    const ext = path.extname(file.name)
+    // Convert Web API File → Node.js Buffer
+    const arrayBuffer = await file.arrayBuffer()
+    let buffer: any = Buffer.from(arrayBuffer)
+    
+    let ext = path.extname(file.name).toLowerCase()
     const basename = path.basename(file.name, ext).replace(/[^a-z0-9]/gi, '-').toLowerCase()
+    let mimeType = file.type
+
+    // Check if WebP Optimization is enabled
+    const options = await OptionService.getOptions(['optimize_webp'])
+    const optimizeWebp = options.optimize_webp !== 'false'
+
+    if (optimizeWebp && mimeType.startsWith('image/') && !mimeType.includes('svg') && !mimeType.includes('webp')) {
+      try {
+        buffer = await sharp(buffer)
+          .webp({ quality: 80, effort: 4 })
+          .toBuffer()
+        ext = '.webp'
+        mimeType = 'image/webp'
+      } catch (e) {
+        console.warn('[MediaService] WebP conversion failed, falling back to original:', e)
+      }
+    }
+
+    // Generate a unique, sanitized filename to prevent collisions and path traversal
     const uniqueId = crypto.randomBytes(4).toString('hex')
     const finalName = `${basename}-${uniqueId}${ext}`
 
-    // Convert Web API File → Node.js Buffer
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
     // Delegate to the active driver (Local or S3/R2/MinIO)
     const driver = await StorageDriverFactory.get()
-    const publicUrl = await driver.upload(buffer, finalName, file.type)
+    const publicUrl = await driver.upload(buffer, finalName, mimeType)
 
     // Persist the attachment record in the database
     const attachment = await prisma.post.create({
@@ -70,7 +90,7 @@ export class MediaService {
         postName: finalName,
         postAuthor: authorId,
         postType: 'attachment',
-        postMimeType: file.type,
+        postMimeType: mimeType,
         guid: publicUrl, // URL returned by the active driver
         postExcerpt: '',
         postPassword: '',

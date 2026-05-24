@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { MessageSquare, MessageCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { LoadingSpinner } from "@/components/admin/SettingsUI"
 
@@ -66,17 +67,18 @@ export default function CommentsManager() {
   return (
     <div className="flex flex-col gap-6 w-full">
       {/* Header */}
-      <div className="border-b border-border/40 pb-4">
-        <h1 className="text-2xl font-bold text-text leading-none">💬 Comentários</h1>
-        <p className="text-xs text-text-secondary mt-1.5">
+      <div className="flex items-center gap-3 border-b border-border/40 pb-6 mb-8">
+        <MessageSquare size={24} className="text-primary-light" />
+        <h1 className="text-2xl font-bold text-text leading-none">Comentários</h1>
+      </div>
+      <p className="text-xs text-text-secondary mt-1.5">
           {comments.length} comentário{comments.length !== 1 ? 's' : ''} encontrado{comments.length !== 1 ? 's' : ''}.
         </p>
-      </div>
 
       {comments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-2 bg-surface/40 border border-border rounded-2xl">
-          <span className="text-4xl opacity-30">💬</span>
-          <p className="text-sm text-text-muted">Nenhum comentário encontrado.</p>
+        <div className="flex flex-col items-center justify-center p-16 text-center border border-dashed border-border rounded-2xl bg-surface-elevated text-text-muted">
+          <MessageCircle size={40} className="opacity-30 mb-4" />
+          <p>Nenhum comentário encontrado para esta busca.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">

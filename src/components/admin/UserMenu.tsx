@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
+import { User, LogOut, ChevronDown } from "lucide-react"
+import { useAdminTranslation } from "./AdminI18nProvider"
 
 interface UserMenuProps {
   userName: string
@@ -12,6 +14,7 @@ interface UserMenuProps {
 export function UserMenu({ userName, userInitial }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { t } = useAdminTranslation()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -40,8 +43,8 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
           {userInitial}
         </div>
         <span className="hidden md:inline">{userName}</span>
-        <span className={`text-[8px] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} hidden md:inline`}>
-          ▼
+        <span className={`text-[8px] transition-transform duration-200 flex items-center ${isOpen ? 'rotate-180' : ''} hidden md:flex`}>
+          <ChevronDown size={14} />
         </span>
       </button>
 
@@ -52,8 +55,8 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white text-xs font-medium no-underline border-none bg-transparent w-full text-left transition-colors duration-150 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >
-            <span className="text-[13px]">👤</span>
-            <span>Meu Perfil</span>
+            <span className="flex items-center justify-center w-4"><User size={14} /></span>
+            <span>{t.header.profile}</span>
           </Link>
           
           <div className="h-px bg-border my-1" />
@@ -62,8 +65,8 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
             onClick={handleLogout} 
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-danger hover:bg-danger/10 text-xs font-semibold border-none bg-transparent w-full text-left transition-all duration-150 cursor-pointer"
           >
-            <span className="text-[13px]">🚪</span>
-            <span>Sair</span>
+            <span className="flex items-center justify-center w-4"><LogOut size={14} /></span>
+            <span>{t.header.logout}</span>
           </button>
         </div>
       )}

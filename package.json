@@ -17,17 +17,20 @@
     "@editorjs/image": "^2.10.3",
     "@editorjs/list": "^2.0.9",
     "@editorjs/paragraph": "^2.11.7",
+    "@measured/puck": "^0.20.2",
     "@next/third-parties": "^16.2.6",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tailwindcss/typography": "^0.5.19",
     "bcryptjs": "^3.0.3",
+    "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "next-auth": "^4.24.14",
     "pg": "^8.21.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-quill": "^2.0.0"
+    "react-quill": "^2.0.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

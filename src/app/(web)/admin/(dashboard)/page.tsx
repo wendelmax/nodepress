@@ -2,8 +2,14 @@ import prisma from "@/lib/prisma"
 import { AnalyticsService } from "@/services/analytics.service"
 import DashboardShell, { DashboardData } from "@/components/admin/DashboardShell"
 import { StatCardId } from "@/components/admin/dashboard-settings"
+import { Users, Eye, FileText, MessageSquare, Edit3, UserPlus, ClipboardList } from "lucide-react"
+import { OptionService } from "@/services/option.service"
+import { getAdminDictionary } from "@/i18n"
 
 export default async function DashboardPage() {
+  const options = await OptionService.getOptions(['site_language'])
+  const dict = getAdminDictionary(options['site_language'] || 'pt-BR')
+
   // ── Counters ──
   let postCount = 0, pageCount = 0, commentCount = 0, userCount = 0
   let draftCount = 0
@@ -28,39 +34,21 @@ export default async function DashboardPage() {
       where: { postType: 'post', postStatus: { not: 'trash' } },
       orderBy: { postDate: 'desc' },
       take: 5,
-      select: { id: true, postTitle: true, postStatus: true, postDate: true, author: { select: { displayName: true, userLogin: true } } },
     })
 
     recentComments = await prisma.comment.findMany({
       orderBy: { commentDate: 'desc' },
-      take: 4,
-      select: {
-        commentId: true,
-        commentAuthor: true,
-        commentContent: true,
-        commentDate: true,
-        commentApproved: true,
-        post: { select: { postTitle: true, postName: true } },
-      },
+      take: 5,
+      include: { post: { select: { postTitle: true } } }
     })
 
-    latestPost = await prisma.post.findFirst({
-      where: { postType: 'post', postStatus: 'publish' },
-      orderBy: { postDate: 'desc' },
-      select: { postTitle: true, postDate: true },
-    })
+    latestPost = recentPosts[0]
+    latestComment = recentComments[0]
+    latestUser = await prisma.user.findFirst({ orderBy: { userRegistered: 'desc' } })
 
-    latestComment = await prisma.comment.findFirst({
-      where: { commentApproved: '1' },
-      orderBy: { commentDate: 'desc' },
-      select: { commentAuthor: true, commentContent: true, commentDate: true },
-    })
-
-    latestUser = await prisma.user.findFirst({
-      orderBy: { userRegistered: 'desc' },
-      select: { displayName: true, userLogin: true, userRegistered: true },
-    })
-  } catch { /* DB not ready */ }
+  } catch (e) {
+    console.error("Dashboard count error:", e)
+  }
 
   // ── Analytics ──
   const analytics = await AnalyticsService.getAnalytics()
@@ -112,55 +100,53 @@ export default async function DashboardPage() {
 
   // ── Stat cards definition ──
   const stats: DashboardData['stats'] = [
-    { id: 'visitors', label: 'Visitantes',    value: fmt(analytics.totalVisitors), trend: visitorsTrend.str,    up: visitorsTrend.up,    icon: '👥', color: 'blue',   spark: sparkVisitors },
-    { id: 'views',    label: 'Visualizações', value: fmt(analytics.totalViews),    trend: viewsTrend.str,      up: viewsTrend.up,      icon: '👁️', color: 'purple', spark: sparkViews },
-    { id: 'posts',    label: 'Posts',         value: String(postCount),            trend: postsTrend.str,       up: postsTrend.up,       icon: '📝', color: 'cyan',   spark: sparkPosts },
-    { id: 'comments', label: 'Comentários',   value: String(commentCount),         trend: commentsTrend.str,    up: commentsTrend.up,    icon: '💬', color: 'rose',   spark: sparkComments },
+    { id: 'visitors', label: dict.dashboard.visitors,    value: fmt(analytics.totalVisitors), trend: visitorsTrend.str,    up: visitorsTrend.up,    icon: <Users size={20} />, color: 'blue',   spark: sparkVisitors },
+    { id: 'views',    label: dict.dashboard.views,       value: fmt(analytics.totalViews),    trend: viewsTrend.str,      up: viewsTrend.up,      icon: <Eye size={20} />, color: 'purple', spark: sparkViews },
+    { id: 'posts',    label: dict.dashboard.posts,       value: String(postCount),            trend: postsTrend.str,       up: postsTrend.up,       icon: <FileText size={20} />, color: 'cyan',   spark: sparkPosts },
+    { id: 'comments', label: dict.dashboard.comments,    value: String(commentCount),         trend: commentsTrend.str,    up: commentsTrend.up,    icon: <MessageSquare size={20} />, color: 'rose',   spark: sparkComments },
   ]
 
   // ── Activity feed (all real) ──
   const timeAgo = (date: Date | string) => {
+    // eslint-disable-next-line react-hooks/purity
     const ms = Date.now() - new Date(date).getTime()
     const mins  = Math.floor(ms / 60_000)
     const hours = Math.floor(mins / 60)
     const days  = Math.floor(hours / 24)
-    if (mins < 1)  return 'Agora mesmo'
-    if (mins < 60) return `${mins}m atrás`
-    if (hours < 24) return `${hours}h atrás`
-    return `${days}d atrás`
+    if (mins < 1)  return dict.dashboard.now
+    if (mins < 60) return `${mins}${dict.dashboard.mins_ago}`
+    if (hours < 24) return `${hours}${dict.dashboard.hours_ago}`
+    return `${days}${dict.dashboard.days_ago}`
   }
 
-  const activities: { icon: string; bg: string; title: string; desc: string; time: string }[] = []
+  const activities: { icon: React.ReactNode; bg: string; title: string; desc: string; time: string }[] = []
 
   if (latestPost) activities.push({
-    icon: '✏️', bg: 'bg-primary/10 text-primary',
-    title: 'Novo post publicado',
+    icon: <Edit3 size={16} />, bg: 'bg-primary/10 text-primary',
+    title: dict.dashboard.new_post,
     desc: latestPost.postTitle || '(Sem título)',
     time: timeAgo(latestPost.postDate),
   })
-
   if (latestComment) activities.push({
-    icon: '💬', bg: 'bg-success/10 text-success',
-    title: 'Comentário aprovado',
-    desc: `Por ${latestComment.commentAuthor}: "${latestComment.commentContent.slice(0, 40)}${latestComment.commentContent.length > 40 ? '...' : ''}"`,
+    icon: <MessageSquare size={16} />, bg: 'bg-rose-500/10 text-rose-500',
+    title: dict.dashboard.new_comment,
+    desc: `${dict.dashboard.on} "${latestComment.post?.postTitle || 'Post desconhecido'}"`,
     time: timeAgo(latestComment.commentDate),
   })
-
   if (latestUser) activities.push({
-    icon: '👤', bg: 'bg-accent-cyan/10 text-accent-cyan',
-    title: 'Novo usuário registrado',
+    icon: <UserPlus size={16} />, bg: 'bg-cyan-500/10 text-cyan-500',
+    title: dict.dashboard.new_user,
     desc: latestUser.displayName || latestUser.userLogin,
     time: timeAgo(latestUser.userRegistered),
   })
 
   if (draftCount > 0) activities.push({
-    icon: '📋', bg: 'bg-accent-purple/10 text-accent-purple',
-    title: `${draftCount} rascunho${draftCount > 1 ? 's' : ''} pendente${draftCount > 1 ? 's' : ''}`,
-    desc: 'Clique para continuar editando',
+    icon: <ClipboardList size={16} />, bg: 'bg-accent-purple/10 text-accent-purple',
+    title: `${draftCount} ${draftCount > 1 ? dict.dashboard.drafts : dict.dashboard.draft} ${dict.dashboard.pending}`,
+    desc: dict.dashboard.click_to_edit,
     time: '',
   })
 
-  // ── Quick summary numbers for chart footer ──
   const totalViews7d    = window7.reduce((s, d) => s + d.views, 0)
   const totalVisitors7d = window7.reduce((s, d) => s + d.visitors, 0)
 

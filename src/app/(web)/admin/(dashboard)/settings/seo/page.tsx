@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Search, BarChart3 } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, LoadingSpinner,
   inputCls, textareaCls, StatusMessage
@@ -97,7 +98,7 @@ export default function OptionsSeoPage() {
       {msg && <StatusMessage type={msg.type} text={msg.text} />}
 
       <form onSubmit={handleSave} className="flex flex-col gap-6">
-        <SettingsSection title="Configurações Globais de SEO" icon="🔍">
+        <SettingsSection title="Configurações Globais de SEO" icon={<Search size={18} />}>
           <FieldRow label="SEO Title do Site" hint="Se vazio, o Título do Site padrão será utilizado.">
             <input className={inputCls} type="text" value={options.seo_site_title}
               onChange={e => set('seo_site_title', e.target.value)}
@@ -123,7 +124,7 @@ export default function OptionsSeoPage() {
           </FieldRow>
         </SettingsSection>
 
-        <SettingsSection title="Analytics & Performance" icon="📊">
+        <SettingsSection title="Analytics & Performance" icon={<BarChart3 size={18} />}>
           <FieldRow label="Google Analytics 4 ID" hint="Será injetado via @next/third-parties para garantir 100/100 no Core Web Vitals.">
             <input className={inputCls} type="text" value={options.analytics_ga4_id}
               onChange={e => set('analytics_ga4_id', e.target.value)}

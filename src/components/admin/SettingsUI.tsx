@@ -3,6 +3,7 @@
  * All components follow the dark SaaS Tailwind v3 theme.
  */
 import { ReactNode } from 'react'
+import { Save } from 'lucide-react'
 
 // ──────────────────────────────────────────────────────────────
 // StatusMessage — success / error alert banner
@@ -35,7 +36,7 @@ export function PageHeader({ title, subtitle }: { title: string; subtitle?: stri
 // ──────────────────────────────────────────────────────────────
 // SettingsSection — labeled group of fields inside a Card
 // ──────────────────────────────────────────────────────────────
-export function SettingsSection({ title, icon, children }: { title: string; icon?: string; children: ReactNode }) {
+export function SettingsSection({ title, icon, children }: { title: string; icon?: string | ReactNode; children: ReactNode }) {
   return (
     <div className="bg-surface/40 border border-border rounded-2xl p-6 flex flex-col gap-5">
       <h2 className="text-sm font-bold text-text flex items-center gap-2 border-b border-border/40 pb-3">
@@ -94,7 +95,9 @@ export function SaveButton({ isSaving, label = 'Salvar Alterações' }: { isSavi
           Salvando...
         </>
       ) : (
-        `💾 ${label}`
+        <>
+          <Save size={16} /> {label}
+        </>
       )}
     </button>
   )

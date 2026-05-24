@@ -65,7 +65,7 @@ export default function CPTEditor() {
       slug: `custom_${Date.now()}`,
       singularName: 'Novo Tipo',
       pluralName: 'Novos Tipos',
-      icon: '📝',
+      icon: 'FileText',
       public: true
     }
     setCpts([...cpts, newCPT])
@@ -113,7 +113,7 @@ export default function CPTEditor() {
 
       {cpts.length === 0 ? (
         <div className="border border-border rounded-2xl bg-white/[0.02] p-8 text-center text-text-muted">
-          Nenhum Custom Post Type registrado. Clique em "+ Adicionar CPT" para criar o primeiro.
+          Nenhum Custom Post Type registrado. Clique em &quot;+ Adicionar CPT&quot; para criar o primeiro.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

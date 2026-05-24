@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { X, FileImage } from "lucide-react"
 import Image from "next/image"
 
 interface MediaItem {
@@ -54,9 +55,9 @@ export default function MediaSelectorModal({ isOpen, onClose, onSelect }: MediaS
           <h2 className="m-0 text-lg font-bold text-text tracking-wide">Select Media</h2>
           <button 
             onClick={onClose} 
-            className="bg-transparent border-none text-2xl cursor-pointer text-text-muted hover:text-white transition-colors"
+            className="bg-transparent border-none p-1 rounded-full hover:bg-white/10 cursor-pointer text-text-muted hover:text-white transition-colors"
           >
-            &times;
+            <X size={20} />
           </button>
         </div>
         
@@ -68,7 +69,7 @@ export default function MediaSelectorModal({ isOpen, onClose, onSelect }: MediaS
             </div>
           ) : mediaItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-text-muted">
-              <span className="text-4xl mb-3">🖼️</span>
+              <FileImage size={48} className="mb-3 opacity-20" />
               <p>No media found. Upload some in the Media Library first.</p>
             </div>
           ) : (
@@ -89,9 +90,9 @@ export default function MediaSelectorModal({ isOpen, onClose, onSelect }: MediaS
                       className="object-cover group-hover:scale-105 transition-transform duration-300" 
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full p-2 text-center break-all bg-white/5">
-                      <span className="text-2xl mb-1">📄</span>
-                      <span className="text-[10px] text-text-secondary line-clamp-2">{item.postTitle}</span>
+                    <div className="aspect-square bg-background-tertiary flex flex-col items-center justify-center text-text-muted">
+                      <FileImage size={24} className="mb-2 opacity-50" />
+                      <span className="text-[10px] truncate w-full px-2 text-center">{item.postTitle}</span>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>

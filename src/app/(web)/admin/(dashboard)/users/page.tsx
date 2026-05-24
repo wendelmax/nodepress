@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { UserService } from "@/services/user.service"
 import { Pagination } from "@/components/admin/Pagination"
+import { Users as UsersIcon, UserCircle2 } from "lucide-react"
 
 export default async function UsersListPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const params = await searchParams
@@ -11,9 +12,12 @@ export default async function UsersListPage({ searchParams }: { searchParams: Pr
     <div className="flex flex-col gap-6 w-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/40 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text leading-none">Usuários</h1>
-          <p className="text-xs text-text-secondary mt-1.5">{total} usuário{total !== 1 ? 's' : ''} cadastrado{total !== 1 ? 's' : ''}.</p>
+        <div className="flex items-center gap-3">
+          <UsersIcon size={24} className="text-primary-light" />
+          <div>
+            <h1 className="text-2xl font-bold text-text leading-none">Usuários</h1>
+            <p className="text-xs text-text-secondary mt-1.5">{total} usuário{total !== 1 ? 's' : ''} cadastrado{total !== 1 ? 's' : ''}.</p>
+          </div>
         </div>
         <Link
           href="/admin/users/new"
@@ -27,7 +31,7 @@ export default async function UsersListPage({ searchParams }: { searchParams: Pr
       <div className="bg-surface/40 border border-border rounded-2xl overflow-hidden">
         {users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-            <span className="text-4xl opacity-30">👤</span>
+            <UserCircle2 size={40} className="opacity-30 mb-2" />
             <p className="text-sm text-text-muted">Nenhum usuário encontrado.</p>
           </div>
         ) : (

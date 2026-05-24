@@ -6,12 +6,18 @@ import Link from "next/link"
 import { usePosts } from "@/hooks/usePosts"
 import { useTaxonomies } from "@/hooks/useTaxonomies"
 import dynamic from 'next/dynamic'
+import { Sparkles, ClipboardList, Settings2 } from "lucide-react"
 import { Card } from "@/components/admin/Card"
 import { GlassButton } from "@/components/admin/GlassButton"
 
 const BlockEditor = dynamic(() => import('./BlockEditor'), { 
   ssr: false, 
-  loading: () => <div className="h-[400px] border border-border rounded-2xl bg-white/[0.01] flex items-center justify-center text-xs text-text-muted">Carregando editor...</div> 
+  loading: () => <div className="h-[400px] border border-border rounded-2xl bg-white/[0.01] flex items-center justify-center text-xs text-text-muted">Carregando editor padrão...</div> 
+})
+
+const PuckBuilder = dynamic(() => import('./PuckBuilder'), { 
+  ssr: false, 
+  loading: () => <div className="h-[600px] border border-border rounded-2xl bg-white/[0.01] flex items-center justify-center text-xs text-text-muted">Iniciando Visual Builder...</div> 
 })
 
 interface PostEditorProps {
@@ -57,6 +63,10 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
   const [isRestoring, setIsRestoring] = useState(false)
 
   const [customMeta, setCustomMeta] = useState<Record<string, string>>(initialData?.metaData || {})
+  
+  const [editorMode, setEditorMode] = useState<'standard' | 'puck'>(
+    initialData?.metaData?._editor_mode === 'puck' ? 'puck' : 'standard'
+  )
 
   const { savePost, isSaving } = usePosts()
   const { terms: availableCategories } = useTaxonomies('category')
@@ -115,6 +125,8 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
   const handleSubmitForm = async (forcedStatus?: string) => {
     const finalStatus = forcedStatus || status
     
+    const finalMeta = { ...customMeta, _editor_mode: editorMode }
+
     const result = await savePost(postId, {
       title,
       content,
@@ -124,7 +136,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
       tags: selectedTags,
       thumbnailId,
       thumbnailUrl,
-      metaData: customMeta,
+      metaData: finalMeta,
       postDate: postDate ? new Date(postDate).toISOString() : undefined,
       parentId
     })
@@ -195,8 +207,22 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
           <div className="rounded-2xl border border-border bg-surface-elevated overflow-hidden shadow-soft w-full">
             {/* Toolbar Header */}
             <div className="flex items-center gap-3 border-b border-border bg-white/[0.02] px-5 py-3.5">
-              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">Editor de Blocos</span>
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                {editorMode === 'puck' ? 'Construtor Visual (Puck)' : 'Editor de Blocos'}
+              </span>
               <div className="w-px h-4 bg-border/60 mx-1" />
+              <button 
+                type="button" 
+                onClick={() => {
+                  if (confirm(editorMode === 'puck' ? 'Voltar para o editor padrão pode tornar o conteúdo ilegível. Deseja continuar?' : 'Alternar para o construtor visual irá ignorar o texto atual. Continuar?')) {
+                    setEditorMode(editorMode === 'standard' ? 'puck' : 'standard')
+                  }
+                }}
+                className="text-[10px] font-bold uppercase tracking-wider bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-md text-text-secondary hover:text-white transition-colors"
+              >
+                Alternar para {editorMode === 'standard' ? 'Construtor Visual' : 'Editor Padrão'}
+              </button>
+              <div className="flex-1" />
               {/* Fake styling helper dots */}
               <div className="flex gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-red-500/40" />
@@ -204,26 +230,33 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                 <span className="w-2 h-2 rounded-full bg-green-500/40" />
               </div>
               <div className="ml-auto">
-                <Link href="/admin/settings/ai" className="px-3.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 text-xs font-semibold transition-colors no-underline">
-                  ✨ Escrever com IA
+                <Link href="/admin/settings/ai" className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 text-xs font-semibold transition-colors no-underline">
+                  <Sparkles size={14} /> Escrever com IA
                 </Link>
               </div>
             </div>
-            {/* Write Area */}
-            <div className="p-6 md:p-8 bg-transparent min-h-[400px]">
-              <BlockEditor 
-                value={content} 
-                onChange={setContent} 
-                placeholder="Comece a escrever ou digite / para escolher um bloco..."
+            {/* Editor Area */}
+            {editorMode === 'puck' ? (
+              <PuckBuilder 
+                initialData={content} 
+                onPublish={(data) => setContent(JSON.stringify(data))} 
               />
-            </div>
+            ) : (
+              <div className="p-6 md:p-8 bg-transparent min-h-[400px]">
+                <BlockEditor 
+                  value={content} 
+                  onChange={setContent} 
+                  placeholder="Comece a escrever ou digite / para escolher um bloco..."
+                />
+              </div>
+            )}
           </div>
 
           {/* Render Custom Field Groups (ACF) */}
           {fieldGroups.filter(g => g.postType === postType).map(group => (
             <Card key={group.id} className="p-6 flex flex-col gap-5">
               <h2 className="text-lg font-semibold text-text flex items-center gap-2 leading-none">
-                <span>📋</span> {group.title}
+                <span className="text-text-muted"><ClipboardList size={18} /></span> {group.title}
               </h2>
               <div className="flex flex-col gap-4">
                 {group.fields.map((field: any) => (
@@ -254,7 +287,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
           {/* Render SEO Settings Box */}
           <Card className="p-6 flex flex-col gap-5">
             <h2 className="text-lg font-semibold text-text flex items-center gap-2 leading-none">
-              <span>🔍</span> Configurações de SEO
+              <span className="text-text-muted"><Settings2 size={18} /></span> Configurações de SEO
             </h2>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">

@@ -1,12 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 interface SidebarLinkProps {
   href: string
   label: string
-  icon: string
+  icon: React.ReactNode
   onClick?: () => void
   /** Extra pathname prefixes that should also mark this link as active */
   matchPaths?: string[]
@@ -15,12 +15,37 @@ interface SidebarLinkProps {
 export function SidebarLink({ href, label, icon, onClick, matchPaths = [] }: SidebarLinkProps) {
   const pathname = usePathname()
 
-  // Dashboard is exact; all others use startsWith or explicit matchPaths
-  const isActive = href === "/admin"
-    ? pathname === "/admin"
-    : pathname === href
-      || pathname.startsWith(href + '/')
-      || matchPaths.some(p => pathname === p || pathname.startsWith(p))
+  const searchParams = useSearchParams()
+
+  let isActive = false
+  if (href === "/admin") {
+    isActive = pathname === "/admin"
+  } else {
+    const hrefUrl = new URL(href, 'http://localhost')
+    const matchUrls = matchPaths.map(p => new URL(p, 'http://localhost'))
+
+    const isPathMatch = (url: URL) => pathname === url.pathname || pathname.startsWith(url.pathname + '/')
+    
+    const checkParams = (url: URL) => {
+      let paramsMatch = true
+      url.searchParams.forEach((val, key) => {
+        if (searchParams.get(key) !== val) paramsMatch = false
+      })
+      return paramsMatch
+    }
+
+    if (isPathMatch(hrefUrl) && checkParams(hrefUrl)) {
+      isActive = true
+    } else if (matchUrls.some(url => isPathMatch(url) && checkParams(url))) {
+      isActive = true
+    }
+
+    // Special case: /admin/posts without post_type in href should not be active if URL has post_type !== 'post'
+    if (isActive && hrefUrl.pathname === '/admin/posts' && !hrefUrl.searchParams.has('post_type')) {
+      const pt = searchParams.get('post_type')
+      if (pt && pt !== 'post') isActive = false
+    }
+  }
 
   return (
     <Link
@@ -33,7 +58,7 @@ export function SidebarLink({ href, label, icon, onClick, matchPaths = [] }: Sid
       }`}
     >
       <span
-        className={`w-[18px] text-center text-[15px] transition-colors duration-200 ${isActive ? 'text-primary-light' : 'text-text-muted'}`}
+        className={`w-[18px] flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-primary-light' : 'text-text-muted'}`}
       >
         {icon}
       </span>

@@ -16,8 +16,8 @@ export default async function EditPage({ searchParams }: { searchParams: Promise
 
   const isPage = postType === 'page'
   const title = isPage ? 'Páginas' : 'Posts'
-  const newLink = isPage ? '/admin/posts/new?type=page' : '/admin/posts/new'
-  const baseLink = isPage ? '/admin/pages?' : '/admin/posts?'
+  const newLink = isPage ? '/admin/posts/new?post_type=page' : '/admin/posts/new'
+  const baseLink = isPage ? '/admin/posts?post_type=page' : '/admin/posts?'
 
   return (
     <div className="flex flex-col gap-6 w-full">

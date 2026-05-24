@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { FileText, FilePlus, Tag, UserPlus, FileSignature, LayoutTemplate, FolderPlus, Menu } from "lucide-react"
 import Link from "next/link"
+import { useAdminTranslation } from "./AdminI18nProvider"
 
 interface CustomPostType {
   slug: string
@@ -16,6 +18,7 @@ interface CreateNewDropdownProps {
 export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const { t } = useAdminTranslation()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -51,14 +54,14 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>✏️</span> Post
+              <span>✏️</span> {t.header.new_post}
             </Link>
             <Link 
               href="/admin/pages/new" 
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>📄</span> Página
+              <span className="flex items-center text-text-muted"><FileText size={16} /></span> {t.header.new_page}
             </Link>
             
             {customPostTypes.length > 0 && (
@@ -72,7 +75,7 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
               >
-                <span>{cpt.icon || '📌'}</span> {cpt.singularName || cpt.slug}
+                <span className="flex items-center text-text-muted"><FilePlus size={16} /></span> {cpt.singularName || cpt.slug}
               </Link>
             ))}
 
@@ -90,7 +93,7 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>🔖</span> Tag
+              <span className="flex items-center text-text-muted"><Tag size={16} /></span> Tag
             </Link>
             <Link 
               href="/admin/menus" 
@@ -104,14 +107,14 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>👤</span> Usuário
+              <span className="flex items-center text-text-muted"><UserPlus size={16} /></span> Usuário
             </Link>
             <Link 
               href="/admin/settings/cpt" 
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>🧩</span> Post Type
+              <span className="flex items-center text-text-muted"><LayoutTemplate size={16} /></span> Post Type
             </Link>
           </div>
         </div>

@@ -1,30 +1,41 @@
 import React from 'react'
+import { Render } from '@measured/puck'
+import { puckConfig } from '@/lib/puck/config'
 
 interface BlockRendererProps {
   content: string;
 }
 
 export default function BlockRenderer({ content }: BlockRendererProps) {
-  let isJson = false
+  let isEditorJs = false
+  let isPuck = false
   let parsedContent: any = null
 
   try {
     if (content && content.trim().startsWith('{')) {
       const data = JSON.parse(content)
       if (data && data.blocks && Array.isArray(data.blocks)) {
-        isJson = true
+        isEditorJs = true
+        parsedContent = data
+      } else if (data && data.root && data.content) {
+        isPuck = true
         parsedContent = data
       }
     }
   } catch (e) {
-    isJson = false
+    isEditorJs = false
+    isPuck = false
   }
 
-  if (!isJson) {
+  if (isPuck) {
+    return <Render config={puckConfig} data={parsedContent} />
+  }
+
+  if (!isEditorJs) {
     // Legacy HTML Fallback
     return (
       <div 
-        className="post-content legacy-content"
+        className="post-content legacy-content prose prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: content }} 
       />
     )

@@ -1,7 +1,8 @@
 "use client"
 
 import { useSettings } from "@/hooks/useSettings"
-import { translations, LanguageCode } from "@/lib/i18n"
+import { useAdminTranslation } from "@/components/admin/AdminI18nProvider"
+import { Globe } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, LoadingSpinner,
   inputCls, selectCls
@@ -9,6 +10,7 @@ import {
 
 export default function OptionsGeneralPage() {
   const { settings, setSettings, isLoading, isSaving, message, saveSettings } = useSettings()
+  const { t } = useAdminTranslation()
 
   if (isLoading) return <LoadingSpinner />
 
@@ -22,7 +24,7 @@ export default function OptionsGeneralPage() {
       {message && <StatusMessage type={message.type} text={message.text} />}
 
       <form onSubmit={async (e) => { e.preventDefault(); await saveSettings(settings) }} className="flex flex-col gap-6">
-        <SettingsSection title="Identidade do Site" icon="🌐">
+        <SettingsSection title="Identidade do Site" icon={<Globe size={18} />}>
           <FieldRow label="Título do Site" required>
             <input
               className={inputCls}
@@ -63,22 +65,19 @@ export default function OptionsGeneralPage() {
             />
           </FieldRow>
 
-          <FieldRow label="Idioma do Site">
+          <FieldRow label={t.settings.general.site_language}>
             <select
               className={selectCls}
               value={settings.site_language}
               onChange={e => setSettings({ ...settings, site_language: e.target.value })}
             >
-              {Object.keys(translations).map(langCode => (
-                <option key={langCode} value={langCode}>
-                  {translations[langCode as LanguageCode].languageName}
-                </option>
-              ))}
+              <option value="pt-BR">Português do Brasil</option>
+              <option value="en-US">English (United States)</option>
             </select>
           </FieldRow>
         </SettingsSection>
 
-        <SaveButton isSaving={isSaving} />
+        <SaveButton isSaving={isSaving} label={t.settings.save_changes} />
       </form>
     </div>
   )

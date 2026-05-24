@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { useMedia, MediaAttachment } from "@/hooks/useMedia"
 import Image from "next/image"
 import { Card } from "@/components/admin/Card"
+import { Upload, ImageIcon, Trash2, X, Copy, Check } from "lucide-react"
 
 export default function MediaLibraryPage() {
   const { mediaList, isLoading, isUploading, uploadMedia, deleteMedia, hasMore, loadMore } = useMedia()
@@ -82,7 +83,7 @@ export default function MediaLibraryPage() {
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 bg-primary-gradient text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:shadow-neon transition-all duration-200"
         >
-          <span className="text-base leading-none">+</span>
+          <Upload size={14} />
           <span>Adicionar Novo</span>
         </button>
         

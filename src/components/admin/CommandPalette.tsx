@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { Home, FileText, File, Image as ImageIcon, MessageSquare, Tag, Bookmark, Plug, Palette, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Edit, ClipboardList, Globe } from "lucide-react"
 
 interface Command {
   id: string
   label: string
   description?: string
-  icon: string
+  icon: React.ReactNode
   action: () => void
   keywords?: string[]
 }
@@ -25,32 +26,32 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
 
   const commands: Command[] = [
     // Navigation
-    { id: "nav-dashboard", label: "Dashboard", icon: "🏠", action: () => router.push("/admin"), keywords: ["home", "início"] },
-    { id: "nav-posts", label: "Posts", icon: "📝", action: () => router.push("/admin/posts"), keywords: ["artigos"] },
-    { id: "nav-pages", label: "Pages", icon: "📄", action: () => router.push("/admin/pages"), keywords: ["páginas"] },
-    { id: "nav-media", label: "Media", icon: "🖼️", action: () => router.push("/admin/media"), keywords: ["mídia", "imagens"] },
-    { id: "nav-comments", label: "Comments", icon: "💬", action: () => router.push("/admin/comments"), keywords: ["comentários"] },
-    { id: "nav-categories", label: "Categories", icon: "🏷️", action: () => router.push("/admin/categories"), keywords: ["categorias"] },
-    { id: "nav-tags", label: "Tags", icon: "🔖", action: () => router.push("/admin/tags") },
-    { id: "nav-plugins", label: "Plugins", icon: "🔌", action: () => router.push("/admin/plugins") },
-    { id: "nav-themes", label: "Themes", icon: "🎨", action: () => router.push("/admin/themes"), keywords: ["temas"] },
-    { id: "nav-users", label: "Users", icon: "👤", action: () => router.push("/admin/users"), keywords: ["usuários"] },
+    { id: "nav-dashboard", label: "Dashboard", icon: <Home size={18} />, action: () => router.push("/admin"), keywords: ["home", "início"] },
+    { id: "nav-posts", label: "Posts", icon: <FileText size={18} />, action: () => router.push("/admin/posts"), keywords: ["artigos"] },
+    { id: "nav-pages", label: "Pages", icon: <File size={18} />, action: () => router.push("/admin/pages"), keywords: ["páginas"] },
+    { id: "nav-media", label: "Media", icon: <ImageIcon size={18} />, action: () => router.push("/admin/media"), keywords: ["mídia", "imagens"] },
+    { id: "nav-comments", label: "Comments", icon: <MessageSquare size={18} />, action: () => router.push("/admin/comments"), keywords: ["comentários"] },
+    { id: "nav-categories", label: "Categories", icon: <Tag size={18} />, action: () => router.push("/admin/categories"), keywords: ["categorias"] },
+    { id: "nav-tags", label: "Tags", icon: <Bookmark size={18} />, action: () => router.push("/admin/tags") },
+    { id: "nav-plugins", label: "Plugins", icon: <Plug size={18} />, action: () => router.push("/admin/plugins") },
+    { id: "nav-themes", label: "Themes", icon: <Palette size={18} />, action: () => router.push("/admin/themes"), keywords: ["temas"] },
+    { id: "nav-users", label: "Users", icon: <Users size={18} />, action: () => router.push("/admin/users"), keywords: ["usuários"] },
     // Settings
-    { id: "nav-settings-general", label: "General Settings", icon: "⚙️", action: () => router.push("/admin/settings/general"), keywords: ["configurações gerais"] },
-    { id: "nav-settings-reading", label: "Reading Settings", icon: "📖", action: () => router.push("/admin/settings/reading"), keywords: ["leitura"] },
-    { id: "nav-settings-permalink", label: "Permalink Settings", icon: "🔗", action: () => router.push("/admin/settings/permalinks"), keywords: ["permalinks", "urls"] },
-    { id: "nav-settings-seo", label: "SEO Settings", icon: "🔍", action: () => router.push("/admin/settings/seo"), keywords: ["seo"] },
-    { id: "nav-settings-ai", label: "AI Settings", icon: "🤖", action: () => router.push("/admin/settings/ai"), keywords: ["inteligência artificial"] },
+    { id: "nav-settings-general", label: "General Settings", icon: <Settings size={18} />, action: () => router.push("/admin/settings/general"), keywords: ["configurações gerais"] },
+    { id: "nav-settings-reading", label: "Reading Settings", icon: <BookOpen size={18} />, action: () => router.push("/admin/settings/reading"), keywords: ["leitura"] },
+    { id: "nav-settings-permalink", label: "Permalink Settings", icon: <LinkIcon size={18} />, action: () => router.push("/admin/settings/permalinks"), keywords: ["permalinks", "urls"] },
+    { id: "nav-settings-seo", label: "SEO Settings", icon: <Search size={18} />, action: () => router.push("/admin/settings/seo"), keywords: ["seo"] },
+    { id: "nav-settings-ai", label: "AI Settings", icon: <Bot size={18} />, action: () => router.push("/admin/settings/ai"), keywords: ["inteligência artificial"] },
     // Actions
-    { id: "action-new-post", label: "New Post", description: "Create a new blog post", icon: "✏️", action: () => router.push("/admin/posts/new"), keywords: ["criar post", "novo post"] },
-    { id: "action-new-page", label: "New Page", description: "Create a new page", icon: "📋", action: () => router.push("/admin/pages/new"), keywords: ["criar página"] },
-    { id: "action-view-site", label: "View Site", description: "Open the public site", icon: "🌐", action: () => window.open("/", "_blank"), keywords: ["ver site", "frontend"] },
+    { id: "action-new-post", label: "New Post", description: "Create a new blog post", icon: <Edit size={18} />, action: () => router.push("/admin/posts/new"), keywords: ["criar post", "novo post"] },
+    { id: "action-new-page", label: "New Page", description: "Create a new page", icon: <ClipboardList size={18} />, action: () => router.push("/admin/pages/new"), keywords: ["criar página"] },
+    { id: "action-view-site", label: "View Site", description: "Open the public site", icon: <Globe size={18} />, action: () => window.open("/", "_blank"), keywords: ["ver site", "frontend"] },
     // Recent posts
     ...recentPosts.map(post => ({
       id: `post-${post.id}`,
       label: post.title,
       description: "Edit post",
-      icon: "📝",
+      icon: <FileText size={18} />,
       action: () => router.push(`/admin/posts/${post.id}/edit`),
       keywords: ["edit", "editar"],
     })),
@@ -127,7 +128,7 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
       <div className="fixed top-[20%] left-1/2 -translate-x-1/2 w-full max-w-[560px] bg-background-secondary border border-border rounded-xl shadow-[0_25px_50px_rgba(0,0,0,0.5)] z-[9999] overflow-hidden">
         {/* Search input */}
         <div className="flex items-center px-4 py-3 border-b border-border bg-background-tertiary">
-          <span className="mr-3 text-base text-text-muted">🔍</span>
+          <span className="mr-3 text-base text-text-muted"><Search size={18} /></span>
           <input
             ref={inputRef}
             value={query}
@@ -153,7 +154,7 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
               onMouseEnter={() => setSelected(i)}
               className={`flex items-center w-full px-4 py-2.5 border-none cursor-pointer text-left gap-3 transition-colors ${i === selected ? 'bg-primary/10' : 'bg-transparent'}`}
             >
-              <span className="text-lg w-6 shrink-0 text-center">{cmd.icon}</span>
+              <span className="flex justify-center items-center w-6 shrink-0 text-text-muted">{cmd.icon}</span>
               <div className="flex-1 min-w-0">
                 <div className={`text-sm ${i === selected ? 'font-semibold text-primary-light' : 'font-normal text-text'}`}>
                   {cmd.label}

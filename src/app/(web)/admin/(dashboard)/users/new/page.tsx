@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ShieldCheck, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, inputCls, selectCls } from "@/components/admin/SettingsUI"
 import Link from "next/link"
@@ -60,9 +61,9 @@ export default function NewUserPage() {
 
       {status && <StatusMessage type={status.type} text={status.message} />}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <SettingsSection title="Dados de Acesso" icon="🔐">
-          <FieldRow label="Nome de Usuário (Login)" required hint="Não poderá ser alterado depois.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
+        <SettingsSection title="Dados de Acesso" icon={<ShieldCheck size={18} />}>
+          <FieldRow label="Usuário" required hint="Não poderá ser alterado depois.">
             <input
               type="text"
               required
@@ -96,8 +97,8 @@ export default function NewUserPage() {
           </FieldRow>
         </SettingsSection>
 
-        <SettingsSection title="Informações do Perfil" icon="👤">
-          <FieldRow label="Nome de Exibição" hint="Nome que aparecerá publicamente nos posts.">
+        <SettingsSection title="Informações do Perfil" icon={<User size={18} />}>
+          <FieldRow label="Nome" hint="Nome que aparecerá publicamente nos posts.">
             <input
               type="text"
               value={formData.displayName}

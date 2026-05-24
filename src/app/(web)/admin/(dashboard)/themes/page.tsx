@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { LoadingSpinner, StatusMessage } from "@/components/admin/SettingsUI"
+import { Paintbrush, Zap } from "lucide-react"
 
 type Msg = { type: 'success' | 'error'; text: string } | null
 
@@ -51,7 +52,10 @@ export default function ThemesPage() {
     <div className="flex flex-col gap-6 w-full">
       {/* Header */}
       <div className="border-b border-border/40 pb-4">
-        <h1 className="text-2xl font-bold text-text leading-none">🎨 Temas</h1>
+        <div className="flex items-center gap-3 pb-2">
+          <Paintbrush size={24} className="text-primary-light" />
+          <h1 className="text-2xl font-bold text-text leading-none">Temas</h1>
+        </div>
         <p className="text-xs text-text-secondary mt-1.5">
           Gerencie a aparência do seu site NodePress. O tema ativo é aplicado imediatamente no frontend.
         </p>
@@ -61,8 +65,8 @@ export default function ThemesPage() {
 
       {themes.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center bg-surface/40 border border-border rounded-2xl">
-          <span className="text-4xl opacity-30">🎨</span>
-          <p className="text-sm text-text-muted">Nenhum tema disponível.</p>
+          <Paintbrush size={40} className="opacity-30 mb-2" />
+          <p className="text-sm text-text-muted">Nenhum tema encontrado. Tente ajustar os filtros.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -112,7 +116,7 @@ export default function ThemesPage() {
                       >
                         {isSaving ? (
                           <div className="w-3 h-3 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
-                        ) : '⚡'}
+                        ) : <Zap size={14} />}
                         Ativar
                       </button>
                     )}

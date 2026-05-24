@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Link2 } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, LoadingSpinner, inputCls
 } from "@/components/admin/SettingsUI"
@@ -69,8 +70,8 @@ export default function OptionsPermalinkPage() {
 
       {msg && <StatusMessage type={msg.type} text={msg.text} />}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <SettingsSection title="Configurações Comuns" icon="🔗">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
+        <SettingsSection title="Configurações Comuns" icon={<Link2 size={18} />}>
           <p className="text-xs text-text-muted">
             Escolha a estrutura de URL que melhor se adapta ao seu conteúdo. Estruturas limpas melhoram SEO e usabilidade.
           </p>

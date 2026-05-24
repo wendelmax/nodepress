@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import { Link as LinkIcon, Image as ImageIcon } from "lucide-react"
 import MediaSelectorModal from "./MediaSelectorModal"
 
 interface RichTextEditorProps {
@@ -67,7 +68,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
         <button type="button" onClick={() => {
           const url = prompt('Enter link URL:')
           if (url) execCmd('createLink', url)
-        }} className={btnClass} title="Insert Link">🔗 Link</button>
+        }} className={`${btnClass} flex flex-row items-center gap-1`} title="Insert Link"><LinkIcon size={14}/> Link</button>
 
         <div className="flex-1"></div>
 

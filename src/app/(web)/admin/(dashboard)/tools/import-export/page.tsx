@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Card } from "@/components/admin/Card"
 import { StatusMessage } from "@/components/admin/SettingsUI"
+import { Wrench, Upload, Download } from "lucide-react"
 
 export default function ImportExportPage() {
   const [isExporting, setIsExporting] = useState(false)
@@ -71,7 +72,9 @@ export default function ImportExportPage() {
   return (
     <div className="flex flex-col gap-8 w-full max-w-4xl">
       <div className="border-b border-border/40 pb-4">
-        <h1 className="text-2xl font-bold text-text leading-none">🛠️ Ferramentas</h1>
+        <h1 className="text-2xl font-bold text-text leading-none flex items-center gap-2">
+          <Wrench size={24} className="text-primary-light" /> Ferramentas
+        </h1>
         <p className="text-xs text-text-secondary mt-1.5">
           Importe ou exporte dados vitais do NodePress como um arquivo JSON.
         </p>
@@ -83,7 +86,7 @@ export default function ImportExportPage() {
         {/* Export Card */}
         <Card className="p-6 flex flex-col gap-4 border-l-4 border-l-primary/60">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">📤</span>
+            <span className="text-3xl text-primary-light flex items-center justify-center w-8"><Upload size={28} /></span>
             <div>
               <h2 className="text-sm font-bold text-text">Exportar Dados</h2>
               <p className="text-xs text-text-muted mt-0.5">Faça um backup dos seus dados</p>
@@ -106,7 +109,7 @@ export default function ImportExportPage() {
         {/* Import Card */}
         <Card className="p-6 flex flex-col gap-4 border-l-4 border-l-warning/60">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">📥</span>
+            <span className="text-3xl text-warning flex items-center justify-center w-8"><Download size={28} /></span>
             <div>
               <h2 className="text-sm font-bold text-text">Importar Dados</h2>
               <p className="text-xs text-text-muted mt-0.5">Restaure um backup existente</p>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Bot, Eye, EyeOff, Plug2, CheckCircle2, XCircle } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, LoadingSpinner,
   inputCls, selectCls, textareaCls
@@ -24,7 +25,8 @@ export default function OptionsAIPage() {
   const [model, setModel] = useState("")
   const [baseUrl, setBaseUrl] = useState("")
   const [testPrompt, setTestPrompt] = useState("Say 'NodePress AI is working!' in one sentence.")
-  const [testResult, setTestResult] = useState("")
+  const [testResult, setTestResult] = useState<string | null>(null)
+  const [testSuccess, setTestSuccess] = useState<boolean | null>(null)
   const [isTesting, setIsTesting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -70,7 +72,8 @@ export default function OptionsAIPage() {
 
   const handleTest = async () => {
     setIsTesting(true)
-    setTestResult("")
+    setTestResult(null)
+    setTestSuccess(null)
     try {
       const res = await fetch("/api/ai/generate", {
         method: "POST",
@@ -79,12 +82,15 @@ export default function OptionsAIPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        setTestResult(`✅ [${data.provider} / ${data.model}]\n\n${data.result}`)
+        setTestResult(`[${data.provider} / ${data.model}]\n\n${data.result}`)
+        setTestSuccess(true)
       } else {
-        setTestResult(`❌ Erro: ${data.error}`)
+        setTestResult(`Erro: ${data.error}`)
+        setTestSuccess(false)
       }
     } catch (err: any) {
-      setTestResult(`❌ ${err.message}`)
+      setTestResult(err.message)
+      setTestSuccess(false)
     } finally {
       setIsTesting(false)
     }
@@ -102,7 +108,7 @@ export default function OptionsAIPage() {
       {msg && <StatusMessage type={msg.type} text={msg.text} />}
 
       <form onSubmit={handleSave} className="flex flex-col gap-6">
-        <SettingsSection title="Provedor de AI" icon="🤖">
+        <SettingsSection title="Provedor de AI" icon={<Bot size={18} />}>
           <FieldRow label="Provedor" hint="Ollama funciona localmente — sem necessidade de chave de API.">
             <select
               className={selectCls}
@@ -129,9 +135,9 @@ export default function OptionsAIPage() {
                 <button
                   type="button"
                   onClick={() => setShowKey(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors text-xs"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
                 >
-                  {showKey ? '🙈' : '👁️'}
+                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </FieldRow>
@@ -182,8 +188,8 @@ export default function OptionsAIPage() {
 
       {/* Test connection */}
       {selectedProvider && (
-        <SettingsSection title="Testar Conexão" icon="🔌">
-          <p className="text-xs text-text-muted">
+        <SettingsSection title="Testar Conexão" icon={<Plug2 size={18} />}>
+          <p className="text-xs text-text-muted mb-4">
             Salve as configurações primeiro e depois teste a conexão com o provedor.
           </p>
 
@@ -198,7 +204,7 @@ export default function OptionsAIPage() {
             type="button"
             onClick={handleTest}
             disabled={isTesting}
-            className="self-start flex items-center gap-2 bg-success/10 border border-success/20 text-success hover:bg-success/20 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 disabled:opacity-50"
+            className="mt-4 self-start flex items-center gap-2 bg-success/10 border border-success/20 text-success hover:bg-success/20 px-4 py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 disabled:opacity-50"
           >
             {isTesting ? (
               <>
@@ -209,11 +215,15 @@ export default function OptionsAIPage() {
           </button>
 
           {testResult && (
-            <pre className={`text-xs p-4 rounded-xl border font-mono whitespace-pre-wrap break-words ${
-              testResult.startsWith('❌') ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/5 border-success/20 text-text-secondary'
+            <div className={`mt-4 p-4 rounded-xl text-xs border whitespace-pre-wrap font-mono ${
+              testSuccess === false ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-success/5 border-success/20 text-text-secondary'
             }`}>
+              <div className="flex items-center gap-2 mb-2 font-bold uppercase tracking-wider">
+                {testSuccess === false ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                {testSuccess === false ? 'Falha no Teste' : 'Teste Bem-sucedido'}
+              </div>
               {testResult}
-            </pre>
+            </div>
           )}
         </SettingsSection>
       )}

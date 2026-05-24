@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { Home } from "lucide-react"
 import { useSettings } from "@/hooks/useSettings"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage, LoadingSpinner, selectCls
@@ -40,8 +41,8 @@ export default function OptionsReadingPage() {
 
       {message && <StatusMessage type={message.type} text={message.text} />}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <SettingsSection title="Exibição da Página Inicial" icon="🏠">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-2xl">
+        <SettingsSection title="Exibição da Página Inicial" icon={<Home size={18} />}>
           <FieldRow label="Página inicial exibe">
             <div className="flex flex-col gap-3">
               {/* Option: Latest posts */}

@@ -32,6 +32,7 @@ const ALLOWED_OPTIONS = [
   's3_region',
   's3_endpoint',
   's3_public_url',
+  'optimize_webp',
 ]
 
 export class OptionService {
