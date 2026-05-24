@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Card } from "@/components/admin/Card"
 
 export default function MediaLibraryPage() {
-  const { mediaList, isLoading, isUploading, uploadMedia, deleteMedia } = useMedia()
+  const { mediaList, isLoading, isUploading, uploadMedia, deleteMedia, hasMore, loadMore } = useMedia()
   const [dragActive, setDragActive] = useState(false)
   const [selectedMedia, setSelectedMedia] = useState<MediaAttachment | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -166,6 +166,18 @@ export default function MediaLibraryPage() {
               <p className="text-text-muted text-xs mt-1.5 max-w-[280px]">Você ainda não enviou nenhuma imagem. Faça o upload do seu primeiro arquivo acima!</p>
             </Card>
           )}
+        </div>
+      )}
+      
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <button 
+            onClick={loadMore}
+            disabled={isLoading}
+            className="bg-white/5 hover:bg-white/10 border border-border text-text-secondary hover:text-white px-6 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200"
+          >
+            {isLoading ? 'Carregando...' : 'Carregar mais imagens'}
+          </button>
         </div>
       )}
 

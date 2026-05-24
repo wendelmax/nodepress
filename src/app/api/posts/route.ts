@@ -16,8 +16,11 @@ export async function GET(request: Request) {
     const type = searchParams.get('type') || 'post'
 
     let posts;
-    if (status === 'all') {
-      posts = await PostService.getAdminList(type)
+    if (status === 'published') {
+      posts = await PostService.getLatestPublished(20, type)
+    } else if (status === 'all') {
+      const result = await PostService.getAdminList(type)
+      posts = result.posts
     } else {
       posts = await PostService.getLatestPublished(per_page, type)
     }

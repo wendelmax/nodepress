@@ -36,11 +36,11 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
     { id: "nav-themes", label: "Themes", icon: "🎨", action: () => router.push("/admin/themes"), keywords: ["temas"] },
     { id: "nav-users", label: "Users", icon: "👤", action: () => router.push("/admin/users"), keywords: ["usuários"] },
     // Settings
-    { id: "nav-settings-general", label: "General Settings", icon: "⚙️", action: () => router.push("/admin/options-general"), keywords: ["configurações gerais"] },
-    { id: "nav-settings-reading", label: "Reading Settings", icon: "📖", action: () => router.push("/admin/options-reading"), keywords: ["leitura"] },
-    { id: "nav-settings-permalink", label: "Permalink Settings", icon: "🔗", action: () => router.push("/admin/options-permalink"), keywords: ["permalinks", "urls"] },
-    { id: "nav-settings-seo", label: "SEO Settings", icon: "🔍", action: () => router.push("/admin/options-seo"), keywords: ["seo"] },
-    { id: "nav-settings-ai", label: "AI Settings", icon: "🤖", action: () => router.push("/admin/options-ai"), keywords: ["inteligência artificial"] },
+    { id: "nav-settings-general", label: "General Settings", icon: "⚙️", action: () => router.push("/admin/settings/general"), keywords: ["configurações gerais"] },
+    { id: "nav-settings-reading", label: "Reading Settings", icon: "📖", action: () => router.push("/admin/settings/reading"), keywords: ["leitura"] },
+    { id: "nav-settings-permalink", label: "Permalink Settings", icon: "🔗", action: () => router.push("/admin/settings/permalinks"), keywords: ["permalinks", "urls"] },
+    { id: "nav-settings-seo", label: "SEO Settings", icon: "🔍", action: () => router.push("/admin/settings/seo"), keywords: ["seo"] },
+    { id: "nav-settings-ai", label: "AI Settings", icon: "🤖", action: () => router.push("/admin/settings/ai"), keywords: ["inteligência artificial"] },
     // Actions
     { id: "action-new-post", label: "New Post", description: "Create a new blog post", icon: "✏️", action: () => router.push("/admin/posts/new"), keywords: ["criar post", "novo post"] },
     { id: "action-new-page", label: "New Page", description: "Create a new page", icon: "📋", action: () => router.push("/admin/pages/new"), keywords: ["criar página"] },
@@ -81,7 +81,12 @@ export function CommandPalette({ recentPosts = [] }: CommandPaletteProps) {
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
+    const handleToggle = () => setOpen(prev => !prev)
+    window.addEventListener("toggle-command-palette", handleToggle)
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("toggle-command-palette", handleToggle)
+    }
   }, [handleKeyDown])
 
   useEffect(() => {

@@ -10,8 +10,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const media = await MediaService.getAll()
-    return NextResponse.json(media)
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10) || 1
+    const result = await MediaService.getAll(page)
+    return NextResponse.json(result)
   } catch (error) {
     return NextResponse.json({ code: 'internal_error', message: 'Error fetching media' }, { status: 500 })
   }

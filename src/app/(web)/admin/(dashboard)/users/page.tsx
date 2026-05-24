@@ -1,8 +1,11 @@
 import Link from "next/link"
 import { UserService } from "@/services/user.service"
+import { Pagination } from "@/components/admin/Pagination"
 
-export default async function UsersListPage() {
-  const users = await UserService.getAll()
+export default async function UsersListPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const params = await searchParams
+  const page = parseInt(params.page || '1', 10) || 1
+  const { users, total, totalPages } = await UserService.getAll(page, 20)
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -10,7 +13,7 @@ export default async function UsersListPage() {
       <div className="flex items-center justify-between border-b border-border/40 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-text leading-none">Usuários</h1>
-          <p className="text-xs text-text-secondary mt-1.5">{users.length} usuário{users.length !== 1 ? 's' : ''} cadastrado{users.length !== 1 ? 's' : ''}.</p>
+          <p className="text-xs text-text-secondary mt-1.5">{total} usuário{total !== 1 ? 's' : ''} cadastrado{total !== 1 ? 's' : ''}.</p>
         </div>
         <Link
           href="/admin/users/new"
@@ -80,7 +83,7 @@ export default async function UsersListPage() {
                     </td>
                     <td className="px-5 py-3 text-center">
                       <Link
-                        href={`/admin/edit?author=${user.id}`}
+                        href={`/admin/posts?author=${user.id}`}
                         className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary-light font-bold hover:bg-primary/20 transition-colors"
                       >
                         {user._count.posts}
@@ -93,6 +96,8 @@ export default async function UsersListPage() {
           </table>
         )}
       </div>
+
+      <Pagination currentPage={page} totalPages={totalPages} />
     </div>
   )
 }

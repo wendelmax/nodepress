@@ -28,7 +28,7 @@ export default function QuickDraft() {
       if (!res.ok) throw new Error(data.error || 'Erro ao salvar.')
       setMsg({ type: 'success', text: 'Rascunho salvo! Redirecionando...' })
       setTimeout(() => {
-        router.push(`/admin/post?post=${data.id}&action=edit`)
+        router.push(`/admin/posts/${data.id}/edit`)
       }, 800)
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message })

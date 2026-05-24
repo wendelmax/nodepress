@@ -7,13 +7,18 @@ export class MediaService {
   /**
    * Get all media attachments (ordered newest first)
    */
-  static async getAll() {
-    return prisma.post.findMany({
-      where: {
-        postType: 'attachment',
-        postStatus: 'inherit',
-      },
+  static async getAll(page: number = 1, limit: number = 30) {
+    const skip = (page - 1) * limit
+    const where = {
+      postType: 'attachment',
+      postStatus: 'inherit',
+    }
+    
+    const media = await prisma.post.findMany({
+      where,
       orderBy: { postDate: 'desc' },
+      skip,
+      take: limit,
       select: {
         id: true,
         postTitle: true,
@@ -25,6 +30,14 @@ export class MediaService {
         },
       },
     })
+    
+    const total = await prisma.post.count({ where })
+    
+    return {
+      media,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
   }
 
   /**

@@ -204,7 +204,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                 <span className="w-2 h-2 rounded-full bg-green-500/40" />
               </div>
               <div className="ml-auto">
-                <Link href="/admin/options-ai" className="px-3.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 text-xs font-semibold transition-colors no-underline">
+                <Link href="/admin/settings/ai" className="px-3.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary-light hover:bg-primary/20 text-xs font-semibold transition-colors no-underline">
                   ✨ Escrever com IA
                 </Link>
               </div>

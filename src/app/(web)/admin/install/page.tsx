@@ -52,9 +52,8 @@ function InstallForm() {
     <div className="flex justify-center items-center min-h-screen bg-background p-5 font-sans">
       <div className="w-full max-w-md bg-surface-elevated p-8 sm:p-10 border border-border rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md">
         
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-gradient flex items-center justify-center text-3xl shadow-glow">⚡</div>
-          <h1 className="text-3xl font-bold text-white tracking-tight mb-2">NodePress</h1>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <img src="/logo.png" alt="NodePress Logo" className="h-20 w-auto mb-4" />
           <p className="text-text-muted text-sm">{t.installTitle}</p>
         </div>
         

@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation'
+import { TaxonomyManager } from "@/components/admin/TaxonomyManager"
 
-export default function CategoriesRedirect() {
-  redirect('/admin/edit-tags?taxonomy=category')
+export default function CategoriesPage() {
+  return <TaxonomyManager taxonomy="category" />
 }

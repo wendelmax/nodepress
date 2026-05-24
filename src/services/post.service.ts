@@ -259,7 +259,7 @@ export class PostService {
   /**
    * Get all non-trashed posts for admin dashboard.
    */
-  static async getAdminList(postType: string = 'post', status: string = 'all') {
+  static async getAdminList(postType: string = 'post', status: string = 'all', page: number = 1, limit: number = 20) {
     const where: any = { postType }
 
     if (status === 'all') {
@@ -270,15 +270,27 @@ export class PostService {
       where.postStatus = status
     }
 
-    return prisma.post.findMany({
+    const skip = (page - 1) * limit
+
+    const posts = await prisma.post.findMany({
       where,
       orderBy: { postDate: 'desc' },
+      skip,
+      take: limit,
       include: {
         author: {
           select: { id: true, displayName: true, userLogin: true }
         }
       }
     })
+
+    const total = await prisma.post.count({ where })
+
+    return {
+      posts,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
   }
 
   /**

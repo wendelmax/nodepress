@@ -242,7 +242,7 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
               {recentPosts.length === 0 ? (
                 <p className="text-text-muted text-xs py-2">
                   Nenhum post ainda.{' '}
-                  <Link href="/admin/post-new" className="text-primary hover:text-primary-light transition-colors">Crie o primeiro!</Link>
+                  <Link href="/admin/posts/new" className="text-primary hover:text-primary-light transition-colors">Crie o primeiro!</Link>
                 </p>
               ) : (
                 <div className="overflow-x-auto w-full">
@@ -251,7 +251,7 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
                       {recentPosts.map(post => (
                         <tr key={post.id} className="border-b border-border/40 last:border-none hover:bg-white/[0.01] transition-colors">
                           <td className="py-3 pr-4">
-                            <Link href={`/admin/post?post=${post.id}&action=edit`} className="text-text font-medium hover:text-primary transition-colors no-underline block leading-snug">
+                            <Link href={`/admin/posts/${post.id}/edit`} className="text-text font-medium hover:text-primary transition-colors no-underline block leading-snug">
                               {post.postTitle || '(sem título)'}
                             </Link>
                             <span className="text-text-muted text-xs mt-0.5 block">
@@ -376,7 +376,7 @@ export default function DashboardShell({ data }: { data: DashboardData }) {
                   { icon: '📊', label: 'Analisar performance' },
                   { icon: '⚙️', label: 'Configurar AI' },
                 ].map(s => (
-                  <Link key={s.label} href="/admin/options-ai" className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/5 border border-border hover:bg-white/10 hover:border-primary/30 text-xs font-semibold text-text-secondary hover:text-white transition-all duration-200 no-underline leading-none">
+                  <Link key={s.label} href="/admin/settings/ai" className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/5 border border-border hover:bg-white/10 hover:border-primary/30 text-xs font-semibold text-text-secondary hover:text-white transition-all duration-200 no-underline leading-none">
                     <span>{s.icon}</span>
                     <span>{s.label}</span>
                   </Link>

@@ -17,13 +17,8 @@ export default async function Header() {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-primary-gradient flex items-center justify-center text-xl text-white shadow-glow group-hover:animate-pulseGlow transition-all">
-            ⚡
-          </div>
+          <img src="/logo.png" alt={siteTitle} className="h-10 w-auto group-hover:scale-105 transition-transform" />
           <div>
-            <h1 className="text-xl font-bold text-text leading-tight group-hover:text-primary-light transition-colors">
-              {siteTitle}
-            </h1>
             <p className="text-[11px] text-text-muted font-medium tracking-wide uppercase">
               {tagline}
             </p>

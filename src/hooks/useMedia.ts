@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useEffect } from "react"
 
 export interface MediaAttachment {
   id: number
@@ -8,8 +8,8 @@ export interface MediaAttachment {
   postMimeType: string
   postDate: string
   guid: string
-  author: {
-    displayName: string
+  author?: {
+    displayName?: string
     userLogin: string
   }
 }
@@ -18,30 +18,39 @@ export function useMedia() {
   const [mediaList, setMediaList] = useState<MediaAttachment[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(1)
 
-  const fetchMedia = useCallback(async () => {
-    await Promise.resolve()
+  const fetchMedia = async (pageNum: number = 1) => {
     setIsLoading(true)
     try {
-      const res = await fetch("/api/media")
+      const res = await fetch(`/api/media?page=${pageNum}`)
       const data = await res.json()
-      if (Array.isArray(data)) {
-        setMediaList(data)
+      if (pageNum === 1) {
+        setMediaList(data.media || [])
+      } else {
+        setMediaList(prev => [...prev, ...(data.media || [])])
       }
-    } catch (error) {
-      console.error("Failed to fetch media", error)
+      setHasMore(pageNum < (data.totalPages || 1))
+      setPage(pageNum)
+    } catch (err) {
+      console.error(err)
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }
 
   useEffect(() => {
-    Promise.resolve().then(() => {
-      fetchMedia()
-    })
-  }, [fetchMedia])
+    fetchMedia(1)
+  }, [])
 
-  const uploadMedia = async (file: File): Promise<MediaAttachment | null> => {
+  const loadMore = () => {
+    if (!isLoading && hasMore) {
+      fetchMedia(page + 1)
+    }
+  }
+
+  const uploadMedia = async (file: File) => {
     setIsUploading(true)
     try {
       const formData = new FormData()
@@ -88,7 +97,9 @@ export function useMedia() {
     isUploading,
     uploadMedia,
     deleteMedia,
-    refreshMedia: fetchMedia
+    hasMore,
+    loadMore,
+    refreshMedia: () => fetchMedia(1)
   }
 }
 

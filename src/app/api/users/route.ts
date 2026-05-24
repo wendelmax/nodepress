@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { getSiteUrl } from '@/lib/site-url'
+import { UserService } from '@/services/user.service'
 
 // GET /np-json/np/v2/users
 export async function GET(request: Request) {
@@ -45,3 +46,44 @@ export async function GET(request: Request) {
 
   return NextResponse.json(formattedUsers)
 }
+
+export async function POST(request: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session) return new NextResponse('Unauthorized', { status: 401 })
+  
+  try {
+    const body = await request.json()
+    const { userLogin, email, password, displayName, role } = body
+    
+    if (!userLogin || !email || !password) {
+      return NextResponse.json({ error: 'Nome de usuário, e-mail e senha são obrigatórios.' }, { status: 400 })
+    }
+    
+    // Check if user exists
+    const existing = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { userLogin },
+          { userEmail: email }
+        ]
+      }
+    })
+    
+    if (existing) {
+      return NextResponse.json({ error: 'Usuário ou e-mail já existe.' }, { status: 400 })
+    }
+    
+    const user = await UserService.create({
+      userLogin,
+      email,
+      password,
+      displayName,
+      role: role || 'subscriber'
+    })
+    
+    return NextResponse.json({ success: true, id: user.id })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+

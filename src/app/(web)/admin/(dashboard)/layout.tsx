@@ -10,6 +10,8 @@ import { UserMenu } from "@/components/admin/UserMenu"
 import { MobileMenuToggle } from "@/components/admin/MobileMenuToggle"
 import { OptionService } from "@/services/option.service"
 import { SidebarLink } from "@/components/admin/SidebarLink"
+import { SearchTrigger } from "@/components/admin/SearchTrigger"
+import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
 import "@/plugins/registry"
 import '../admin.css'
 
@@ -46,7 +48,7 @@ export default async function AdminLayout({
       href: `/admin/posts?type=${c.slug}`, // Redirects to edit feed with filter
       label: c.pluralName,
       icon: c.icon || '📌',
-      matchPaths: [`/admin/edit?post_type=${c.slug}`] // For active state handling
+      matchPaths: [`/admin/posts?type=${c.slug}`] // For active state handling
     })),
     { href: '/admin/media', label: 'Media', icon: '🖼️' },
     { href: '/admin/comments', label: 'Comments', icon: '💬' },
@@ -73,16 +75,22 @@ export default async function AdminLayout({
       ],
     },
     {
+      label: 'Tools',
+      items: [
+        { href: '/admin/tools/import-export', label: 'Import / Export', icon: '🛠️' },
+      ],
+    },
+    {
       label: 'Settings',
       items: [
         { href: '/admin/users', label: 'Users', icon: '👤' },
-        { href: '/admin/options-general', label: 'General', icon: '⚙️' },
-        { href: '/admin/options-reading', label: 'Reading', icon: '📖' },
-        { href: '/admin/options-permalink', label: 'Permalinks', icon: '🔗' },
-        { href: '/admin/options-seo', label: 'SEO & Analytics', icon: '📊' },
-        { href: '/admin/options-storage', label: 'Storage', icon: '🗄️' },
-        { href: '/admin/options-ai', label: 'AI', icon: '🤖' },
-        { href: '/admin/options-cpt', label: 'Post Types', icon: '🧩' },
+        { href: '/admin/settings/general', label: 'General', icon: '⚙️' },
+        { href: '/admin/settings/reading', label: 'Reading', icon: '📖' },
+        { href: '/admin/settings/permalinks', label: 'Permalinks', icon: '🔗' },
+        { href: '/admin/settings/seo', label: 'SEO & Analytics', icon: '📊' },
+        { href: '/admin/settings/storage', label: 'Storage', icon: '🗄️' },
+        { href: '/admin/settings/ai', label: 'AI', icon: '🤖' },
+        { href: '/admin/settings/cpt', label: 'Post Types', icon: '🧩' },
       ],
     },
   ]
@@ -92,11 +100,10 @@ export default async function AdminLayout({
       {/* ── Sidebar ── */}
       <aside className="np-sidebar fixed top-0 left-0 bottom-0 z-50 flex flex-col w-[220px] bg-sidebar-gradient border-r border-border -translate-x-full md:translate-x-0 transition-transform duration-300">
         {/* Logo */}
-        <Link href="/admin" className="h-14 flex items-center px-4 border-b border-border gap-2.5 no-underline hover:opacity-90 transition-opacity">
-          <div className="w-8 h-8 rounded-lg bg-primary-gradient flex items-center justify-center text-base text-white flex-shrink-0 animate-float">⚡</div>
-          <div>
-            <div className="text-text font-semibold text-sm tracking-wide leading-none">{siteName}</div>
-            <div className="text-text-muted text-[10px] uppercase font-bold tracking-widest mt-1">NodePress</div>
+        <Link href="/admin" className="py-5 flex flex-col items-center justify-center border-b border-border gap-2.5 no-underline hover:opacity-90 transition-opacity">
+          <img src="/logo.png" alt="NodePress Logo" className="h-8 w-auto flex-shrink-0" />
+          <div className="text-text font-semibold text-sm tracking-wide leading-none text-center">
+            {siteName}
           </div>
         </Link>
 
@@ -134,13 +141,7 @@ export default async function AdminLayout({
         <MobileMenuToggle />
         
         {/* Search trigger */}
-        <div
-          className="flex-1 max-w-[480px] hidden sm:flex items-center gap-2 bg-background-tertiary border border-border rounded-xl px-3 h-9 hover:border-primary/30 transition-all duration-200 cursor-default"
-        >
-          <span className="text-sm text-text-muted">🔍</span>
-          <span className="text-text-muted text-xs font-medium flex-1">Search or jump to... </span>
-          <kbd className="text-[10px] text-text-muted bg-white/5 px-2 py-0.5 rounded border border-border font-sans font-medium">⌘K</kbd>
-        </div>
+        <SearchTrigger />
 
         <div className="flex items-center gap-2 ml-auto">
           {/* Hook slot — plugins can add items here */}
@@ -148,11 +149,8 @@ export default async function AdminLayout({
             <Fragment key={`topbar-hook-${index}`}>{item}</Fragment>
           ))}
 
-          {/* New Post */}
-          <Link href="/admin/post-new" className="flex items-center gap-1.5 bg-primary-gradient text-white text-xs font-semibold px-4 py-2 rounded-xl hover:shadow-neon transition-all duration-200 no-underline leading-none">
-            <span className="text-base leading-none">+</span>
-            <span>Novo</span>
-          </Link>
+          {/* New Item Dropdown */}
+          <CreateNewDropdown customPostTypes={customPostTypes.filter(c => c.public)} />
 
           {/* Notifications */}
           <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer" title="Notifications">

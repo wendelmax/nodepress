@@ -13,4 +13,5 @@ export interface NodePressTheme {
   SinglePost: React.ComponentType<{ post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: any }>
   SinglePage: React.ComponentType<{ post: any, options?: any }>
   Archive: React.ComponentType<{ posts: any[], title?: string, options?: any }>
+  NotFound?: React.ComponentType<{ options?: any }>
 }

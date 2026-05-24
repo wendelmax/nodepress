@@ -5,8 +5,9 @@ export class UserService {
   /**
    * Get all users for admin list
    */
-  static async getAll() {
-    return prisma.user.findMany({
+  static async getAll(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit
+    const users = await prisma.user.findMany({
       select: {
         id: true,
         userLogin: true,
@@ -23,8 +24,18 @@ export class UserService {
       },
       orderBy: {
         userRegistered: 'asc'
-      }
+      },
+      skip,
+      take: limit
     })
+
+    const total = await prisma.user.count()
+
+    return {
+      users,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
   }
 
   /**
@@ -98,6 +109,30 @@ export class UserService {
           where: { metaKey: 'capabilities' },
           select: { metaValue: true }
         }
+      }
+    })
+  }
+
+  /**
+   * Create a new user
+   */
+  static async create(data: { userLogin: string; email: string; displayName?: string; password?: string; role?: string }) {
+    const hash = data.password ? await bcrypt.hash(data.password, 10) : ''
+    return prisma.user.create({
+      data: {
+        userLogin: data.userLogin,
+        userEmail: data.email,
+        displayName: data.displayName || data.userLogin,
+        userPass: hash,
+        userNicename: data.userLogin.toLowerCase(),
+        userUrl: '',
+        userActivationKey: '',
+        meta: data.role ? {
+          create: {
+            metaKey: 'capabilities',
+            metaValue: data.role
+          }
+        } : undefined
       }
     })
   }

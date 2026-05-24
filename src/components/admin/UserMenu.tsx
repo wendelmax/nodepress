@@ -48,7 +48,7 @@ export function UserMenu({ userName, userInitial }: UserMenuProps) {
       {isOpen && (
         <div className="absolute top-[calc(100%+8px)] right-0 w-44 bg-background-secondary border border-border rounded-xl shadow-soft p-1.5 flex flex-col gap-0.5 z-[150] transition-all">
           <Link 
-            href="/admin/users" 
+            href="/admin/profile" 
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-text-secondary hover:bg-white/5 hover:text-white text-xs font-medium no-underline border-none bg-transparent w-full text-left transition-colors duration-150 cursor-pointer"
             onClick={() => setIsOpen(false)}
           >

@@ -57,15 +57,7 @@ export default function LoginPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, #5b6af0, #a855f7)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, margin: '0 auto 16px',
-          }}>⚡</div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#f0f1f5', margin: 0 }}>
-            NodePress
-          </h1>
+          <img src="/logo.png" alt="NodePress Logo" style={{ height: '70px', width: 'auto', marginBottom: '16px' }} />
           <p style={{ fontSize: 13.5, color: '#555d7a', marginTop: 6 }}>
             Entre no painel administrativo
           </p>

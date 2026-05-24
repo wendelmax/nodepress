@@ -8,13 +8,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         {/* Brand */}
         <div className="col-span-1 md:col-span-1">
-          <Link href="/" className="flex items-center gap-3 group mb-4">
-            <div className="w-8 h-8 rounded-lg bg-primary-gradient flex items-center justify-center text-sm text-white shadow-glow">
-              ⚡
-            </div>
-            <h2 className="text-lg font-bold text-text group-hover:text-primary-light transition-colors">
-              NodePress
-            </h2>
+          <Link href="/" className="flex items-center group mb-4">
+            <img src="/logo.png" alt="NodePress Logo" className="h-10 w-auto group-hover:scale-105 transition-transform" />
           </Link>
           <p className="text-xs text-text-muted leading-relaxed">
             Plataforma moderna de publicação em Next.js. Gerencie seu conteúdo com um painel SaaS Premium e alta performance.
