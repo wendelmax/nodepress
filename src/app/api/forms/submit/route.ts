@@ -23,23 +23,20 @@ export async function POST(request: Request) {
     const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown IP'
     const userAgent = request.headers.get('user-agent') || 'Unknown Browser'
 
-    // Create submission as a child post of the form
-    const submission = await prisma.post.create({
+    // Create submission in the FormSubmission table
+    const payloadData = {
+      ...data,
+      _metadata: {
+        ip,
+        userAgent
+      }
+    }
+
+    const submission = await prisma.formSubmission.create({
       data: {
-        postTitle: `Submissão - Form ${formId} - ${new Date().toISOString()}`,
-        postContent: JSON.stringify(data),
-        postStatus: 'publish', // Or 'unread' if we expand statuses
-        postName: `submission-${Date.now()}`,
-        postAuthor: 1, // System or Admin ID
-        postType: 'form_submission',
-        postParent: form.id,
-        postMimeType: '',
-        guid: '',
-        postExcerpt: ip, // Save IP in excerpt
-        postPassword: '',
-        toPing: '',
-        pinged: '',
-        postContentFiltered: userAgent // Save UserAgent in filtered content
+        formId: formId.toString(),
+        payload: JSON.stringify(payloadData),
+        status: 'unread'
       }
     })
 

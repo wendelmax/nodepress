@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 
 export class PostService {
   /**
@@ -48,6 +49,8 @@ export class PostService {
         postModifiedGmt: now
       }
     })
+
+    try { revalidatePath('/', 'layout') } catch (e) {}
 
     return result.count
   }
@@ -126,7 +129,7 @@ export class PostService {
   static async create(data: { title: string; content: string; status: string; authorId: number; type?: string; thumbnailId?: number; thumbnailUrl?: string; metaData?: Record<string, string>; postDate?: Date; parentId?: number | null }) {
     const slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
 
-    return prisma.post.create({
+    const newPost = await prisma.post.create({
       data: {
         postTitle: data.title,
         postContent: data.content,
@@ -153,6 +156,10 @@ export class PostService {
         }
       }
     })
+
+    try { revalidatePath('/', 'layout') } catch (e) {}
+
+    return newPost
   }
 
   /**
@@ -235,6 +242,8 @@ export class PostService {
       await Promise.all(metaPromises)
     }
 
+    try { revalidatePath('/', 'layout') } catch (e) {}
+
     return post
   }
 
@@ -247,12 +256,15 @@ export class PostService {
 
     if (force || post.postStatus === 'trash') {
       await prisma.post.delete({ where: { id } })
+      try { revalidatePath('/', 'layout') } catch (e) {}
       return { deleted: true, previous: post }
     } else {
-      return prisma.post.update({
+      const updated = await prisma.post.update({
         where: { id },
         data: { postStatus: 'trash' }
       })
+      try { revalidatePath('/', 'layout') } catch (e) {}
+      return updated
     }
   }
 
@@ -339,6 +351,7 @@ export class PostService {
       select: {
         id: true,
         postTitle: true,
+        postContent: true,
         postDate: true,
         author: {
           select: { displayName: true, userLogin: true }

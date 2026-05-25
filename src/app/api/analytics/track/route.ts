@@ -16,8 +16,12 @@ import { AnalyticsService } from '@/services/analytics.service'
  */
 export async function POST(request: Request) {
   try {
-    const { isNewVisitor } = await request.json()
-    await AnalyticsService.recordPageView({ isNewVisitor: Boolean(isNewVisitor) })
+    const { isNewVisitor, path, sessionId } = await request.json()
+    await AnalyticsService.recordPageView({ 
+      isNewVisitor: Boolean(isNewVisitor),
+      path: path || '/',
+      sessionId: sessionId || 'unknown'
+    })
     return NextResponse.json({ ok: true })
   } catch {
     // Silently absorb errors — analytics must never break the app

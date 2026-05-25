@@ -22,7 +22,8 @@ export const authOptions: NextAuthOptions = {
               { userLogin: credentials.username },
               { userEmail: credentials.username }
             ]
-          }
+          },
+          include: { meta: true }
         })
 
         if (!user) {
@@ -35,10 +36,14 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        const roleMeta = user.meta.find(m => m.metaKey === '_np_role')
+        const role = roleMeta ? roleMeta.metaValue : (user.userStatus === 0 ? 'admin' : 'author')
+
         return {
           id: user.id.toString(),
           name: user.displayName || user.userLogin,
           email: user.userEmail,
+          role: role
         }
       }
     })
@@ -53,12 +58,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.role = (user as any).role
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
       }
       return session
     }

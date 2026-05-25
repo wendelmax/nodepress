@@ -200,3 +200,27 @@ model Option {
   @@index([autoload])
   @@map("np_options")
 }
+
+model AnalyticsEvent {
+  id           Int      @id @default(autoincrement())
+  sessionId    String   @map("session_id") @db.VarChar(255)
+  path         String   @map("path") @db.Text
+  isNewVisitor Boolean  @default(false) @map("is_new_visitor")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("np_analytics_events")
+}
+
+model FormSubmission {
+  id        Int      @id @default(autoincrement())
+  formId    String   @map("form_id") @db.VarChar(100)
+  payload   String   @map("payload") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  status    String   @default("unread") @map("status") @db.VarChar(50)
+
+  @@index([formId])
+  @@index([createdAt])
+  @@map("np_form_submissions")
+}

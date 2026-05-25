@@ -22,6 +22,7 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
 
   const [items, setItems] = useState<MenuItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null)
 
   // Custom link form
   const [linkTitle, setLinkTitle] = useState("")
@@ -118,6 +119,48 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
     })
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItemIndex(index)
+    // Create a generic semi-transparent drag image
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move"
+      // Wait for next tick so we can style the dragging element if needed
+      setTimeout(() => {
+        // can add 'opacity-50' to the actual element if we had a ref
+      }, 0)
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault() // Necessary to allow dropping
+    if (draggedItemIndex === null || draggedItemIndex === index) return
+
+    // Move item logically
+    const newItems = [...items]
+    const draggedItem = newItems[draggedItemIndex]
+    
+    // Remove from old position
+    newItems.splice(draggedItemIndex, 1)
+    // Insert into new position
+    newItems.splice(index, 0, draggedItem)
+    
+    setDraggedItemIndex(index)
+    setItems(newItems)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setDraggedItemIndex(null)
+    
+    // Save new order
+    const orderedIds = items.map(item => item.id)
+    await fetch(`/api/menus/${selectedMenuId}/items`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderedIds })
+    })
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
       
@@ -207,10 +250,21 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
         ) : (
           <div className="flex flex-col gap-3">
             {items.map((item, index) => (
-              <div key={item.id} className="flex items-center justify-between bg-background border border-border p-4 rounded-xl group hover:border-primary/30 transition-colors">
+              <div 
+                key={item.id} 
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={handleDrop}
+                onDragEnd={() => setDraggedItemIndex(null)}
+                className={`flex items-center justify-between bg-background border border-border p-4 rounded-xl group transition-all ${draggedItemIndex === index ? 'opacity-40 border-primary shadow-lg scale-[1.02]' : 'hover:border-primary/30 cursor-grab active:cursor-grabbing'}`}
+              >
                 <div>
-                  <strong className="text-sm font-semibold text-text group-hover:text-primary-light transition-colors">{item.title}</strong>
-                  <div className="text-xs text-text-muted mt-1">{item.url}</div>
+                  <strong className="text-sm font-semibold text-text group-hover:text-primary-light transition-colors flex items-center gap-2">
+                    <span className="text-text-muted cursor-grab hover:text-white" title="Arrastar para reordenar">⠿</span>
+                    {item.title}
+                  </strong>
+                  <div className="text-xs text-text-muted mt-1 ml-5">{item.url}</div>
                 </div>
                 <div className="flex gap-2">
                   <button 

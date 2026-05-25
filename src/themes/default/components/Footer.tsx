@@ -1,7 +1,19 @@
 import Link from 'next/link'
+import { OptionService } from '@/services/option.service'
+import BlockRenderer from './BlockRenderer'
 
-export default function Footer() {
+export default async function Footer() {
+  const options = await OptionService.getOptions(['site_footer_content'])
+  const footerContent = options['site_footer_content']
   const currentYear = new Date().getFullYear()
+
+  if (footerContent && footerContent !== '') {
+    return (
+      <footer className="w-full relative">
+        <BlockRenderer content={footerContent} />
+      </footer>
+    )
+  }
 
   return (
     <footer className="border-t border-border/40 bg-background pt-16 pb-8 relative overflow-hidden">

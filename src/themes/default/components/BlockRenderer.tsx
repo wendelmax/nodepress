@@ -65,6 +65,22 @@ export default function BlockRenderer({ content }: BlockRendererProps) {
               </ListTag>
             )
 
+          case 'quote':
+            return (
+              <blockquote key={key}>
+                <p dangerouslySetInnerHTML={{ __html: block.data.text }} />
+                {block.data.caption && <cite dangerouslySetInnerHTML={{ __html: block.data.caption }} />}
+              </blockquote>
+            )
+
+          case 'code':
+            return (
+              <pre key={key} className="bg-surface-elevated border border-border rounded-xl p-4 overflow-x-auto text-sm">
+                <code dangerouslySetInnerHTML={{ __html: block.data.code }} />
+              </pre>
+            )
+
+
           case 'image':
             return (
               <figure key={key} className={`my-8 ${block.data.withBackground ? 'bg-surface p-6 rounded-2xl border border-border' : ''}`}>

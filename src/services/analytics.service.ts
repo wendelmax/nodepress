@@ -29,40 +29,57 @@ export class AnalyticsService {
   // Public API
   // ────────────────────────────────────────────────────────────
 
-  /** Retrieve stored analytics. Returns zeroed structure if nothing saved yet. */
+  /** Retrieve stored analytics from the database. */
   static async getAnalytics(): Promise<AnalyticsData> {
+    const data: AnalyticsData = { totalViews: 0, totalVisitors: 0, dailyStats: {} }
+    if (!process.env.DATABASE_URL) return data
+
     try {
-      const opts = await OptionService.getOptions(['site_analytics'])
-      const raw = opts['site_analytics']
-      if (raw) return JSON.parse(raw) as AnalyticsData
-    } catch { /* DB not ready */ }
-    return this.empty()
+      // Get all events from the last 30 days
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+      const events = await prisma.analyticsEvent.findMany({
+        where: { createdAt: { gte: thirtyDaysAgo } },
+        select: { createdAt: true, isNewVisitor: true }
+      })
+
+      // Aggregate
+      events.forEach(event => {
+        const dateKey = this.fmt(event.createdAt)
+        if (!data.dailyStats[dateKey]) {
+          data.dailyStats[dateKey] = { views: 0, visitors: 0 }
+        }
+        
+        data.totalViews += 1
+        data.dailyStats[dateKey].views += 1
+
+        if (event.isNewVisitor) {
+          data.totalVisitors += 1
+          data.dailyStats[dateKey].visitors += 1
+        }
+      })
+    } catch (err) {
+      console.error('[Analytics] getAnalytics error:', err)
+    }
+
+    return data
   }
 
   /**
    * Record a page view.
-   * @param isNewVisitor - true when the visitor had no session cookie (set by middleware).
+   * @param params - Contains isNewVisitor, path and sessionId.
    */
-  static async recordPageView({ isNewVisitor }: { isNewVisitor: boolean } = { isNewVisitor: false }): Promise<void> {
+  static async recordPageView({ isNewVisitor, path, sessionId }: { isNewVisitor: boolean, path: string, sessionId: string }): Promise<void> {
     if (!process.env.DATABASE_URL) return
     try {
-      const data = await this.getAnalytics()
-      const today = this.today()
-
-      if (!data.dailyStats[today]) {
-        data.dailyStats[today] = { views: 0, visitors: 0 }
-      }
-
-      data.totalViews += 1
-      data.dailyStats[today].views += 1
-
-      if (isNewVisitor) {
-        data.totalVisitors += 1
-        data.dailyStats[today].visitors += 1
-      }
-
-      this.prune(data, 30)
-      await this.save(data)
+      await prisma.analyticsEvent.create({
+        data: {
+          sessionId,
+          path,
+          isNewVisitor
+        }
+      })
     } catch (err) {
       console.error('[Analytics] recordPageView error:', err)
     }
@@ -103,18 +120,4 @@ export class AnalyticsService {
     return `${y}-${m}-${d}`
   }
 
-  private static prune(data: AnalyticsData, maxDays: number): void {
-    const keys = Object.keys(data.dailyStats).sort()
-    if (keys.length > maxDays) {
-      keys.slice(0, keys.length - maxDays).forEach(k => delete data.dailyStats[k])
-    }
-  }
-
-  private static async save(data: AnalyticsData): Promise<void> {
-    await prisma.option.upsert({
-      where: { optionName: 'site_analytics' },
-      update: { optionValue: JSON.stringify(data) },
-      create: { optionName: 'site_analytics', optionValue: JSON.stringify(data) },
-    })
-  }
 }

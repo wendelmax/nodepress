@@ -9,6 +9,9 @@ NodePress is a full-featured Content Management System inspired by WordPress, bu
 ## ✨ Features
 
 - **5-Minute Install** — Web-based setup wizard. No config files to edit manually.
+- **Visual Page Builder** — Drag-and-drop page building powered by [Puck](https://github.com/measuredco/puck), replacing clunky shortcodes.
+- **Native Forms & Leads** — Built-in form builder with a dedicated leads management dashboard and CSV export (no Contact Form 7 needed).
+- **Enterprise-Grade Caching** — Next.js App Router Static Site Generation (SSG) with automatic on-demand cache invalidation (ISR) via `revalidatePath`.
 - **Post & Page Management** — Full CRUD for posts and pages, with draft, scheduled, and publish states.
 - **Revision History** — Every saved edit creates a revision; restore any previous version instantly.
 - **Taxonomy System** — Categories and Tags with full admin management.

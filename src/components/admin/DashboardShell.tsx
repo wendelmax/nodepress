@@ -42,42 +42,37 @@ function Sparkline({ color, values }: { color: string; values: number[] }) {
   )
 }
 
+import { AreaChart as RechartsAreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
 // ── Area Chart SVG ─────────────────────────────────────────────────────────────
 function AreaChart({ window: win }: { window: { date: string; views: number; visitors: number }[] }) {
-  const w = 560, h = 140, padX = 32, padY = 16
-  const views = win.map(d => d.views)
-  const maxV = Math.max(...views, 1)
-  const color = '#4F7CFF'
-  const pts = views.map((v, i) => {
-    const x = padX + (i / Math.max(views.length - 1, 1)) * (w - padX * 2)
-    const y = padY + (1 - v / maxV) * (h - padY * 2)
-    return [x, y] as [number, number]
+  const data = win.map(d => {
+    const [, mm, dd] = d.date.split('-')
+    return { name: `${dd}/${mm}`, views: d.views, visitors: d.visitors }
   })
-  const pathD = pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x},${y}`).join(' ')
-  const areaD = `${pathD} L ${pts[pts.length - 1][0]},${h - padY} L ${pts[0][0]},${h - padY} Z`
-  const labels = win.map(d => { const [, mm, dd] = d.date.split('-'); return `${dd}/${mm}` })
+  const color = '#4F7CFF'
+
   return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h + 24}`} className="w-full h-auto mt-2 block">
-      <defs>
-        <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0, 0.25, 0.5, 0.75, 1].map(pct => {
-        const y = padY + (1 - pct) * (h - padY * 2)
-        return <line key={pct} x1={padX} y1={y} x2={w - padX} y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      })}
-      <path d={areaD} fill="url(#area-grad)" />
-      <path d={pathD} stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="3" fill={color} stroke="rgba(13,19,34,1)" strokeWidth="1.5" />
-      ))}
-      {labels.map((label, i) => {
-        const x = padX + (i / Math.max(labels.length - 1, 1)) * (w - padX * 2)
-        return <text key={i} x={x} y={h + 16} textAnchor="middle" fontSize="9" fill="rgba(167,176,192,0.6)" fontFamily="Inter, sans-serif" fontWeight="500">{label}</text>
-      })}
-    </svg>
+    <div className="w-full h-48 mt-4 -ml-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsAreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'rgba(167,176,192,0.6)' }} tickLine={false} axisLine={false} dy={10} />
+          <YAxis tick={{ fontSize: 10, fill: 'rgba(167,176,192,0.6)' }} tickLine={false} axisLine={false} dx={-10} allowDecimals={false} />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.04)" />
+          <Tooltip 
+            contentStyle={{ backgroundColor: 'rgba(13,19,34,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
+            itemStyle={{ color: '#fff' }}
+          />
+          <Area type="monotone" dataKey="views" stroke={color} fillOpacity={1} fill="url(#colorViews)" strokeWidth={2} activeDot={{ r: 4 }} />
+        </RechartsAreaChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 

@@ -9,6 +9,24 @@ import { generatePermalink } from "@/lib/permalinks"
 import { ThemeService } from "@/services/theme.service"
 import type { Metadata } from "next"
 
+export const revalidate = 86400 // Revalidate daily by default
+// export const dynamic = 'force-static' // Not strictly needed if we don't have dynamic functions, and generateStaticParams will tell it to be static anyway.
+
+export async function generateStaticParams() {
+  const posts = await PostService.getAdminList('post', 'publish', 1, 1000)
+  const pages = await PostService.getAdminList('page', 'publish', 1, 1000)
+  
+  const params = []
+  
+  for (const post of [...posts.posts, ...pages.posts]) {
+    // If you use nested permalinks like /category/post-name, this needs to be split
+    // For simplicity, assuming slug is just [postName] or handled properly
+    params.push({ slug: [post.postName] })
+  }
+  
+  return params
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const { slug } = await params
   const postName = slug[slug.length - 1]

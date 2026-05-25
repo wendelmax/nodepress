@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma"
+import { revalidatePath } from "next/cache"
 
 const ALLOWED_OPTIONS = [
   'blogname',
@@ -24,6 +25,7 @@ const ALLOWED_OPTIONS = [
   'ai_model',
   'ai_base_url',
   'site_analytics',
+  'site_footer_content',
   // Storage driver configuration
   'storage_driver',
   's3_access_key',
@@ -87,5 +89,8 @@ export class OptionService {
     }
 
     await Promise.all(promises)
+
+    // Invalidate the cache for the entire site since options affect global layouts, seo, and themes
+    try { revalidatePath('/', 'layout') } catch (e) {}
   }
 }

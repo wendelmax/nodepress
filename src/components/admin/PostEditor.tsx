@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePosts } from "@/hooks/usePosts"
@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic'
 import { Sparkles, ClipboardList, Settings2, ImageIcon } from "lucide-react"
 import { Card } from "@/components/admin/Card"
 import { GlassButton } from "@/components/admin/GlassButton"
+import MediaLibraryModal from "@/components/admin/MediaLibraryModal"
 
 const BlockEditor = dynamic(() => import('./BlockEditor'), { 
   ssr: false, 
@@ -57,10 +58,13 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
   
   const [thumbnailId, setThumbnailId] = useState<number | null>(initialData?.thumbnailId || null)
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(initialData?.thumbnailUrl || null)
-  const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
+  
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false)
+  const [mediaModalTarget, setMediaModalTarget] = useState<'thumbnail' | 'opengraph'>('thumbnail')
 
   const [revisions, setRevisions] = useState<any[]>([])
   const [isRestoring, setIsRestoring] = useState(false)
+  const [selectedRevisionForDiff, setSelectedRevisionForDiff] = useState<any | null>(null)
 
   const [customMeta, setCustomMeta] = useState<Record<string, string>>(initialData?.metaData || {})
   
@@ -74,6 +78,46 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
   
   const router = useRouter()
   const isEditing = !!postId
+
+  // Autosave logic
+  const lastSavedDataRef = useRef({ title: initialData?.title || "", content: initialData?.content || "" })
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const [lastAutosaveTime, setLastAutosaveTime] = useState<Date | null>(null)
+
+  useEffect(() => {
+    // Only autosave if it's already saved once (has ID) and is currently a draft
+    if (!isEditing || status !== 'draft') return
+
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+
+    autosaveTimerRef.current = setTimeout(() => {
+      if (title !== lastSavedDataRef.current.title || content !== lastSavedDataRef.current.content) {
+        // Trigger silent save
+        savePost(postId, {
+          title,
+          content,
+          status: 'draft',
+          type: postType,
+          categories: selectedCategories,
+          tags: selectedTags,
+          thumbnailId,
+          thumbnailUrl,
+          metaData: { ...customMeta, _editor_mode: editorMode },
+          postDate: postDate ? new Date(postDate).toISOString() : undefined,
+          parentId
+        }).then((res) => {
+          if (res) {
+            lastSavedDataRef.current = { title, content }
+            setLastAutosaveTime(new Date())
+          }
+        })
+      }
+    }, 30000) // 30 seconds debounce
+
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
+    }
+  }, [title, content, status, isEditing, postId, postType, selectedCategories, selectedTags, thumbnailId, thumbnailUrl, customMeta, editorMode, postDate, parentId])
 
   useEffect(() => {
     if (isEditing) {
@@ -168,6 +212,11 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
         </div>
         
         <div className="flex items-center gap-3">
+          {lastAutosaveTime && (
+            <span className="text-[10px] text-text-muted hidden sm:inline-block">
+              Salvo às {lastAutosaveTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => { setStatus("draft"); handleSubmitForm("draft"); }}
@@ -289,10 +338,30 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
             <h2 className="text-lg font-semibold text-text flex items-center gap-2 leading-none">
               <span className="text-text-muted"><Settings2 size={18} /></span> Configurações de SEO
             </h2>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 font-sans mb-2">
+              <div className="text-xs text-[#202124] mb-1 flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                <div>
+                  <span className="block font-medium">Seu Site</span>
+                  <span className="text-gray-500">https://seusite.com/{postType === 'page' ? '' : 'post/'}slug-do-post</span>
+                </div>
+              </div>
+              <h3 className="text-[#1a0dab] text-lg font-normal mb-1 truncate cursor-pointer hover:underline">
+                {customMeta['_seo_title'] || title || 'Título do Post'}
+              </h3>
+              <p className="text-[#4d5156] text-sm leading-snug line-clamp-2">
+                {customMeta['_seo_description'] || 'Forneça uma meta description para aparecer aqui nos resultados de busca do Google.'}
+              </p>
+            </div>
+
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-text-secondary">
+                <label className="text-xs font-semibold text-text-secondary flex justify-between">
                   Palavra-chave foco / Título SEO
+                  <span className={`text-[10px] ${(customMeta['_seo_title']?.length || 0) > 60 ? 'text-danger' : 'text-text-muted'}`}>
+                    {(customMeta['_seo_title']?.length || 0)} / 60
+                  </span>
                 </label>
                 <input
                   type="text"
@@ -303,8 +372,11 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-semibold text-text-secondary">
+                <label className="text-xs font-semibold text-text-secondary flex justify-between">
                   Meta Description
+                  <span className={`text-[10px] ${(customMeta['_seo_description']?.length || 0) > 160 ? 'text-danger' : 'text-text-muted'}`}>
+                    {(customMeta['_seo_description']?.length || 0)} / 160
+                  </span>
                 </label>
                 <textarea
                   value={customMeta['_seo_description'] || ''}
@@ -312,6 +384,32 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                   className="w-full bg-white/[0.03] border border-border rounded-xl p-4 text-xs text-text outline-none focus:border-primary/50 transition-all resize-none min-h-[70px] font-sans"
                   placeholder="Escreva uma descrição resumida para atrair cliques no Google..."
                 />
+              </div>
+              <div className="flex flex-col gap-2 mt-2 pt-4 border-t border-border/50">
+                <label className="text-xs font-semibold text-text-secondary">Imagem de Compartilhamento Social (OpenGraph)</label>
+                {customMeta['_seo_og_image'] ? (
+                  <div className="relative w-full max-w-xs rounded-xl overflow-hidden border border-border">
+                    <img src={customMeta['_seo_og_image']} alt="OG Image" className="w-full h-auto" />
+                    <button 
+                      type="button" 
+                      onClick={() => setCustomMeta({ ...customMeta, '_seo_og_image': '' })}
+                      className="absolute top-2 right-2 bg-black/50 text-white rounded-md p-1 text-xs hover:bg-danger transition-colors"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMediaModalTarget('opengraph')
+                      setIsMediaModalOpen(true)
+                    }}
+                    className="w-full max-w-xs h-20 border border-dashed border-border rounded-xl flex items-center justify-center text-xs text-text-muted hover:text-primary hover:border-primary transition-colors bg-white/[0.02]"
+                  >
+                    + Selecionar Imagem (1200x630)
+                  </button>
+                )}
               </div>
             </div>
           </Card>
@@ -404,11 +502,10 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                     <span className="text-text-muted">{new Date(rev.postDate).toLocaleString('pt-BR')}</span>
                     <button 
                       type="button" 
-                      disabled={isRestoring}
-                      onClick={() => handleRestore(rev.id)}
+                      onClick={() => setSelectedRevisionForDiff(rev)}
                       className="text-primary hover:text-primary-light bg-transparent border-none cursor-pointer p-0 underline text-xs font-medium"
                     >
-                      Restaurar
+                      Comparar
                     </button>
                   </div>
                 ))}
@@ -435,39 +532,19 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                   </button>
                 </>
               ) : (
-                <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/40 rounded-2xl py-8 px-4 cursor-pointer text-center bg-white/[0.01] hover:bg-white/[0.03] transition-all">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setMediaModalTarget('thumbnail')
+                    setIsMediaModalOpen(true)
+                  }}
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/40 rounded-2xl py-8 px-4 cursor-pointer text-center bg-white/[0.01] hover:bg-white/[0.03] transition-all outline-none"
+                >
                   <span className="text-primary/40 mb-2"><ImageIcon size={36} /></span>
                   <span className="text-xs font-semibold text-primary hover:text-primary-light">
-                    {isUploadingThumbnail ? 'Carregando...' : 'Definir imagem destacada'}
+                    Definir imagem destacada
                   </span>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden"
-                    disabled={isUploadingThumbnail}
-                    onChange={async (e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setIsUploadingThumbnail(true)
-                        const formData = new FormData()
-                        formData.append('file', e.target.files[0])
-                        try {
-                          const res = await fetch('/api/media', { method: 'POST', body: formData })
-                          const data = await res.json()
-                          if (res.ok && data.id) {
-                            setThumbnailId(data.id)
-                            setThumbnailUrl(data.guid)
-                          } else {
-                            alert('Falha no upload.')
-                          }
-                        } catch (err) {
-                          alert('Erro no upload.')
-                        } finally {
-                          setIsUploadingThumbnail(false)
-                        }
-                      }
-                    }}
-                  />
-                </label>
+                </button>
               )}
             </div>
           </div>
@@ -529,6 +606,99 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
           )}
         </div>
       </div>
+
+      <MediaLibraryModal 
+        isOpen={isMediaModalOpen}
+        onClose={() => setIsMediaModalOpen(false)}
+        onSelect={(id, url) => {
+          if (mediaModalTarget === 'thumbnail') {
+            setThumbnailId(id)
+            setThumbnailUrl(url)
+          } else if (mediaModalTarget === 'opengraph') {
+            setCustomMeta({ ...customMeta, '_seo_og_image': url })
+          }
+        }}
+      />
+
+      {/* ── Revision Diff Modal ── */}
+      {selectedRevisionForDiff && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 bg-background/80 backdrop-blur-md animate-fadeIn"
+        >
+          <div className="bg-surface-elevated border border-border rounded-3xl w-full max-w-6xl h-full max-h-[85vh] flex flex-col shadow-soft relative overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border bg-background-secondary/50">
+              <div>
+                <h2 className="text-xl font-bold text-text">Comparar Revisão</h2>
+                <p className="text-sm text-text-muted mt-1">
+                  Revisão de <span className="font-semibold text-text-secondary">{new Date(selectedRevisionForDiff.postDate).toLocaleString('pt-BR')}</span> vs. Atual
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRevisionForDiff(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-text-secondary hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isRestoring}
+                  onClick={() => {
+                    handleRestore(selectedRevisionForDiff.id)
+                    setSelectedRevisionForDiff(null)
+                  }}
+                  className="px-5 py-2 rounded-xl text-sm font-bold text-white bg-danger/80 hover:bg-danger transition-colors flex items-center gap-2"
+                >
+                  {isRestoring ? 'Restaurando...' : 'Restaurar esta Revisão'}
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Side by Side */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-hidden bg-background">
+              {/* Revision Side */}
+              <div className="flex flex-col border-r border-border h-full">
+                <div className="bg-danger/10 border-b border-danger/20 p-3 text-center">
+                  <span className="text-xs font-bold text-danger uppercase tracking-wider">Revisão Antiga</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 font-mono text-sm leading-relaxed text-text-secondary">
+                  <div className="mb-4">
+                    <span className="text-xs text-text-muted block mb-1">Título:</span>
+                    <strong className="text-text">{selectedRevisionForDiff.postTitle}</strong>
+                  </div>
+                  <div>
+                    <span className="text-xs text-text-muted block mb-2">Conteúdo Bruto:</span>
+                    <div className="whitespace-pre-wrap bg-white/[0.02] p-4 rounded-xl border border-border/50">
+                      {selectedRevisionForDiff.postContent || '(Vazio)'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Side */}
+              <div className="flex flex-col h-full">
+                <div className="bg-success/10 border-b border-success/20 p-3 text-center">
+                  <span className="text-xs font-bold text-success uppercase tracking-wider">Conteúdo Atual</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 font-mono text-sm leading-relaxed text-text-secondary">
+                  <div className="mb-4">
+                    <span className="text-xs text-text-muted block mb-1">Título:</span>
+                    <strong className="text-text">{title}</strong>
+                  </div>
+                  <div>
+                    <span className="text-xs text-text-muted block mb-2">Conteúdo Bruto:</span>
+                    <div className="whitespace-pre-wrap bg-white/[0.02] p-4 rounded-xl border border-border/50">
+                      {content || '(Vazio)'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

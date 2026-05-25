@@ -12,7 +12,7 @@ import { OptionService } from "@/services/option.service"
 import { SidebarLink } from "@/components/admin/SidebarLink"
 import { SearchTrigger } from "@/components/admin/SearchTrigger"
 import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
-import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink } from "lucide-react"
+import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink, ImageIcon } from "lucide-react"
 import { AdminI18nProvider } from "@/components/admin/AdminI18nProvider"
 import { getAdminDictionary } from "@/i18n"
 import "@/plugins/registry"
@@ -63,6 +63,7 @@ export default async function AdminLayout({
         { href: '/admin', label: dict.sidebar.dashboard, icon: <LayoutDashboard size={18} /> },
         { href: '/admin/posts', label: dict.sidebar.posts, icon: <FileText size={18} />, matchPaths: ['/admin/posts/new', '/admin/categories'] },
         { href: '/admin/posts?post_type=page', label: dict.sidebar.pages, icon: <FileText size={18} />, matchPaths: ['/admin/posts/new?post_type=page'] },
+        { href: '/admin/media', label: 'Mídia', icon: <ImageIcon size={18} /> },
         { href: '/admin/forms', label: dict.sidebar.forms, icon: <ClipboardList size={18} />, matchPaths: ['/admin/forms/new', '/admin/forms/[id]/edit'] },
         ...pluginMenuLinks,
         ...cptMenuLinks,
@@ -81,6 +82,7 @@ export default async function AdminLayout({
       items: [
         { href: '/admin/themes', label: dict.sidebar.themes, icon: <Palette size={18} /> },
         { href: '/admin/plugins', label: dict.sidebar.plugins, icon: <Plug size={18} /> },
+        { href: '/admin/leads', label: 'Leads', icon: <Users size={18} /> },
         { href: '/admin/menus', label: 'Menus', icon: <MenuIcon size={18} /> },
       ],
     },
@@ -165,10 +167,10 @@ export default async function AdminLayout({
           <CreateNewDropdown customPostTypes={customPostTypes.filter(c => c.public)} />
 
           {/* Notifications */}
-          <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer relative" title="Notifications">
+          <Link href="/admin/leads?status=unread" className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer relative" title="Leads Não Lidos">
             <Bell size={18} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full animate-pulse border border-background"></span>
-          </div>
+          </Link>
 
           {/* Help */}
           <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer" title="Help">

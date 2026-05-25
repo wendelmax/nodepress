@@ -5,6 +5,9 @@ import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 import type { Metadata } from "next"
 
+export const revalidate = 86400 // Revalidate daily by default (can be triggered instantly via revalidatePath)
+export const dynamic = 'force-static' // Force SSG
+
 export async function generateMetadata(): Promise<Metadata> {
   const options = await OptionService.getOptions(['blogname', 'blogdescription', 'show_on_front', 'page_on_front'])
   const siteName = options['blogname'] || 'NodePress'
