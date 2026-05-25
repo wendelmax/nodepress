@@ -24,7 +24,7 @@ export function StatusMessage({ type, text }: { type: 'success' | 'error'; text:
 // ──────────────────────────────────────────────────────────────
 // PageHeader — page title + optional subtitle
 // ──────────────────────────────────────────────────────────────
-export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+export function PageHeader({ title, subtitle }: { title: string | ReactNode; subtitle?: string | ReactNode }) {
   return (
     <div className="border-b border-border/40 pb-4 mb-6">
       <h1 className="text-2xl font-bold text-text leading-none">{title}</h1>

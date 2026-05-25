@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useTaxonomies } from "@/hooks/useTaxonomies"
 import { LoadingSpinner, PageHeader, inputCls, textareaCls } from "@/components/admin/SettingsUI"
+import { Folder, Tag, Layers } from "lucide-react"
 
 export interface TaxonomyManagerProps {
   taxonomy: 'category' | 'post_tag'
@@ -17,7 +18,7 @@ export function TaxonomyManager({ taxonomy }: TaxonomyManagerProps) {
   const isCategory = taxonomy === 'category'
   const title = isCategory ? "Categorias" : "Tags"
   const singular = isCategory ? "Categoria" : "Tag"
-  const icon = isCategory ? "🗂️" : "🏷️"
+  const icon = isCategory ? <Folder className="text-primary" /> : <Tag className="text-primary" />
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +34,7 @@ export function TaxonomyManager({ taxonomy }: TaxonomyManagerProps) {
   return (
     <div className="flex flex-col gap-6 w-full">
       <PageHeader
-        title={`${icon} ${title}`}
+        title={<span className="flex items-center gap-2">{icon} {title}</span>}
         subtitle={isCategory
           ? "Organize seus posts em categorias para facilitar a navegação."
           : "Use tags para relacionar posts por assuntos específicos."}
@@ -94,7 +95,7 @@ export function TaxonomyManager({ taxonomy }: TaxonomyManagerProps) {
           <div className="bg-surface/40 border border-border rounded-2xl overflow-hidden">
             {terms.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
-                <span className="text-4xl opacity-30">{icon}</span>
+                <span className="text-4xl opacity-30 text-text-muted">{isCategory ? <Folder size={40} /> : <Tag size={40} />}</span>
                 <p className="text-sm text-text-muted">Nenhuma {singular.toLowerCase()} encontrada.</p>
               </div>
             ) : (

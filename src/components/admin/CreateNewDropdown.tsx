@@ -54,7 +54,7 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>✏️</span> {t.header.new_post}
+              <span className="flex items-center text-text-muted"><FileSignature size={16} /></span> {t.header.new_post}
             </Link>
             <Link 
               href="/admin/pages/new" 
@@ -86,7 +86,7 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>🏷️</span> Categoria
+              <span className="flex items-center text-text-muted"><FolderPlus size={16} /></span> Categoria
             </Link>
             <Link 
               href="/admin/tags" 
@@ -100,7 +100,7 @@ export function CreateNewDropdown({ customPostTypes = [] }: CreateNewDropdownPro
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-3 py-2 text-sm text-text hover:bg-white/5 hover:text-white rounded-lg transition-colors no-underline"
             >
-              <span>≡</span> Menu
+              <span className="flex items-center text-text-muted"><Menu size={16} /></span> Menu
             </Link>
             <Link 
               href="/admin/users" 

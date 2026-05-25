@@ -77,7 +77,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: RichTex
           onClick={() => setIsMediaModalOpen(true)} 
           className="px-3 py-1.5 bg-primary/10 text-primary-light hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5"
         >
-          🖼️ <span className="hidden sm:inline">Add Media</span>
+          <ImageIcon size={16} /> <span className="hidden sm:inline">Add Media</span>
         </button>
       </div>
 

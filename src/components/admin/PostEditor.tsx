@@ -6,7 +6,7 @@ import Link from "next/link"
 import { usePosts } from "@/hooks/usePosts"
 import { useTaxonomies } from "@/hooks/useTaxonomies"
 import dynamic from 'next/dynamic'
-import { Sparkles, ClipboardList, Settings2 } from "lucide-react"
+import { Sparkles, ClipboardList, Settings2, ImageIcon } from "lucide-react"
 import { Card } from "@/components/admin/Card"
 import { GlassButton } from "@/components/admin/GlassButton"
 
@@ -436,7 +436,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
                 </>
               ) : (
                 <label className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/40 rounded-2xl py-8 px-4 cursor-pointer text-center bg-white/[0.01] hover:bg-white/[0.03] transition-all">
-                  <span className="text-3xl mb-2">🖼️</span>
+                  <span className="text-primary/40 mb-2"><ImageIcon size={36} /></span>
                   <span className="text-xs font-semibold text-primary hover:text-primary-light">
                     {isUploadingThumbnail ? 'Carregando...' : 'Definir imagem destacada'}
                   </span>

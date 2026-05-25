@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-
+import { ArrowUp, ArrowDown, Trash2 } from "lucide-react"
 interface Menu {
   id: number;
   name: string;
@@ -219,7 +219,7 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
                     className={`p-1.5 rounded-lg border flex items-center justify-center transition-colors ${index === 0 ? 'border-border/50 text-border bg-transparent cursor-not-allowed' : 'border-border text-text-secondary hover:bg-white/5 hover:text-white cursor-pointer'}`}
                     title="Move Up"
                   >
-                    ⬆️
+                    <ArrowUp size={16} />
                   </button>
                   <button 
                     onClick={() => handleMove(index, 'down')} 
@@ -227,14 +227,14 @@ export default function MenuEditor({ initialMenus }: { initialMenus: Menu[] }) {
                     className={`p-1.5 rounded-lg border flex items-center justify-center transition-colors ${index === items.length - 1 ? 'border-border/50 text-border bg-transparent cursor-not-allowed' : 'border-border text-text-secondary hover:bg-white/5 hover:text-white cursor-pointer'}`}
                     title="Move Down"
                   >
-                    ⬇️
+                    <ArrowDown size={16} />
                   </button>
                   <button 
                     onClick={() => handleDeleteItem(item.id)}
                     className="p-1.5 rounded-lg border border-danger/30 text-danger hover:bg-danger/10 transition-colors cursor-pointer"
                     title="Remove"
                   >
-                    🗑️
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>

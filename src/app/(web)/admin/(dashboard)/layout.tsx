@@ -12,7 +12,7 @@ import { OptionService } from "@/services/option.service"
 import { SidebarLink } from "@/components/admin/SidebarLink"
 import { SearchTrigger } from "@/components/admin/SearchTrigger"
 import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
-import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList } from "lucide-react"
+import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink } from "lucide-react"
 import { AdminI18nProvider } from "@/components/admin/AdminI18nProvider"
 import { getAdminDictionary } from "@/i18n"
 import "@/plugins/registry"
@@ -143,7 +143,7 @@ export default async function AdminLayout({
             <span>Site em produção</span>
           </div>
           <Link href="/" target="_blank" className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text-secondary transition-colors no-underline px-1.5">
-            <span>↗</span> Ver site
+            <ExternalLink size={14} /> Ver site
           </Link>
         </div>
       </aside>
@@ -172,7 +172,7 @@ export default async function AdminLayout({
 
           {/* Help */}
           <div className="w-9 h-9 flex items-center justify-center bg-white/5 hover:bg-white/10 text-text-secondary border border-border rounded-xl transition-all duration-200 cursor-pointer" title="Help">
-            ?
+            <HelpCircle size={18} />
           </div>
 
           {/* User */}

@@ -117,7 +117,7 @@ export default function MediaLibraryPage() {
         ) : (
           <div className="flex flex-col items-center">
             <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-3 text-xl shadow-glow text-primary-light">
-              📤
+              <Upload size={24} />
             </div>
             <p className="text-text font-semibold text-sm">
               Arraste e solte arquivos aqui para fazer upload
@@ -161,7 +161,7 @@ export default function MediaLibraryPage() {
           {mediaList.length === 0 && (
             <Card className="col-span-full py-16 flex flex-col items-center justify-center text-center">
               <div className="w-14 h-14 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-2xl mb-3 text-text-muted">
-                🖼️
+                <ImageIcon size={28} />
               </div>
               <h3 className="text-text font-bold text-sm">Biblioteca Vazia</h3>
               <p className="text-text-muted text-xs mt-1.5 max-w-[280px]">Você ainda não enviou nenhuma imagem. Faça o upload do seu primeiro arquivo acima!</p>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, BarChart3 } from "lucide-react"
+import { Search, BarChart3, Trash2, RefreshCw } from "lucide-react"
 import {
   PageHeader, SettingsSection, FieldRow, SaveButton, LoadingSpinner,
   inputCls, textareaCls, StatusMessage
@@ -143,7 +143,7 @@ export default function OptionsSeoPage() {
                   <div className="w-3.5 h-3.5 border-2 border-danger/60 border-t-transparent rounded-full animate-spin" />
                   Limpando...
                 </>
-              ) : '🗑️ Limpar Cache do Site'}
+              ) : <><Trash2 size={16}/> Limpar Cache do Site</>}
             </button>
           </FieldRow>
 
@@ -159,7 +159,7 @@ export default function OptionsSeoPage() {
                   <div className="w-3.5 h-3.5 border-2 border-yellow-400/60 border-t-transparent rounded-full animate-spin" />
                   Resetando...
                 </>
-              ) : '♻️ Zerar Dados de Analytics'}
+              ) : <><RefreshCw size={16}/> Zerar Dados de Analytics</>}
             </button>
           </FieldRow>
         </SettingsSection>
