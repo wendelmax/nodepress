@@ -39,6 +39,8 @@ interface CommentsResponse {
   total: number
 }
 
+const DEFAULT_PER_PAGE = 50
+
 export default function CommentsManager() {
   const [comments, setComments] = useState<Comment[]>([])
   const [total, setTotal] = useState(0)
@@ -46,7 +48,7 @@ export default function CommentsManager() {
 
   const fetchComments = async () => {
     setIsLoading(true)
-    const res = await fetch("/api/comments?per_page=200")
+    const res = await fetch(`/api/comments?per_page=${DEFAULT_PER_PAGE}`)
     if (res.ok) {
       const data = await res.json() as CommentsResponse
       setComments(data.comments || [])

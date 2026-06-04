@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
-const BATCH_SIZE = 500
+// Keeps memory/query pressure balanced during full-export scans.
+const BATCH_SIZE = Number(process.env.EXPORT_BATCH_SIZE || 500)
 
 export async function GET() {
   const session = await getServerSession(authOptions)

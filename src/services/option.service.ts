@@ -37,9 +37,10 @@ const ALLOWED_OPTIONS = [
   'optimize_webp',
 ]
 
+const OPTIONS_CACHE_TTL_MS = 30_000
+
 export class OptionService {
   private static cache = new Map<string, { value: string; expiresAt: number }>()
-  private static CACHE_TTL_MS = 30_000
 
   /**
    * Retrieves specific global options from the database.
@@ -80,7 +81,7 @@ export class OptionService {
         settingsMap[opt.optionName] = opt.optionValue
         this.cache.set(opt.optionName, {
           value: opt.optionValue,
-          expiresAt: now + this.CACHE_TTL_MS
+          expiresAt: now + OPTIONS_CACHE_TTL_MS
         })
       }
 
@@ -118,7 +119,7 @@ export class OptionService {
       if (ALLOWED_OPTIONS.includes(key)) {
         this.cache.set(key, {
           value,
-          expiresAt: now + this.CACHE_TTL_MS
+          expiresAt: now + OPTIONS_CACHE_TTL_MS
         })
       }
     }

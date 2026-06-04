@@ -44,7 +44,7 @@ export class AnalyticsService {
         prisma.analyticsEvent.count({
           where: { createdAt: { gte: thirtyDaysAgo }, isNewVisitor: true }
         }),
-        prisma.$queryRaw<Array<{ day: Date; views: number; visitors: number }>>`
+        prisma.$queryRaw<Array<{ day: Date; views: number; visitors: number }>`
           SELECT
             DATE(created_at) AS day,
             COUNT(*)::int AS views,

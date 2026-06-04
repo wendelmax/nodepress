@@ -85,11 +85,6 @@ export class CommentService {
     }
   }
 
-  static async getAllCommentsLegacy(page: number = 1, limit: number = 50) {
-    const data = await this.getAllComments(page, limit)
-    return data.comments
-  }
-
   /**
    * Atualiza o status de um comentário ('1', '0', 'spam', 'trash').
    */
