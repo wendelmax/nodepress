@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma'
 const DEFAULT_BATCH_SIZE = 500
 const parsedBatchSize = Number.parseInt(process.env.EXPORT_BATCH_SIZE ?? '', 10)
 const BATCH_SIZE =
-  Number.isFinite(parsedBatchSize) && parsedBatchSize > 0
+  Number.isInteger(parsedBatchSize) && parsedBatchSize > 0
     ? parsedBatchSize
     : DEFAULT_BATCH_SIZE
 
