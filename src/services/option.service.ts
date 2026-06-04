@@ -37,35 +37,59 @@ const ALLOWED_OPTIONS = [
   'optimize_webp',
 ]
 
+const OPTIONS_CACHE_TTL_MS = 30_000
+
 export class OptionService {
+  private static cache = new Map<string, { value: string; expiresAt: number }>()
+
   /**
    * Retrieves specific global options from the database.
    * If an array of keys is provided, it fetches those.
    * Otherwise, it fetches the default allowed options.
    */
   static async getOptions(keys: string[] = ALLOWED_OPTIONS): Promise<Record<string, string>> {
+    const now = Date.now()
+    const settingsMap: Record<string, string> = {}
+    const missingKeys: string[] = []
+
+    for (const key of keys) {
+      const cached = this.cache.get(key)
+      if (cached && cached.expiresAt > now) {
+        settingsMap[key] = cached.value
+      } else {
+        missingKeys.push(key)
+      }
+    }
+
+    if (missingKeys.length === 0) {
+      return settingsMap
+    }
+
     try {
       // Fast check: if no DATABASE_URL, don't even try to query
       if (!process.env.DATABASE_URL) {
-        return {}
+        return settingsMap
       }
 
       const options = await prisma.option.findMany({
         where: {
-          optionName: { in: keys }
+          optionName: { in: missingKeys }
         }
       })
 
-      const settingsMap = options.reduce((acc, opt) => {
-        acc[opt.optionName] = opt.optionValue
-        return acc
-      }, {} as Record<string, string>)
+      for (const opt of options) {
+        settingsMap[opt.optionName] = opt.optionValue
+        this.cache.set(opt.optionName, {
+          value: opt.optionValue,
+          expiresAt: now + OPTIONS_CACHE_TTL_MS
+        })
+      }
 
       return settingsMap
     } catch (error) {
       // If database is not configured or tables don't exist yet, just return empty settings gracefully
       // This is essential for the /setup-config wizard to work because the Root Layout calls this.
-      return {}
+      return settingsMap
     }
   }
 
@@ -89,6 +113,16 @@ export class OptionService {
     }
 
     await Promise.all(promises)
+
+    const now = Date.now()
+    for (const [key, value] of Object.entries(payload)) {
+      if (ALLOWED_OPTIONS.includes(key)) {
+        this.cache.set(key, {
+          value,
+          expiresAt: now + OPTIONS_CACHE_TTL_MS
+        })
+      }
+    }
 
     // Invalidate the cache for the entire site since options affect global layouts, seo, and themes
     try { revalidatePath('/', 'layout') } catch (e) {}

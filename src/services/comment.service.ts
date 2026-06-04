@@ -59,13 +59,30 @@ export class CommentService {
   /**
    * Retorna todos os comentários do sistema para o painel de moderação.
    */
-  static async getAllComments() {
-    return prisma.comment.findMany({
-      orderBy: { commentDate: 'desc' },
-      include: {
-        post: { select: { id: true, postTitle: true, postName: true } }
-      }
-    })
+  static async getAllComments(page: number = 1, limit: number = 50) {
+    const safePage = Math.max(1, page)
+    const safeLimit = Math.max(1, Math.min(200, limit))
+    const skip = (safePage - 1) * safeLimit
+
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        orderBy: { commentDate: 'desc' },
+        include: {
+          post: { select: { id: true, postTitle: true, postName: true } }
+        },
+        skip,
+        take: safeLimit
+      }),
+      prisma.comment.count()
+    ])
+
+    return {
+      comments,
+      total,
+      totalPages: Math.ceil(total / safeLimit),
+      page: safePage,
+      limit: safeLimit
+    }
   }
 
   /**

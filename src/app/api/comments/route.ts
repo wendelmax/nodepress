@@ -3,15 +3,19 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { CommentService } from '@/services/comment.service'
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    const comments = await CommentService.getAllComments()
-    return NextResponse.json(comments)
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const perPage = parseInt(searchParams.get('per_page') || '50', 10)
+
+    const result = await CommentService.getAllComments(page, perPage)
+    return NextResponse.json(result)
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch comments' }, { status: 500 })
   }
