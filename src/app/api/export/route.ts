@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma'
 
 // Keeps memory/query pressure balanced during full-export scans.
 const DEFAULT_BATCH_SIZE = 500
-const parsedBatchSize = Number.parseInt(process.env.EXPORT_BATCH_SIZE ?? '', 10)
+const parsedBatchSize = Number(process.env.EXPORT_BATCH_SIZE ?? '')
 const BATCH_SIZE =
   Number.isInteger(parsedBatchSize) && parsedBatchSize > 0
     ? parsedBatchSize
