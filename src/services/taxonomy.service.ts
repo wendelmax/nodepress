@@ -55,16 +55,16 @@ export class TaxonomyService {
       where: {
         taxonomy,
         term: { slug }
-      }
+      },
+      include: {
+        relationships: {
+          select: { objectId: true }
+        }
+      },
     })
 
     if (!termTaxonomy) return []
-
-    const relationships = await prisma.termRelationship.findMany({
-      where: { termTaxonomyId: termTaxonomy.termTaxonomyId }
-    })
-
-    return relationships.map(r => r.objectId)
+    return termTaxonomy.relationships.map(r => r.objectId)
   }
 
   /**
@@ -143,15 +143,22 @@ export class TaxonomyService {
    */
   static async getPostTermIds(postId: number, taxonomy: string): Promise<number[]> {
     const relationships = await prisma.termRelationship.findMany({
-      where: { objectId: postId },
-      include: {
-        termTaxonomy: true
+      where: {
+        objectId: postId,
+        termTaxonomy: {
+          taxonomy
+        }
+      },
+      select: {
+        termTaxonomy: {
+          select: {
+            termId: true
+          }
+        }
       }
     })
 
-    return relationships
-      .filter(r => r.termTaxonomy.taxonomy === taxonomy)
-      .map(r => r.termTaxonomy.termId)
+    return relationships.map(r => r.termTaxonomy.termId)
   }
 
   /**
@@ -159,7 +166,12 @@ export class TaxonomyService {
    */
   static async getPostTerms(postId: number, taxonomy: string) {
     const relationships = await prisma.termRelationship.findMany({
-      where: { objectId: postId },
+      where: {
+        objectId: postId,
+        termTaxonomy: {
+          taxonomy
+        }
+      },
       include: {
         termTaxonomy: {
           include: {
@@ -169,12 +181,10 @@ export class TaxonomyService {
       }
     })
 
-    return relationships
-      .filter(r => r.termTaxonomy.taxonomy === taxonomy)
-      .map(r => ({
-        id: r.termTaxonomy.termId,
-        name: r.termTaxonomy.term.name,
-        slug: r.termTaxonomy.term.slug
-      }))
+    return relationships.map(r => ({
+      id: r.termTaxonomy.termId,
+      name: r.termTaxonomy.term.name,
+      slug: r.termTaxonomy.term.slug
+    }))
   }
 }

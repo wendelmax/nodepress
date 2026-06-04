@@ -58,25 +58,34 @@ export default async function DashboardPage() {
   const sparkViews = window7.map(d => d.views)
 
   // Per-day post and comment counts from DB
-  const sparkPosts = await Promise.all(
-    window7.map(async ({ date }) => {
-      try {
-        const start = new Date(date + 'T00:00:00.000Z')
-        const end = new Date(date + 'T23:59:59.999Z')
-        return prisma.post.count({ where: { postType: 'post', postDate: { gte: start, lte: end } } })
-      } catch { return 0 }
-    })
-  )
+  let sparkPosts = window7.map(() => 0)
+  let sparkComments = window7.map(() => 0)
 
-  const sparkComments = await Promise.all(
-    window7.map(async ({ date }) => {
-      try {
-        const start = new Date(date + 'T00:00:00.000Z')
-        const end = new Date(date + 'T23:59:59.999Z')
-        return prisma.comment.count({ where: { commentDate: { gte: start, lte: end } } })
-      } catch { return 0 }
-    })
-  )
+  if (window7.length > 0) {
+    const startDate = new Date(`${window7[0].date}T00:00:00.000Z`)
+    const endDate = new Date(`${window7[window7.length - 1].date}T23:59:59.999Z`)
+
+    const [postRows, commentRows] = await Promise.all([
+      prisma.$queryRaw<Array<{ day: Date; count: number }>>`
+        SELECT DATE(post_date) AS day, COUNT(*)::int AS count
+        FROM np_posts
+        WHERE post_type = 'post' AND post_date >= ${startDate} AND post_date <= ${endDate}
+        GROUP BY DATE(post_date)
+      `,
+      prisma.$queryRaw<Array<{ day: Date; count: number }>>`
+        SELECT DATE(comment_date) AS day, COUNT(*)::int AS count
+        FROM np_comments
+        WHERE comment_date >= ${startDate} AND comment_date <= ${endDate}
+        GROUP BY DATE(comment_date)
+      `
+    ])
+
+    const postMap = new Map(postRows.map(row => [new Date(row.day).toISOString().slice(0, 10), Number(row.count) || 0]))
+    const commentMap = new Map(commentRows.map(row => [new Date(row.day).toISOString().slice(0, 10), Number(row.count) || 0]))
+
+    sparkPosts = window7.map(({ date }) => postMap.get(date) ?? 0)
+    sparkComments = window7.map(({ date }) => commentMap.get(date) ?? 0)
+  }
 
   // ── Trend calculations (today vs. yesterday from real analytics) ──
   const todayStats    = window7[6] ?? { views: 0, visitors: 0 }

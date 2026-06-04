@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
+const BATCH_SIZE = 500
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   
@@ -11,25 +13,55 @@ export async function GET() {
   }
 
   try {
-    // 1. Fetch all essential data
-    const posts = await prisma.post.findMany({
-      include: { meta: true }
-    })
-    
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        userLogin: true,
-        userEmail: true,
-        displayName: true,
-        userRegistered: true,
-        meta: true
-      }
-    })
+    // 1. Fetch essential data in batches
+    const posts: any[] = []
+    let lastPostId = 0
+    while (true) {
+      const batch = await prisma.post.findMany({
+        where: { id: { gt: lastPostId } },
+        orderBy: { id: 'asc' },
+        take: BATCH_SIZE,
+        include: { meta: true }
+      })
+      if (batch.length === 0) break
+      posts.push(...batch)
+      lastPostId = batch[batch.length - 1].id
+    }
 
-    const taxonomies = await prisma.term.findMany({
-      include: { taxonomies: true }
-    })
+    const users: any[] = []
+    let lastUserId = 0
+    while (true) {
+      const batch = await prisma.user.findMany({
+        where: { id: { gt: lastUserId } },
+        orderBy: { id: 'asc' },
+        take: BATCH_SIZE,
+        select: {
+          id: true,
+          userLogin: true,
+          userEmail: true,
+          displayName: true,
+          userRegistered: true,
+          meta: true
+        }
+      })
+      if (batch.length === 0) break
+      users.push(...batch)
+      lastUserId = batch[batch.length - 1].id
+    }
+
+    const taxonomies: any[] = []
+    let lastTermId = 0
+    while (true) {
+      const batch = await prisma.term.findMany({
+        where: { termId: { gt: lastTermId } },
+        orderBy: { termId: 'asc' },
+        take: BATCH_SIZE,
+        include: { taxonomies: true }
+      })
+      if (batch.length === 0) break
+      taxonomies.push(...batch)
+      lastTermId = batch[batch.length - 1].termId
+    }
 
     const options = await prisma.option.findMany()
 

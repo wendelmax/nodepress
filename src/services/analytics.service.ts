@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma"
-import { OptionService } from "./option.service"
 
 interface DailyStat {
   views: number
@@ -35,28 +34,36 @@ export class AnalyticsService {
     if (!process.env.DATABASE_URL) return data
 
     try {
-      // Get all events from the last 30 days
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-      const events = await prisma.analyticsEvent.findMany({
-        where: { createdAt: { gte: thirtyDaysAgo } },
-        select: { createdAt: true, isNewVisitor: true }
-      })
+      const [totalViews, totalVisitors, dailyRows] = await Promise.all([
+        prisma.analyticsEvent.count({
+          where: { createdAt: { gte: thirtyDaysAgo } }
+        }),
+        prisma.analyticsEvent.count({
+          where: { createdAt: { gte: thirtyDaysAgo }, isNewVisitor: true }
+        }),
+        prisma.$queryRaw<Array<{ day: Date; views: number; visitors: number }>>`
+          SELECT
+            DATE(created_at) AS day,
+            COUNT(*)::int AS views,
+            COALESCE(SUM(CASE WHEN is_new_visitor THEN 1 ELSE 0 END), 0)::int AS visitors
+          FROM np_analytics_events
+          WHERE created_at >= ${thirtyDaysAgo}
+          GROUP BY DATE(created_at)
+          ORDER BY DATE(created_at) ASC
+        `
+      ])
 
-      // Aggregate
-      events.forEach(event => {
-        const dateKey = this.fmt(event.createdAt)
-        if (!data.dailyStats[dateKey]) {
-          data.dailyStats[dateKey] = { views: 0, visitors: 0 }
-        }
-        
-        data.totalViews += 1
-        data.dailyStats[dateKey].views += 1
+      data.totalViews = totalViews
+      data.totalVisitors = totalVisitors
 
-        if (event.isNewVisitor) {
-          data.totalVisitors += 1
-          data.dailyStats[dateKey].visitors += 1
+      dailyRows.forEach(row => {
+        const dateKey = this.fmt(new Date(row.day))
+        data.dailyStats[dateKey] = {
+          views: Number(row.views) || 0,
+          visitors: Number(row.visitors) || 0
         }
       })
     } catch (err) {
