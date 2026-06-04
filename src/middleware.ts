@@ -32,6 +32,17 @@ export async function middleware(request: NextRequest) {
 
   // --- Analytics for Public Routes ---
   const response = NextResponse.next()
+  const isPageMethod = request.method === 'GET' || request.method === 'HEAD'
+  const isPrefetch = request.headers.get('purpose') === 'prefetch' || request.headers.get('next-router-prefetch') === '1'
+  const skipAnalyticsPath =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/setup-config') ||
+    pathname.startsWith('/install')
+
+  if (!isPageMethod || isPrefetch || skipAnalyticsPath) {
+    return response
+  }
+
   const existingSession = request.cookies.get(SESSION_COOKIE)
   const isNewVisitor = !existingSession
   const sessionId = existingSession?.value || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`

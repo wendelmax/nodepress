@@ -34,14 +34,26 @@ function StatusBadge({ approved }: { approved: string }) {
   )
 }
 
+interface CommentsResponse {
+  comments: Comment[]
+  total: number
+}
+
+const DEFAULT_PER_PAGE = 50
+
 export default function CommentsManager() {
   const [comments, setComments] = useState<Comment[]>([])
+  const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchComments = async () => {
     setIsLoading(true)
-    const res = await fetch("/api/comments")
-    if (res.ok) setComments(await res.json())
+    const res = await fetch(`/api/comments?per_page=${DEFAULT_PER_PAGE}`)
+    if (res.ok) {
+      const data = await res.json() as CommentsResponse
+      setComments(data.comments || [])
+      setTotal(data.total || 0)
+    }
     setIsLoading(false)
   }
 
@@ -72,7 +84,7 @@ export default function CommentsManager() {
         <h1 className="text-2xl font-bold text-text leading-none">Comentários</h1>
       </div>
       <p className="text-xs text-text-secondary mt-1.5">
-          {comments.length} comentário{comments.length !== 1 ? 's' : ''} encontrado{comments.length !== 1 ? 's' : ''}.
+        {total} comentário{total !== 1 ? 's' : ''} encontrado{total !== 1 ? 's' : ''}.
         </p>
 
       {comments.length === 0 ? (

@@ -33,41 +33,79 @@ export async function POST(request: Request) {
     let importedPosts = 0
     let importedOptions = 0
 
-    // 1. Import Options
-    for (const opt of options) {
-      const exists = await prisma.option.findUnique({ where: { optionName: opt.optionName } })
-      if (!exists) {
-        await prisma.option.create({
-          data: {
-            optionName: opt.optionName,
-            optionValue: opt.optionValue,
-            autoload: opt.autoload
-          }
+    // 1. Import Options (bulk)
+    if (options.length > 0) {
+      const optionNames = options
+        .map((opt: any) => opt.optionName)
+        .filter((name: string) => typeof name === 'string' && name.length > 0)
+
+      const existingOptions = await prisma.option.findMany({
+        where: { optionName: { in: optionNames } },
+        select: { optionName: true }
+      })
+      const existingOptionSet = new Set(existingOptions.map(o => o.optionName))
+
+      const missingOptions = options
+        .filter((opt: any) => !existingOptionSet.has(opt.optionName))
+        .map((opt: any) => ({
+          optionName: opt.optionName,
+          optionValue: opt.optionValue ?? '',
+          autoload: opt.autoload ?? 'yes'
+        }))
+
+      if (missingOptions.length > 0) {
+        const created = await prisma.option.createMany({
+          data: missingOptions,
+          skipDuplicates: true
         })
-        importedOptions++
+        importedOptions = created.count
       }
     }
 
-    // 2. Import Posts
-    for (const p of posts) {
-      const exists = await prisma.post.findUnique({ where: { id: p.id } })
-      if (!exists) {
-        // We need to strip relational fields that we will insert manually or let Prisma ignore
-        const { meta, author, comments, id, ...postData } = p
-        
-        await prisma.post.create({
-          data: {
-            id, // We force the ID to maintain references
-            ...postData,
-            meta: meta && meta.length > 0 ? {
-              create: meta.map((m: any) => ({
-                metaKey: m.metaKey,
-                metaValue: m.metaValue
-              }))
-            } : undefined
-          }
+    // 2. Import Posts + Meta (bulk)
+    if (posts.length > 0) {
+      const postIds = posts
+        .map((p: any) => Number(p.id))
+        .filter((id: number) => Number.isInteger(id) && id > 0)
+
+      const existingPosts = await prisma.post.findMany({
+        where: { id: { in: postIds } },
+        select: { id: true }
+      })
+      const existingPostSet = new Set(existingPosts.map(p => p.id))
+
+      const missingPostsRaw = posts.filter((p: any) => !existingPostSet.has(Number(p.id)))
+
+      const postData = missingPostsRaw.map((p: any) => {
+        const { meta, author, comments, ...baseData } = p
+        return baseData
+      })
+
+      if (postData.length > 0) {
+        const createdPosts = await prisma.post.createMany({
+          data: postData,
+          skipDuplicates: true
         })
-        importedPosts++
+        importedPosts = createdPosts.count
+      }
+
+      const postMetaData = missingPostsRaw.flatMap((p: any) => {
+        const postId = Number(p.id)
+        const meta = Array.isArray(p.meta) ? p.meta : []
+        return meta
+          .filter((m: any) => typeof m.metaKey === 'string')
+          .map((m: any) => ({
+            postId,
+            metaKey: m.metaKey,
+            metaValue: m.metaValue ?? ''
+          }))
+      })
+
+      if (postMetaData.length > 0) {
+        await prisma.postMeta.createMany({
+          data: postMetaData,
+          skipDuplicates: true
+        })
       }
     }
 
