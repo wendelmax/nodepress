@@ -4,7 +4,12 @@ import { authOptions } from '@/lib/auth'
 import prisma from '@/lib/prisma'
 
 // Keeps memory/query pressure balanced during full-export scans.
-const BATCH_SIZE = Number(process.env.EXPORT_BATCH_SIZE || 500)
+const DEFAULT_BATCH_SIZE = 500
+const parsedBatchSize = Number.parseInt(process.env.EXPORT_BATCH_SIZE ?? '', 10)
+const BATCH_SIZE =
+  Number.isFinite(parsedBatchSize) && parsedBatchSize > 0
+    ? parsedBatchSize
+    : DEFAULT_BATCH_SIZE
 
 export async function GET() {
   const session = await getServerSession(authOptions)

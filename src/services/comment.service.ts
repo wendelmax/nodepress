@@ -60,8 +60,11 @@ export class CommentService {
    * Retorna todos os comentários do sistema para o painel de moderação.
    */
   static async getAllComments(page: number = 1, limit: number = 50) {
-    const safePage = Math.max(1, page)
-    const safeLimit = Math.max(1, Math.min(200, limit))
+    const parsedPage = Number.isFinite(page) ? Math.trunc(page) : 1
+    const parsedLimit = Number.isFinite(limit) ? Math.trunc(limit) : 50
+
+    const safePage = Math.max(1, parsedPage)
+    const safeLimit = Math.max(1, Math.min(200, parsedLimit))
     const skip = (safePage - 1) * safeLimit
 
     const [comments, total] = await Promise.all([
