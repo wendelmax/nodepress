@@ -35,9 +35,11 @@ export async function POST(request: Request) {
 
     // 1. Import Options (bulk)
     if (options.length > 0) {
-      const optionNames = options
+      const validOptions = options
+        .filter((opt: any) => typeof opt?.optionName === 'string' && opt.optionName.length > 0)
+
+      const optionNames = validOptions
         .map((opt: any) => opt.optionName)
-        .filter((name: string) => typeof name === 'string' && name.length > 0)
 
       const existingOptions = await prisma.option.findMany({
         where: { optionName: { in: optionNames } },
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
       })
       const existingOptionSet = new Set(existingOptions.map(o => o.optionName))
 
-      const missingOptions = options
+      const missingOptions = validOptions
         .filter((opt: any) => !existingOptionSet.has(opt.optionName))
         .map((opt: any) => ({
           optionName: opt.optionName,
@@ -74,11 +76,17 @@ export async function POST(request: Request) {
       })
       const existingPostSet = new Set(existingPosts.map(p => p.id))
 
-      const missingPostsRaw = posts.filter((p: any) => !existingPostSet.has(Number(p.id)))
+      const missingPostsRaw = posts.filter((p: any) => {
+        const postId = Number(p.id)
+        return Number.isInteger(postId) && postId > 0 && !existingPostSet.has(postId)
+      })
 
       const postData = missingPostsRaw.map((p: any) => {
         const { meta, author, comments, ...baseData } = p
-        return baseData
+        return {
+          ...baseData,
+          id: Number(p.id)
+        }
       })
 
       if (postData.length > 0) {
