@@ -9,7 +9,7 @@ export default async function EditPage({ searchParams }: { searchParams: Promise
   const postType = params.post_type || 'post'
   const postStatus = params.post_status || 'all'
   
-  const posts = await PostService.getAdminList(postType, postStatus)
+  const { posts } = await PostService.getAdminList(postType, postStatus)
   const counts = await PostService.getAdminCounts(postType)
 
   const isPage = postType === 'page'
