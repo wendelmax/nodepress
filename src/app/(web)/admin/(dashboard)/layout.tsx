@@ -18,6 +18,14 @@ import { getAdminDictionary } from "@/i18n"
 import "@/plugins/registry"
 import '../admin.css'
 
+// This whole route group is a session-gated admin dashboard (auth check +
+// live DB reads on every request via checkInstallation()/getServerSession()
+// below) — it should never be statically pre-rendered or cached. Without
+// this, `next build` tries to prerender individual admin pages (e.g.
+// /admin/menus) at build time and fails when the database isn't reachable
+// yet (DATABASE_URL is a runtime-only dependency, see Dockerfile).
+export const dynamic = 'force-dynamic'
+
 export default async function AdminLayout({
   children,
 }: {
