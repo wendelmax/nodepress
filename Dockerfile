@@ -4,7 +4,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# --legacy-peer-deps: react-quill@2.0.0 declares a peer dep on React ^16-18,
+# but this project is on React 19.2.4. Unrelated to this task (pre-existing
+# upstream conflict in package.json), but `npm ci` fails without it.
+RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npx prisma generate
 RUN npm run build
