@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import prisma from '@/lib/prisma'
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   
   // Check authorization
   if (!session || !session.user || (session.user as any).role !== 'administrator') {

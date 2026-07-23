@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { MenuService } from '@/services/menu.service'
 
 // GET /api/menus/[id]/items - id here is the slug for easier fetching
@@ -16,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 // POST /api/menus/[id]/items - id here is the menu numeric ID
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -42,7 +41,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 // PUT /api/menus/[id]/items - updates the order of items
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

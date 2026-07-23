@@ -1,11 +1,10 @@
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/auth"
 import { UserService } from "@/services/user.service"
 import { notFound } from "next/navigation"
 import ProfileForm from "@/components/admin/ProfileForm"
 
 export default async function MyProfilePage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   
   if (!session || !session.user || !(session.user as any).id) {
     return notFound()

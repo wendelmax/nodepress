@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { getActiveAIProvider } from '@/lib/ai/registry'
 import { AIGenerateOptions } from '@/lib/ai/types'
 import {
@@ -14,7 +13,7 @@ import {
 
 export async function POST(request: Request) {
   // ── Layer 1: Authentication ──────────────────────────────────────────────
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     auditLog('UNAUTHORIZED_ACCESS', { errorType: 'no_session' })
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

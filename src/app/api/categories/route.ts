@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { TaxonomyService } from '@/services/taxonomy.service'
 
 export async function GET(request: Request) {
@@ -13,7 +12,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_create', message: 'Sorry, you are not allowed to create terms.', data: { status: 401 } }, { status: 401 })
   }

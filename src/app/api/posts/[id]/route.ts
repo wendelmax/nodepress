@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { PostService } from '@/services/post.service'
 import { TaxonomyService } from '@/services/taxonomy.service'
 
@@ -36,7 +35,7 @@ export async function PATCH(
 }
 
 async function handleUpdate(request: Request, idStr: string) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_edit', message: 'Sorry, you are not allowed to edit this post.', data: { status: 401 } }, { status: 401 })
   }
@@ -86,7 +85,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_delete', message: 'Sorry, you are not allowed to delete this post.', data: { status: 401 } }, { status: 401 })
   }

@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { CommentService } from '@/services/comment.service'
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -24,7 +23,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // This route is public for anyone to submit comments.
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     // Some basic IP extraction logic (Next.js specific depending on proxy/hosting)
     const ip = request.headers.get('x-forwarded-for') || ''

@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { UserService } from '@/services/user.service'
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_read', message: 'Sorry, you are not allowed to read users.', data: { status: 401 } }, { status: 401 })
   }
@@ -26,7 +25,7 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_edit', message: 'Sorry, you are not allowed to edit this user.', data: { status: 401 } }, { status: 401 })
   }

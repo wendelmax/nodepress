@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { auth } from '@/auth'
 
 const SESSION_COOKIE = 'np_sid'
 const SESSION_TTL_SECONDS = 30 * 60
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // --- RBAC for Admin Routes ---
   if (pathname.startsWith('/admin')) {
-    const token = await getToken({ req: request })
-    
-    if (!token) {
+    const session = await auth()
+
+    if (!session) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const role = token.role as string || 'author'
+    const role = (session.user as any)?.role as string || 'author'
 
     // Block non-admins from settings, users, plugins, themes
     if (role !== 'admin') {
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/admin', request.url))
       }
     }
-    
+
     // Allow access to other admin routes
     return NextResponse.next()
   }
@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   const existingSession = request.cookies.get(SESSION_COOKIE)
   const isNewVisitor = !existingSession
   const sessionId = existingSession?.value || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-  
+
   if (isNewVisitor) {
     response.cookies.set(SESSION_COOKIE, sessionId, {
       httpOnly: true,
@@ -60,7 +60,7 @@ export async function middleware(request: NextRequest) {
   fetch(`${host}/api/analytics/track`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       isNewVisitor,
       path: pathname,
       sessionId

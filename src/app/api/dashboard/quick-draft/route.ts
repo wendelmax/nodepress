@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import prisma from '@/lib/prisma'
 
 /**
@@ -10,7 +9,7 @@ import prisma from '@/lib/prisma'
  * Returns the new post ID so the client can redirect to the editor.
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
   }

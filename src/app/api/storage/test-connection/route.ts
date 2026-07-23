@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { S3Driver } from '@/storage/S3Driver'
 import { LocalDriver } from '@/storage/LocalDriver'
 import { StorageDriverFactory } from '@/storage/StorageDriverFactory'
@@ -12,7 +11,7 @@ import { StorageDriverFactory } from '@/storage/StorageDriverFactory'
  * Used by the admin settings page before persisting credentials to the database.
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json(
       { success: false, message: 'Não autorizado.' },

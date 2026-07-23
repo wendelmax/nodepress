@@ -20,6 +20,7 @@ model User {
   userActivationKey   String       @map("user_activation_key") @db.VarChar(255)
   userStatus          Int          @default(0) @map("user_status")
   displayName         String       @map("display_name") @db.VarChar(250)
+  keycloakSub         String?      @map("keycloak_sub") @db.VarChar(255) @unique
 
   meta                UserMeta[]
   posts               Post[]

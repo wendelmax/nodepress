@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import prisma from '@/lib/prisma'
 
 // Keeps memory/query pressure balanced during full-export scans.
@@ -12,7 +11,7 @@ const BATCH_SIZE =
     : DEFAULT_BATCH_SIZE
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

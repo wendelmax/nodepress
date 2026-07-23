@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { MediaService } from '@/services/media.service'
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_read', message: 'Sorry, you are not allowed to read media.', data: { status: 401 } }, { status: 401 })
   }
@@ -20,7 +19,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_create', message: 'Sorry, you are not allowed to upload media.', data: { status: 401 } }, { status: 401 })
   }
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session || !session.user) {
     return NextResponse.json({ code: 'rest_cannot_delete', message: 'Sorry, you are not allowed to delete media.', data: { status: 401 } }, { status: 401 })
   }

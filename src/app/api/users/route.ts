@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import { auth } from "@/auth"
 import { getSiteUrl } from '@/lib/site-url'
 import { UserService } from '@/services/user.service'
 
@@ -48,7 +47,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session) return new NextResponse('Unauthorized', { status: 401 })
   
   try {

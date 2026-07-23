@@ -27,13 +27,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { siteTitle, username, password, email, lang } = body
+    const { siteTitle, username, email, lang } = body
 
-    if (!siteTitle || !username || !password || !email) {
+    if (!siteTitle || !username || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const passwordHash = await bcrypt.hash(password, 10)
+    // No password is set here anymore — login goes through Keycloak SSO
+    // (see src/auth.ts). This row is a placeholder that gets adopted on
+    // first real Keycloak login (matched by email, then keycloakSub is
+    // written onto it). The random hash below only satisfies the
+    // NOT NULL userPass column; it is never checked against, since
+    // CredentialsProvider no longer exists.
+    const passwordHash = await bcrypt.hash(crypto.randomUUID(), 10)
     const siteLang = lang || 'en'
     const siteOrigin = getOriginFromRequest(request)
 
