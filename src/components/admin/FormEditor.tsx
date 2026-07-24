@@ -215,16 +215,17 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
           ) : (
             <div className="flex flex-col gap-4">
               {submissions.map(sub => {
-                let data = {}
-                try { data = JSON.parse(sub.postContent) } catch(e) {}
-                
+                let data: Record<string, any> = {}
+                try { data = JSON.parse(sub.payload) } catch(e) {}
+                const { _metadata, ...fields } = data
+
                 return (
                   <div key={sub.id} className="bg-white/[0.02] border border-border/50 rounded-xl p-5 flex flex-col gap-3">
                     <div className="flex justify-between items-center text-xs text-text-muted border-b border-border/30 pb-2 mb-1">
-                      <span>Recebido em: {new Date(sub.postDate).toLocaleString('pt-BR')}</span>
-                      <span>IP/Origem: {sub.postExcerpt || 'Desconhecida'}</span>
+                      <span>Recebido em: {new Date(sub.createdAt).toLocaleString('pt-BR')}</span>
+                      <span>IP/Origem: {_metadata?.ip || 'Desconhecida'}</span>
                     </div>
-                    {Object.entries(data).map(([k, v]) => (
+                    {Object.entries(fields).map(([k, v]) => (
                       <div key={k} className="text-sm">
                         <span className="font-bold text-text-secondary capitalize block text-[10px] uppercase tracking-wider mb-0.5">{k}</span>
                         <span className="text-text">{v as React.ReactNode || '-'}</span>
