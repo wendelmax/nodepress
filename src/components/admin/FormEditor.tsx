@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PageHeader, SettingsSection, inputCls, selectCls } from "@/components/admin/SettingsUI"
 import { Check, Loader2, List, Settings, Inbox, Trash2 } from "lucide-react"
@@ -13,6 +13,27 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
   })
   const [activeTab, setActiveTab] = useState<'editor' | 'submissions'>('editor')
   const [isSaving, setIsSaving] = useState(false)
+  const [isAdmissionForm, setIsAdmissionForm] = useState<boolean>(
+    () => form.meta?.find((m: any) => m.metaKey === '_np_form_kind')?.metaValue === 'admission'
+  )
+  const [processId, setProcessId] = useState<string>(
+    () => form.meta?.find((m: any) => m.metaKey === '_np_admission_process_id')?.metaValue || ''
+  )
+  const [modality, setModality] = useState<string>(
+    () => form.meta?.find((m: any) => m.metaKey === '_np_admission_modality')?.metaValue || ''
+  )
+  const [processes, setProcesses] = useState<any[]>([])
+  const [loadingProcesses, setLoadingProcesses] = useState(false)
+
+  useEffect(() => {
+    if (!isAdmissionForm) return
+    setLoadingProcesses(true)
+    fetch('/api/admissions/processes')
+      .then(res => res.json())
+      .then(data => setProcesses(Array.isArray(data) ? data : []))
+      .catch(() => setProcesses([]))
+      .finally(() => setLoadingProcesses(false))
+  }, [isAdmissionForm])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -22,7 +43,12 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          content: JSON.stringify(fields)
+          content: JSON.stringify(fields),
+          metaData: {
+            _np_form_kind: isAdmissionForm ? 'admission' : '',
+            _np_admission_process_id: isAdmissionForm ? processId : '',
+            _np_admission_modality: isAdmissionForm ? modality : '',
+          }
         })
       })
       alert("Formulário salvo!")
@@ -96,6 +122,48 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
                 ID: {form.id}
               </code>
             </div>
+          </SettingsSection>
+
+          <SettingsSection title="Integração com Admissões">
+            <label className="flex items-center gap-2 text-sm text-text-secondary cursor-pointer mb-4">
+              <input
+                type="checkbox"
+                checked={isAdmissionForm}
+                onChange={e => setIsAdmissionForm(e.target.checked)}
+                className="rounded border-border bg-black/50 text-primary"
+              />
+              Este formulário captura candidatos (cria Lead no processo seletivo)
+            </label>
+
+            {isAdmissionForm && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Processo Seletivo</label>
+                  <select value={processId} onChange={e => setProcessId(e.target.value)} className={selectCls}>
+                    <option value="">{loadingProcesses ? "Carregando..." : "Selecione um processo"}</option>
+                    {processes.map((p: any) => (
+                      <option key={p.ID} value={p.ID}>{p.Name} ({p.Term})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Modalidade</label>
+                  <select value={modality} onChange={e => setModality(e.target.value)} className={selectCls}>
+                    <option value="">Selecione a modalidade</option>
+                    <option value="ENEM">ENEM</option>
+                    <option value="VESTIBULAR">Vestibular</option>
+                    <option value="TRANSFERENCIA">Transferência</option>
+                    <option value="PORTADOR_DIPLOMA">Portador de Diploma</option>
+                  </select>
+                </div>
+                <p className="text-xs text-text-muted">
+                  Para este formulário criar candidatos corretamente, os campos devem usar os nomes internos
+                  <code className="mx-1 bg-black/30 px-1.5 py-0.5 rounded">name</code>,
+                  <code className="mx-1 bg-black/30 px-1.5 py-0.5 rounded">email</code> e
+                  <code className="mx-1 bg-black/30 px-1.5 py-0.5 rounded">phone</code>.
+                </p>
+              </div>
+            )}
           </SettingsSection>
 
           <SettingsSection title="Campos (Drag & Drop em breve)">
