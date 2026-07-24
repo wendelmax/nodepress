@@ -38,11 +38,18 @@ export function FormEmbed({ formId }: { formId: string }) {
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
 
+    const urlParams = new URLSearchParams(window.location.search)
+    const utm: Record<string, string> = {}
+    for (const key of ['utm_source', 'utm_medium', 'utm_campaign']) {
+      const val = urlParams.get(key)
+      if (val) utm[key] = val
+    }
+
     try {
       const res = await fetch('/api/forms/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId, ...data })
+        body: JSON.stringify({ formId, ...data, ...utm })
       })
 
       if (res.ok) {
