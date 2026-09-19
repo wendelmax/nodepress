@@ -1,9 +1,8 @@
-/**
- * Plugins Registry
- * 
- * To install a new plugin, add it to the src/plugins directory 
- * and import it here so the HookService can initialize its hooks.
- */
+import type { NodePressPlugin } from './types'
+import './legacy'
 
-import './hello-dolly'
-import './seo-optimizer'
+export const registeredPlugins: NodePressPlugin[] = []
+
+export async function getRegisteredPlugins(): Promise<NodePressPlugin[]> {
+  return registeredPlugins
+}

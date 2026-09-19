@@ -5,7 +5,7 @@ interface Hook {
   callback: HookCallback;
 }
 
-class HookRegistry {
+export class HookRegistry {
   private actions: Map<string, Hook[]> = new Map();
   private filters: Map<string, Hook[]> = new Map();
   private pluginsLoaded: boolean = false;
@@ -24,13 +24,27 @@ class HookRegistry {
   /**
    * Register a filter callback
    */
-  public addFilter(tag: string, callback: HookCallback, priority: number = 10) {
+  public addFilter(tag: string, callback: HookCallback, priority: number = 10): () => void {
     if (!this.filters.has(tag)) {
       this.filters.set(tag, []);
     }
     const hooks = this.filters.get(tag)!;
     hooks.push({ priority, callback });
     hooks.sort((a, b) => a.priority - b.priority);
+    let removed = false
+    return () => {
+      if (removed) return
+      removed = true
+      this.removeFilter(tag, callback)
+    }
+  }
+
+  public removeFilter(tag: string, callback: HookCallback): void {
+    const hooks = this.filters.get(tag)
+    if (!hooks) return
+    const remaining = hooks.filter((hook) => hook.callback !== callback)
+    if (remaining.length === 0) this.filters.delete(tag)
+    else this.filters.set(tag, remaining)
   }
 
   /**
@@ -53,13 +67,27 @@ class HookRegistry {
   /**
    * Register an action callback
    */
-  public addAction(tag: string, callback: HookCallback, priority: number = 10) {
+  public addAction(tag: string, callback: HookCallback, priority: number = 10): () => void {
     if (!this.actions.has(tag)) {
       this.actions.set(tag, []);
     }
     const hooks = this.actions.get(tag)!;
     hooks.push({ priority, callback });
     hooks.sort((a, b) => a.priority - b.priority);
+    let removed = false
+    return () => {
+      if (removed) return
+      removed = true
+      this.removeAction(tag, callback)
+    }
+  }
+
+  public removeAction(tag: string, callback: HookCallback): void {
+    const hooks = this.actions.get(tag)
+    if (!hooks) return
+    const remaining = hooks.filter((hook) => hook.callback !== callback)
+    if (remaining.length === 0) this.actions.delete(tag)
+    else this.actions.set(tag, remaining)
   }
 
   /**
