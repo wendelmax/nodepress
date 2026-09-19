@@ -225,3 +225,16 @@ model FormSubmission {
   @@index([createdAt])
   @@map("np_form_submissions")
 }
+
+model PluginMigration {
+  id            Int      @id @default(autoincrement())
+  pluginId      String   @map("plugin_id") @db.VarChar(100)
+  migrationId   String   @map("migration_id") @db.VarChar(150)
+  checksum      String   @db.VarChar(128)
+  pluginVersion String   @map("plugin_version") @db.VarChar(50)
+  appliedAt     DateTime @default(now()) @map("applied_at")
+
+  @@unique([pluginId, migrationId])
+  @@index([pluginId])
+  @@map("np_plugin_migrations")
+}
