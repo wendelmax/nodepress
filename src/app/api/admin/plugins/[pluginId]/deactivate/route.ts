@@ -1,4 +1,5 @@
 import { requireAdmin } from '../../_shared'
+import { errorResponse } from '@/core/errors'
 
 export async function POST(_request: Request, { params }: { params: Promise<{ pluginId: string }> }) {
   const result = await requireAdmin()
@@ -8,8 +9,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ pl
   try {
     return Response.json(await result.service.deactivate(pluginId))
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Plugin deactivation failed'
-    const status = /unknown plugin/i.test(message) ? 404 : 500
-    return Response.json({ error: message }, { status })
+    return errorResponse(error, 'Plugin deactivation failed', { pluginId })
   }
 }

@@ -27,12 +27,20 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
 
   useEffect(() => {
     if (!isAdmissionForm) return
-    setLoadingProcesses(true)
-    fetch('/api/admissions/processes')
-      .then(res => res.json())
-      .then(data => setProcesses(Array.isArray(data) ? data : []))
-      .catch(() => setProcesses([]))
-      .finally(() => setLoadingProcesses(false))
+    let cancelled = false
+    void (async () => {
+      setLoadingProcesses(true)
+      try {
+        const response = await fetch('/api/admissions/processes')
+        const data = await response.json()
+        if (!cancelled) setProcesses(Array.isArray(data) ? data : [])
+      } catch {
+        if (!cancelled) setProcesses([])
+      } finally {
+        if (!cancelled) setLoadingProcesses(false)
+      }
+    })()
+    return () => { cancelled = true }
   }, [isAdmissionForm])
 
   const handleSave = async () => {
