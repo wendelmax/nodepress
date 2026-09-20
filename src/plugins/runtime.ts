@@ -1,5 +1,6 @@
 import { HookService } from '@/services/hook.service'
-import type { NodePressPlugin, PluginContext, PluginMenuInput } from './types'
+import { MenuService } from '@/services/menu.service'
+import type { NodePressPlugin, PluginContext, PluginMenuInput, PluginMenuItem } from './types'
 import type { PluginRuntime } from '@/services/plugin.service'
 
 export class NodePressPluginRuntime implements PluginRuntime {
@@ -12,9 +13,14 @@ export class NodePressPluginRuntime implements PluginRuntime {
       cleanupCallbacks.push(cleanup)
       return cleanup
     }
+    const withSurface = (item: PluginMenuInput, surface: 'admin' | 'public'): PluginMenuItem => ({
+      ...item,
+      surface,
+      children: item.children?.map((child) => withSurface(child, surface)),
+    })
     const menus = {
-      addAdmin: (_item: PluginMenuInput) => track(() => {}),
-      addPublic: (_item: PluginMenuInput) => track(() => {}),
+      addAdmin: (item: PluginMenuInput) => track(MenuService.registerPluginMenu(plugin.id, withSurface(item, 'admin'))),
+      addPublic: (item: PluginMenuInput) => track(MenuService.registerPluginMenu(plugin.id, withSurface(item, 'public'))),
     }
     const context: PluginContext = {
       pluginId: plugin.id,

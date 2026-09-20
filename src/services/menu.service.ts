@@ -1,6 +1,102 @@
 import prisma from "@/lib/prisma"
+import type { PluginMenuItem, PluginSurface } from '@/plugins/types'
+import { validateMenuInput } from '@/plugins/validation'
+import type { MenuNode } from './menu.types'
 
 export class MenuService {
+  private static pluginMenus = new Map<string, PluginMenuItem[]>()
+
+  static registerPluginMenu(pluginId: string, item: PluginMenuItem): () => void {
+    validateMenuInput(item)
+    if (!pluginId || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(pluginId)) {
+      throw new Error(`Invalid plugin id for menu: ${pluginId}`)
+    }
+
+    const contribution: PluginMenuItem = {
+      ...item,
+      pluginId,
+      position: item.position ?? 100,
+    }
+    const contributions = this.pluginMenus.get(pluginId) ?? []
+    contributions.push(contribution)
+    this.pluginMenus.set(pluginId, contributions)
+
+    let removed = false
+    return () => {
+      if (removed) return
+      removed = true
+      const current = this.pluginMenus.get(pluginId) ?? []
+      const remaining = current.filter((candidate) => candidate !== contribution)
+      if (remaining.length === 0) this.pluginMenus.delete(pluginId)
+      else this.pluginMenus.set(pluginId, remaining)
+    }
+  }
+
+  static clearPluginMenus(pluginId?: string): void {
+    if (pluginId) this.pluginMenus.delete(pluginId)
+    else this.pluginMenus.clear()
+  }
+
+  static getPluginMenuTree(
+    surface: PluginSurface,
+    capabilityChecker: (capability?: string) => boolean,
+  ): MenuNode[] {
+    const visible = [...this.pluginMenus.values()]
+      .flat()
+      .filter((item) => item.surface === surface && capabilityChecker(item.capability))
+    const byId = new Map<string, PluginMenuItem>()
+    for (const item of visible) {
+      if (!byId.has(item.id)) byId.set(item.id, item)
+    }
+
+    for (const item of byId.values()) {
+      if (item.parentId && !byId.has(item.parentId)) {
+        throw new Error(`Menu parent not found: ${item.parentId}`)
+      }
+    }
+
+    const visiting = new Set<string>()
+    const visited = new Set<string>()
+    const visit = (id: string) => {
+      if (visiting.has(id)) throw new Error(`Menu cycle detected at: ${id}`)
+      if (visited.has(id)) return
+      visiting.add(id)
+      const item = byId.get(id)
+      if (item?.parentId) visit(item.parentId)
+      visiting.delete(id)
+      visited.add(id)
+    }
+    for (const item of byId.values()) visit(item.id)
+
+    const nodes = new Map<string, MenuNode>()
+    for (const item of byId.values()) {
+      nodes.set(item.id, Object.freeze({
+        id: item.id,
+        label: item.label,
+        surface: item.surface,
+        href: item.href,
+        parentId: item.parentId,
+        position: item.position ?? 100,
+        capability: item.capability,
+        icon: item.icon,
+        pluginId: item.pluginId ?? '',
+        children: [] as MenuNode[],
+      }) as unknown as MenuNode)
+    }
+
+    const roots: MenuNode[] = []
+    for (const node of nodes.values()) {
+      if (node.parentId) nodes.get(node.parentId)?.children.push(node)
+      else roots.push(node)
+    }
+    const sort = (items: MenuNode[]) => {
+      items.sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+      for (const item of items) sort(item.children)
+    }
+    sort(roots)
+    return roots
+  }
+
   /**
    * Retorna todos os menus disponíveis (taxonomia 'nav_menu')
    */
