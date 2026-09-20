@@ -5,10 +5,11 @@ import { OptionService } from '@/services/option.service'
 export default async function NotFound() {
   const Theme = await ThemeService.getActiveTheme()
   const options = await OptionService.getOptions(['blogname'])
+  const themeOptions = await ThemeService.getRenderOptions(options)
 
   // Se o tema ativo possui uma página 404 personalizada, usamos ela
   if (Theme.NotFound) {
-    return <Theme.NotFound options={options} />
+    return <Theme.NotFound options={themeOptions} />
   }
 
   // Fallback padrão se o tema não tiver 404

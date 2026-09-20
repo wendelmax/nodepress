@@ -89,6 +89,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
 
   // Get Active Theme
   const Theme = await ThemeService.getActiveTheme()
+  const themeOptions = await ThemeService.getRenderOptions(options)
 
   // If this page is set as the Posts page (Blog Feed)
   if (options['page_for_posts'] && post.id === parseInt(options['page_for_posts'])) {
@@ -98,7 +99,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
       permalink: generatePermalink(p, structure)
     }))
 
-    return <Theme.Archive posts={posts} title={post.postTitle} options={options} />
+    return <Theme.Archive posts={posts} title={post.postTitle} options={themeOptions} />
   }
 
   const isPage = post.postType === 'page'
@@ -115,7 +116,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
   }
 
   if (isPage) {
-    return <Theme.SinglePage post={post} options={options} />
+    return <Theme.SinglePage post={post} options={themeOptions} />
   }
 
   return (
@@ -124,7 +125,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
       categories={categories} 
       tags={tags} 
       initialComments={initialComments} 
-      options={options} 
+      options={themeOptions}
     />
   )
 }

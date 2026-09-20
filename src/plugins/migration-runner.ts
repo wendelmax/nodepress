@@ -68,7 +68,7 @@ export class PluginMigrationRunner {
 
   private async getDatabase(): Promise<PluginMigrationDatabase> {
     if (this.database) return this.database
-    const module = await import('@/lib/prisma')
-    return module.default as unknown as PluginMigrationDatabase
+    const prismaModule = await import('@/lib/prisma')
+    return prismaModule.default as unknown as PluginMigrationDatabase
   }
 }

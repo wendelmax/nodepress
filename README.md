@@ -15,7 +15,7 @@ NodePress is a full-featured Content Management System inspired by WordPress, bu
 - **Post & Page Management** — Full CRUD for posts and pages, with draft, scheduled, and publish states.
 - **Revision History** — Every saved edit creates a revision; restore any previous version instantly.
 - **Taxonomy System** — Categories and Tags with full admin management.
-- **Plugin System** — Hook-based plugin architecture (`addAction` / `addFilter`) inspired by WordPress hooks.
+- **Plugin System** — Typed plugin manifests with hooks, migrations, capabilities, lifecycle, and automatic admin/public menus.
 - **Theme System** — Swap frontend themes from the admin panel without touching code.
 - **Custom Fields (ACF-style)** — Define field groups and attach custom metadata to any post or page.
 - **SEO & Analytics** — Built-in SEO meta fields and Google Analytics 4 integration.
@@ -118,22 +118,29 @@ prisma/
 
 ## 🔌 Plugin Development
 
-NodePress features a hook system similar to WordPress. Create a plugin in `src/plugins/your-plugin/`:
+Plugins são módulos TypeScript confiáveis carregados em processo. O fluxo completo — manifesto, migrations, hooks, capacidades e menus — está documentado em [docs/plugins.md](docs/plugins.md).
 
-```tsx
-// src/plugins/my-plugin/index.tsx
-import { HookService } from '@/services/hook.service';
-
-HookService.addAction('admin_top_bar', () => {
-  return <div>Hello from My Plugin!</div>;
-}, 10);
-```
-
-Then register it in `src/plugins/registry.ts`:
+Um plugin novo exporta um manifesto e é adicionado a `src/plugins/registry.ts`:
 
 ```ts
-import './my-plugin';
+import type { NodePressPlugin } from '@/plugins/types'
+
+export const myPlugin: NodePressPlugin = {
+  id: 'my-plugin',
+  name: 'Meu Plugin',
+  version: '1.0.0',
+  permissions: ['my-plugin.manage'],
+  register({ hooks, menus }) {
+    hooks.addAction('admin_top_bar', () => 'Meu Plugin', 10)
+    menus.addAdmin({
+      id: 'my-plugin', label: 'Meu Plugin', href: '/admin/my-plugin',
+      capability: 'my-plugin.manage', position: 50,
+    })
+  },
+}
 ```
+
+Plugins legados baseados apenas em importações de efeitos colaterais continuam carregando pela camada de compatibilidade.
 
 ---
 

@@ -29,6 +29,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   }))
 
   const Theme = await ThemeService.getActiveTheme()
+  const themeOptions = await ThemeService.getRenderOptions(options)
 
-  return <Theme.Archive posts={posts} title={`Category: ${term.name}`} options={options} />
+  return <Theme.Archive posts={posts} title={`Category: ${term.name}`} options={themeOptions} />
 }
