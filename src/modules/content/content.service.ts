@@ -19,6 +19,10 @@ export interface ContentRepository {
   create(input: Omit<ContentRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<ContentRecord>
   updateStatus(id: string, status: ContentStatus): Promise<ContentRecord>
   findBySlug(contentType: string, slug: string, tenantId?: string): Promise<ContentRecord | undefined>
+  findById(id: string): Promise<ContentRecord | undefined>
+  list(contentType: string, tenantId?: string): Promise<ContentRecord[]>
+  update(id: string, input: Partial<Pick<ContentRecord, 'title' | 'slug' | 'data'>>): Promise<ContentRecord>
+  delete(id: string): Promise<void>
 }
 
 export interface CreateContentInput {
@@ -58,6 +62,40 @@ export class ContentService {
 
   publish(id: string): Promise<ContentRecord> {
     return this.repository.updateStatus(id, 'publish')
+  }
+
+  async list(contentType: string, context?: Pick<NodePressContext, 'tenantId'>): Promise<ContentRecord[]> {
+    if (!this.registry.get(contentType)) throw new Error(`Unknown content type: ${contentType}`)
+    return this.repository.list(contentType, context?.tenantId)
+  }
+
+  async update(
+    id: string,
+    input: Partial<Pick<ContentRecord, 'title' | 'slug' | 'data'>>,
+    context?: Pick<NodePressContext, 'tenantId'>,
+  ): Promise<ContentRecord> {
+    const current = await this.repository.findById(id)
+    if (!current || current.tenantId !== context?.tenantId) throw new Error('Content record not found')
+    const definition = this.registry.get(current.contentType)
+    if (!definition) throw new Error(`Unknown content type: ${current.contentType}`)
+
+    const nextTitle = input.title === undefined ? current.title : input.title.trim()
+    if (!nextTitle) throw new Error('Content title is required')
+    const nextSlug = input.slug === undefined ? current.slug : normalizeSlug(input.slug)
+    if (!nextSlug) throw new Error('Content slug is required')
+    const nextData = input.data === undefined ? current.data : input.data
+    validateContentData(definition.fields, nextData, current.contentType)
+
+    const existing = await this.repository.findBySlug(current.contentType, nextSlug, context?.tenantId)
+    if (existing && existing.id !== id) throw new Error(`Content slug already exists: ${current.contentType}/${nextSlug}`)
+
+    return this.repository.update(id, { title: nextTitle, slug: nextSlug, data: { ...nextData } })
+  }
+
+  async remove(id: string, context?: Pick<NodePressContext, 'tenantId'>): Promise<void> {
+    const current = await this.repository.findById(id)
+    if (!current || current.tenantId !== context?.tenantId) throw new Error('Content record not found')
+    await this.repository.delete(id)
   }
 }
 

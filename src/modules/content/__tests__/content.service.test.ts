@@ -62,6 +62,21 @@ describe('generic content types', () => {
       contentType: 'animal', title: 'Another Rex', slug: 'rex', data: { name: 'Other', status: 'available' },
     })).rejects.toThrow(/slug/i)
   })
+
+  it('lists, updates, and removes records through the repository contract', async () => {
+    registry.register(animalDefinition())
+    const record = await service.create({
+      contentType: 'animal', title: 'Rex', slug: 'rex', data: { name: 'Rex', status: 'available' },
+    })
+
+    const updated = await service.update(record.id, { title: 'Rex Atualizado', data: { name: 'Rex Atualizado', status: 'adopted' } })
+    expect(updated.title).toBe('Rex Atualizado')
+    expect(updated.data.status).toBe('adopted')
+    expect(await service.list('animal')).toHaveLength(1)
+
+    await service.remove(record.id)
+    expect(await service.list('animal')).toEqual([])
+  })
 })
 
 function animalDefinition(): ContentTypeDefinition {
@@ -101,5 +116,24 @@ class MemoryContentRepository implements ContentRepository {
 
   async findBySlug(contentType: string, slug: string, tenantId?: string): Promise<ContentRecord | undefined> {
     return this.records.find((record) => record.contentType === contentType && record.slug === slug && record.tenantId === tenantId)
+  }
+
+  async findById(id: string): Promise<ContentRecord | undefined> {
+    return this.records.find((record) => record.id === id)
+  }
+
+  async list(contentType: string, tenantId?: string): Promise<ContentRecord[]> {
+    return this.records.filter((record) => record.contentType === contentType && record.tenantId === tenantId)
+  }
+
+  async update(id: string, input: Partial<Pick<ContentRecord, 'title' | 'slug' | 'data'>>): Promise<ContentRecord> {
+    const record = this.records.find((item) => item.id === id)
+    if (!record) throw new Error('Content record not found')
+    Object.assign(record, input, { updatedAt: new Date() })
+    return record
+  }
+
+  async delete(id: string): Promise<void> {
+    this.records = this.records.filter((record) => record.id !== id)
   }
 }
