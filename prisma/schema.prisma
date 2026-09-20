@@ -266,3 +266,18 @@ model ContentRecord {
   @@index([tenantId])
   @@map("np_content_records")
 }
+
+model PayloadImportRecord {
+  id         String   @id @default(cuid()) @db.VarChar(30)
+  source     String   @db.VarChar(100)
+  collection String   @db.VarChar(150)
+  sourceId   String   @map("source_id") @db.VarChar(255)
+  targetId   String   @map("target_id") @db.VarChar(100)
+  targetType String   @map("target_type") @db.VarChar(100)
+  slug       String   @db.VarChar(255)
+  importedAt DateTime @default(now()) @map("imported_at")
+
+  @@unique([source, collection, sourceId])
+  @@index([targetType, targetId])
+  @@map("np_import_records")
+}
