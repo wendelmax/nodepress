@@ -41,17 +41,28 @@ export class MenuService {
     surface: PluginSurface,
     capabilityChecker: (capability?: string) => boolean,
   ): MenuNode[] {
-    const visible = [...this.pluginMenus.values()]
+    const allForSurface = [...this.pluginMenus.values()]
       .flat()
-      .filter((item) => item.surface === surface && capabilityChecker(item.capability))
+      .filter((item) => item.surface === surface)
+    const allIds = new Set(allForSurface.map((item) => item.id))
+    const visible = allForSurface
+      .flat()
+      .filter((item) => capabilityChecker(item.capability))
     const byId = new Map<string, PluginMenuItem>()
     for (const item of visible) {
       if (!byId.has(item.id)) byId.set(item.id, item)
     }
 
-    for (const item of byId.values()) {
-      if (item.parentId && !byId.has(item.parentId)) {
-        throw new Error(`Menu parent not found: ${item.parentId}`)
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const item of [...byId.values()]) {
+        if (!item.parentId || byId.has(item.parentId)) continue
+        if (!allIds.has(item.parentId)) {
+          throw new Error(`Menu parent not found: ${item.parentId}`)
+        }
+        byId.delete(item.id)
+        changed = true
       }
     }
 
@@ -94,7 +105,11 @@ export class MenuService {
       for (const item of items) sort(item.children)
     }
     sort(roots)
-    return roots
+    const freeze = (node: MenuNode): MenuNode => Object.freeze({
+      ...node,
+      children: Object.freeze(node.children.map(freeze)),
+    }) as MenuNode
+    return Object.freeze(roots.map(freeze)) as unknown as MenuNode[]
   }
 
   /**

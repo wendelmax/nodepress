@@ -74,4 +74,26 @@ describe('plugin menu aggregation', () => {
     })
     expect(() => MenuService.getPluginMenuTree('admin', () => true)).toThrow(/cycle/i)
   })
+
+  it('hides descendants when their capability-protected parent is not visible', () => {
+    MenuService.registerPluginMenu('animals', {
+      id: 'animals-admin', label: 'Animais', surface: 'admin', capability: 'animals.read',
+    })
+    MenuService.registerPluginMenu('animals', {
+      id: 'animals-settings', label: 'Configurações', surface: 'admin', parentId: 'animals-admin',
+    })
+
+    expect(MenuService.getPluginMenuTree('admin', () => false)).toEqual([])
+  })
+
+  it('freezes the returned tree and its child collections', () => {
+    MenuService.registerPluginMenu('animals', {
+      id: 'animals-admin', label: 'Animais', surface: 'admin',
+    })
+    const tree = MenuService.getPluginMenuTree('admin', () => true)
+
+    expect(Object.isFrozen(tree)).toBe(true)
+    expect(Object.isFrozen(tree[0])).toBe(true)
+    expect(Object.isFrozen(tree[0]?.children)).toBe(true)
+  })
 })
