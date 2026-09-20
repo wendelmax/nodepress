@@ -17,25 +17,25 @@ export interface NodePressModule {
   health(context: import('../context').NodePressContext): Promise<ModuleHealth>
 }
 
-export function validateModule(module: NodePressModule): void {
-  if (!module || typeof module !== 'object') throw new Error('Invalid module manifest')
-  if (!IDENTIFIER_PATTERN.test(module.id)) throw new Error(`Invalid module id: ${module.id}`)
-  if (!VERSION_PATTERN.test(module.version)) throw new Error(`Invalid module version: ${module.version}`)
-  if (typeof module.start !== 'function' || typeof module.stop !== 'function') {
-    throw new Error(`Invalid lifecycle handlers for module: ${module.id}`)
+export function validateModule(moduleDefinition: NodePressModule): void {
+  if (!moduleDefinition || typeof moduleDefinition !== 'object') throw new Error('Invalid module manifest')
+  if (!IDENTIFIER_PATTERN.test(moduleDefinition.id)) throw new Error(`Invalid module id: ${moduleDefinition.id}`)
+  if (!VERSION_PATTERN.test(moduleDefinition.version)) throw new Error(`Invalid module version: ${moduleDefinition.version}`)
+  if (typeof moduleDefinition.start !== 'function' || typeof moduleDefinition.stop !== 'function') {
+    throw new Error(`Invalid lifecycle handlers for module: ${moduleDefinition.id}`)
   }
-  if (typeof module.health !== 'function') throw new Error(`Invalid health handler for module: ${module.id}`)
-  if (new Set(module.dependencies ?? []).size !== (module.dependencies ?? []).length) {
-    throw new Error(`Duplicate module dependency for: ${module.id}`)
+  if (typeof moduleDefinition.health !== 'function') throw new Error(`Invalid health handler for module: ${moduleDefinition.id}`)
+  if (new Set(moduleDefinition.dependencies ?? []).size !== (moduleDefinition.dependencies ?? []).length) {
+    throw new Error(`Duplicate module dependency for: ${moduleDefinition.id}`)
   }
 }
 
 export function resolveModuleOrder(modules: NodePressModule[]): NodePressModule[] {
   const byId = new Map<string, NodePressModule>()
-  for (const module of modules) {
-    validateModule(module)
-    if (byId.has(module.id)) throw new Error(`Duplicate module id: ${module.id}`)
-    byId.set(module.id, module)
+  for (const moduleDefinition of modules) {
+    validateModule(moduleDefinition)
+    if (byId.has(moduleDefinition.id)) throw new Error(`Duplicate module id: ${moduleDefinition.id}`)
+    byId.set(moduleDefinition.id, moduleDefinition)
   }
 
   const visiting = new Set<string>()
@@ -45,15 +45,15 @@ export function resolveModuleOrder(modules: NodePressModule[]): NodePressModule[
   const visit = (id: string) => {
     if (visiting.has(id)) throw new Error(`Module dependency cycle detected at: ${id}`)
     if (visited.has(id)) return
-    const module = byId.get(id)
-    if (!module) throw new Error(`Missing module dependency: ${id}`)
+    const moduleDefinition = byId.get(id)
+    if (!moduleDefinition) throw new Error(`Missing module dependency: ${id}`)
     visiting.add(id)
-    for (const dependency of [...(module.dependencies ?? [])].sort()) visit(dependency)
+    for (const dependency of [...(moduleDefinition.dependencies ?? [])].sort()) visit(dependency)
     visiting.delete(id)
     visited.add(id)
-    ordered.push(module)
+    ordered.push(moduleDefinition)
   }
 
-  for (const module of [...modules].sort((a, b) => a.id.localeCompare(b.id))) visit(module.id)
+  for (const moduleDefinition of [...modules].sort((a, b) => a.id.localeCompare(b.id))) visit(moduleDefinition.id)
   return ordered
 }

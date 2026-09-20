@@ -42,9 +42,9 @@ describe('NodePress core contracts', () => {
   })
 
   it('validates module metadata and creates typed event envelopes', () => {
-    const module = moduleOf('content')
-    expect(() => validateModule(module)).not.toThrow()
-    expect(() => validateModule({ ...module, id: 'Invalid ID' })).toThrow(/module id/i)
+    const moduleDefinition = moduleOf('content')
+    expect(() => validateModule(moduleDefinition)).not.toThrow()
+    expect(() => validateModule({ ...moduleDefinition, id: 'Invalid ID' })).toThrow(/module id/i)
 
     const event = createDomainEvent('content.published', { contentId: 'post-1' }, {
       requestId: 'req-1',
