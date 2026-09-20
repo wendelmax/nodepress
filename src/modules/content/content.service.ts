@@ -40,24 +40,31 @@ export class ContentService {
   ) {}
 
   async create(input: CreateContentInput, context?: Pick<NodePressContext, 'tenantId'>): Promise<ContentRecord> {
+    const normalized = await this.validate(input, context)
+
+    const existing = await this.repository.findBySlug(input.contentType, normalized.slug, context?.tenantId)
+    if (existing) throw new Error(`Content slug already exists: ${input.contentType}/${normalized.slug}`)
+
+    return this.repository.create({
+      contentType: input.contentType,
+      tenantId: context?.tenantId,
+      title: normalized.title,
+      slug: normalized.slug,
+      status: input.status ?? 'draft',
+      data: { ...input.data },
+    })
+  }
+
+  async validate(input: CreateContentInput, context?: Pick<NodePressContext, 'tenantId'>): Promise<{ title: string; slug: string }> {
     const definition = this.registry.get(input.contentType)
     if (!definition) throw new Error(`Unknown content type: ${input.contentType}`)
     if (!input.title.trim()) throw new Error('Content title is required')
     const slug = normalizeSlug(input.slug || input.title)
     if (!slug) throw new Error('Content slug is required')
     validateContentData(definition.fields, input.data, input.contentType)
-
     const existing = await this.repository.findBySlug(input.contentType, slug, context?.tenantId)
     if (existing) throw new Error(`Content slug already exists: ${input.contentType}/${slug}`)
-
-    return this.repository.create({
-      contentType: input.contentType,
-      tenantId: context?.tenantId,
-      title: input.title.trim(),
-      slug,
-      status: input.status ?? 'draft',
-      data: { ...input.data },
-    })
+    return { title: input.title.trim(), slug }
   }
 
   publish(id: string): Promise<ContentRecord> {

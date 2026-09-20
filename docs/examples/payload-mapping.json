@@ -1,0 +1,17 @@
+{
+  "mappings": [
+    {
+      "collection": "animals",
+      "contentType": "animal",
+      "titleField": "name",
+      "slugField": "slug",
+      "statusField": "status",
+      "fields": {
+        "name": "name",
+        "species": "species",
+        "status": "status",
+        "weight": "weight"
+      }
+    }
+  ]
+}
