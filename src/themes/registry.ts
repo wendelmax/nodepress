@@ -8,7 +8,8 @@ const MinimalTheme = {
     author: "NodePress Team",
     version: "1.0.0",
     slug: "minimal"
-  }
+  },
+  supportsPluginMenus: true,
 }
 
 export const themes = {

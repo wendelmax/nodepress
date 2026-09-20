@@ -1,5 +1,5 @@
 import { auth } from '@/auth'
-import { getPluginService } from '@/services/plugin-factory'
+import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
 import { MenuService } from '@/services/menu.service'
 import type { PluginSurface } from '@/plugins/types'
 
@@ -9,8 +9,7 @@ export async function GET(request: Request) {
     return Response.json({ error: 'surface must be admin or public' }, { status: 400 })
   }
 
-  const service = await getPluginService()
-  await service.loadActive()
+  await ensureActivePluginsLoaded()
   const session = surface === 'admin' ? await auth() : null
   const role = session?.user ? (session.user as { role?: string }).role : undefined
   if (surface === 'admin' && role !== 'admin') {
