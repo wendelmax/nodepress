@@ -1,6 +1,5 @@
 import type { ContentTypeDefinition } from '@/modules/content'
 import type { NodePressPlugin } from '../types'
-import { createAnimalsMigration } from './migrations/001_create_animals'
 
 export const animalContentType: ContentTypeDefinition = {
   id: 'animal',
@@ -19,7 +18,6 @@ export const animalsPlugin: NodePressPlugin = {
   name: 'Animais',
   version: '1.0.0',
   permissions: ['animals.read', 'animals.manage'],
-  migrations: [createAnimalsMigration],
   register({ menus, contentTypes }) {
     contentTypes.register(animalContentType)
     menus.addAdmin({

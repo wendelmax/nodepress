@@ -37,8 +37,7 @@ describe('animals plugin', () => {
     expect(contentTypes.register).toHaveBeenCalledWith(expect.objectContaining({ id: 'animal' }))
   })
 
-  it('declares a repeatable migration for the animals table', () => {
-    expect(animalsPlugin.migrations).toHaveLength(1)
-    expect(animalsPlugin.migrations?.[0]?.id).toBe('001-create-animals')
+  it('uses the generic entity storage without a domain-specific table migration', () => {
+    expect(animalsPlugin.migrations ?? []).toHaveLength(0)
   })
 })
