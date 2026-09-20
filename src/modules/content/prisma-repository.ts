@@ -25,6 +25,35 @@ export class PrismaContentRepository implements ContentRepository {
     const row = await prisma.contentRecord.findFirst({ where: { contentType, slug, tenantId } })
     return row ? toContentRecord(row) : undefined
   }
+
+  async findById(id: string): Promise<ContentRecord | undefined> {
+    const row = await prisma.contentRecord.findUnique({ where: { id } })
+    return row ? toContentRecord(row) : undefined
+  }
+
+  async list(contentType: string, tenantId?: string): Promise<ContentRecord[]> {
+    const rows = await prisma.contentRecord.findMany({
+      where: { contentType, tenantId },
+      orderBy: { createdAt: 'desc' },
+    })
+    return rows.map(toContentRecord)
+  }
+
+  async update(id: string, input: Partial<Pick<ContentRecord, 'title' | 'slug' | 'data'>>): Promise<ContentRecord> {
+    const row = await prisma.contentRecord.update({
+      where: { id },
+      data: {
+        ...(input.title === undefined ? {} : { title: input.title }),
+        ...(input.slug === undefined ? {} : { slug: input.slug }),
+        ...(input.data === undefined ? {} : { data: input.data as Prisma.InputJsonValue }),
+      },
+    })
+    return toContentRecord(row)
+  }
+
+  async delete(id: string): Promise<void> {
+    await prisma.contentRecord.delete({ where: { id } })
+  }
 }
 
 function toContentRecord(row: {
