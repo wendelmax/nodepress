@@ -1,5 +1,6 @@
 import type { NodePressPlugin } from '@/plugins/types'
 import type { PluginMigrationRunner } from '@/plugins/migration-runner'
+import { resolvePluginOrder } from '@/plugins/dependencies'
 
 export interface PluginActivationStore {
   getActivePluginIds(): Promise<string[]>
@@ -30,7 +31,8 @@ export class PluginService {
   private readonly operations = new Map<string, Promise<unknown>>()
 
   constructor(private readonly options: PluginServiceOptions) {
-    this.pluginsById = new Map(options.plugins.map((plugin) => [plugin.id, plugin]))
+    const orderedPlugins = resolvePluginOrder(options.plugins)
+    this.pluginsById = new Map(orderedPlugins.map((plugin) => [plugin.id, plugin]))
     if (this.pluginsById.size !== options.plugins.length) {
       throw new Error('Duplicate plugin id in registry')
     }
@@ -51,6 +53,12 @@ export class PluginService {
       const plugin = this.requirePlugin(pluginId)
       const activeIds = await this.options.store.getActivePluginIds()
       if (activeIds.includes(pluginId)) return this.status(plugin, true)
+
+      for (const dependencyId of Object.keys(plugin.dependencies ?? {})) {
+        if (!activeIds.includes(dependencyId)) {
+          throw new Error(`Plugin dependency not active: ${plugin.id} -> ${dependencyId}`)
+        }
+      }
 
       await this.options.runner.runPending(plugin)
       const cleanup = await this.options.runtime.activate(plugin)
@@ -79,8 +87,8 @@ export class PluginService {
 
   async loadActive(): Promise<void> {
     const activeIds = await this.options.store.getActivePluginIds()
-    for (const pluginId of activeIds) {
-      const plugin = this.requirePlugin(pluginId)
+    const ordered = resolvePluginOrder([...this.pluginsById.values()])
+    for (const plugin of ordered.filter((candidate) => activeIds.includes(candidate.id))) {
       await this.options.runner.runPending(plugin)
       await this.options.runtime.activate(plugin)
     }

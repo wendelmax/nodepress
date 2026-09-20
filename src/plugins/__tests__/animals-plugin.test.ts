@@ -15,6 +15,11 @@ describe('animals plugin', () => {
       pluginId: animalsPlugin.id,
       hooks: { addAction: vi.fn(() => vi.fn()), addFilter: vi.fn(() => vi.fn()) },
       menus,
+      contentTypes: { register: vi.fn(() => vi.fn()) },
+      events: { on: vi.fn(() => vi.fn()) },
+      jobs: { add: vi.fn(() => vi.fn()) },
+      routes: { add: vi.fn(() => vi.fn()) },
+      commands: { add: vi.fn(() => vi.fn()) },
     })
 
     expect(menus.addAdmin).toHaveBeenCalledWith(expect.objectContaining({

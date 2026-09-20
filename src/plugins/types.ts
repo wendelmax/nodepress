@@ -1,4 +1,7 @@
 import type { Prisma } from '@prisma/client'
+import type { ContentTypeDefinition, ContentTypeRegistry } from '@/modules/content'
+import type { NodePressEventHandler } from '@/core/events/registry'
+import type { PluginCommandDefinition, PluginJobDefinition, PluginRouteDefinition } from './runtime-registries'
 
 export type PluginSurface = 'admin' | 'public'
 export type PluginCapability = string
@@ -36,16 +39,43 @@ export interface PluginMenuRegistrar {
   addPublic(item: PluginMenuInput): () => void
 }
 
+export interface PluginContentTypeRegistrar {
+  register(definition: ContentTypeDefinition): () => void
+}
+
+export interface PluginEventRegistrar {
+  on<TPayload>(name: string, handler: NodePressEventHandler<TPayload>): () => void
+}
+
+export interface PluginJobRegistrar {
+  add(definition: PluginJobDefinition): () => void
+}
+
+export interface PluginRouteRegistrar {
+  add(definition: PluginRouteDefinition): () => void
+}
+
+export interface PluginCommandRegistrar {
+  add(definition: PluginCommandDefinition): () => void
+}
+
 export interface PluginContext {
   pluginId: string
   hooks: PluginHookRegistrar
   menus: PluginMenuRegistrar
+  contentTypes: PluginContentTypeRegistrar
+  events: PluginEventRegistrar
+  jobs: PluginJobRegistrar
+  routes: PluginRouteRegistrar
+  commands: PluginCommandRegistrar
 }
 
 export interface NodePressPlugin {
   id: string
   name: string
   version: string
+  engine?: { nodepress: string }
+  dependencies?: Record<string, string>
   permissions?: PluginCapability[]
   migrations?: PluginMigration[]
   register(context: PluginContext): void | Promise<void>
