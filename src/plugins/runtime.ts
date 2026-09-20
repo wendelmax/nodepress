@@ -1,5 +1,8 @@
 import { HookService } from '@/services/hook.service'
 import { MenuService } from '@/services/menu.service'
+import { contentTypeRegistry } from '@/modules/content/content-type-registry'
+import { eventRegistry } from '@/core/events/registry'
+import { commandRegistry, jobRegistry, routeRegistry } from './runtime-registries'
 import type { NodePressPlugin, PluginContext, PluginMenuInput, PluginMenuItem } from './types'
 import type { PluginRuntime } from '@/services/plugin.service'
 
@@ -29,6 +32,21 @@ export class NodePressPluginRuntime implements PluginRuntime {
         addFilter: (tag, callback, priority) => track(HookService.addFilter(tag, callback, priority)),
       },
       menus,
+      contentTypes: {
+        register: (definition) => track(contentTypeRegistry.register(definition)),
+      },
+      events: {
+        on: (name, handler) => track(eventRegistry.on(name, handler)),
+      },
+      jobs: {
+        add: (definition) => track(jobRegistry.add(definition)),
+      },
+      routes: {
+        add: (definition) => track(routeRegistry.add(definition)),
+      },
+      commands: {
+        add: (definition) => track(commandRegistry.add(definition)),
+      },
     }
 
     await plugin.register(context)

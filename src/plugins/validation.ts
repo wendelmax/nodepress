@@ -25,6 +25,15 @@ export function validatePluginManifest(plugin: NodePressPlugin): void {
     throw new Error(`Invalid plugin register function for ${plugin.id}`)
   }
 
+  if (plugin.engine && typeof plugin.engine.nodepress !== 'string') {
+    throw new Error(`Invalid plugin engine requirement for ${plugin.id}`)
+  }
+  for (const [dependencyId, range] of Object.entries(plugin.dependencies ?? {})) {
+    if (!IDENTIFIER_PATTERN.test(dependencyId) || !range.trim()) {
+      throw new Error(`Invalid plugin dependency for ${plugin.id}: ${dependencyId}`)
+    }
+  }
+
   const migrationIds = new Set<string>()
   for (const migration of plugin.migrations ?? []) {
     if (!IDENTIFIER_PATTERN.test(migration.id)) {
