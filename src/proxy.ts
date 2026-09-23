@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { auth } from '@/auth'
+import { canManageUsers } from '@/lib/authorization.mjs'
 
 const SESSION_COOKIE = 'np_sid'
 const SESSION_TTL_SECONDS = 30 * 60
@@ -10,6 +11,11 @@ export async function proxy(request: NextRequest) {
 
   // --- RBAC for Admin Routes ---
   if (pathname.startsWith('/admin')) {
+    // The installer must remain reachable before the first account exists.
+    if (pathname === '/admin/install' || pathname.startsWith('/admin/install/')) {
+      return NextResponse.next()
+    }
+
     const session = await auth()
 
     if (!session) {
@@ -19,7 +25,7 @@ export async function proxy(request: NextRequest) {
     const role = (session.user as any)?.role as string || 'author'
 
     // Block non-admins from settings, users, plugins, themes
-    if (role !== 'admin') {
+    if (!canManageUsers(role)) {
       const blockedPrefixes = ['/admin/settings', '/admin/users', '/admin/plugins', '/admin/themes', '/admin/tools']
       if (blockedPrefixes.some(prefix => pathname.startsWith(prefix))) {
         return NextResponse.redirect(new URL('/admin', request.url))

@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { getOriginFromRequest } from '@/lib/site-url'
+import { getAuthProviderAvailability } from '@/lib/auth-config.mjs'
 
 const execAsync = promisify(exec)
 
@@ -27,19 +28,21 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { siteTitle, username, email, lang } = body
+    const { siteTitle, username, email, password, lang } = body
+    const authConfig = getAuthProviderAvailability(process.env)
 
     if (!siteTitle || !username || !email) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // No password is set here anymore — login goes through Keycloak SSO
-    // (see src/auth.ts). This row is a placeholder that gets adopted on
-    // first real Keycloak login (matched by email, then keycloakSub is
-    // written onto it). The random hash below only satisfies the
-    // NOT NULL userPass column; it is never checked against, since
-    // CredentialsProvider no longer exists.
-    const passwordHash = await bcrypt.hash(crypto.randomUUID(), 10)
+    if (authConfig.local && (!password || String(password).length < 8)) {
+      return NextResponse.json({ error: 'A senha local deve ter pelo menos 8 caracteres.' }, { status: 400 })
+    }
+
+    const passwordHash = await bcrypt.hash(
+      authConfig.local ? String(password) : crypto.randomUUID(),
+      10,
+    )
     const siteLang = lang || 'en'
     const siteOrigin = getOriginFromRequest(request)
 
@@ -55,6 +58,12 @@ export async function POST(request: Request) {
           userUrl: '',
           userActivationKey: '',
           displayName: username,
+          meta: {
+            create: {
+              metaKey: 'capabilities',
+              metaValue: JSON.stringify({ admin: true }),
+            },
+          },
         },
       })
 

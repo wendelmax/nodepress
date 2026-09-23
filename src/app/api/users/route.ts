@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma'
 import { auth } from "@/auth"
 import { getSiteUrl } from '@/lib/site-url'
 import { UserService } from '@/services/user.service'
+import { canManageUsers } from '@/lib/authorization.mjs'
 
 // GET /np-json/np/v2/users
 export async function GET(request: Request) {
@@ -49,6 +50,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await auth()
   if (!session) return new NextResponse('Unauthorized', { status: 401 })
+  if (!canManageUsers((session.user as any)?.role)) return new NextResponse('Forbidden', { status: 403 })
   
   try {
     const body = await request.json()
