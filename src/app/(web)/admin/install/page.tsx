@@ -1,9 +1,14 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { getTranslation } from "@/lib/i18n"
+
+type AuthConfig = {
+  local: boolean
+  keycloak: boolean
+}
 
 function InstallForm() {
   const router = useRouter()
@@ -14,14 +19,22 @@ function InstallForm() {
 
   const [siteTitle, setSiteTitle] = useState("")
   const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [authConfig, setAuthConfig] = useState<AuthConfig>({ local: true, keycloak: false })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(() => {
     return searchParams.get("db_error")
       ? "Error connecting to the database. Make sure your .env file is configured correctly and you have run 'npx prisma db push'."
       : ""
   })
+
+  useEffect(() => {
+    fetch("/api/auth/config")
+      .then((response) => response.json())
+      .then(setAuthConfig)
+      .catch(() => undefined)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +45,7 @@ function InstallForm() {
       const res = await fetch("/api/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ siteTitle, username, password, email, lang }),
+        body: JSON.stringify({ siteTitle, username, email, password, lang }),
       })
 
       if (res.ok) {
@@ -74,8 +87,9 @@ function InstallForm() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label className="block font-semibold text-text-secondary text-sm">{t.siteTitle}</label>
+            <label htmlFor="site-title" className="block font-semibold text-text-secondary text-sm">{t.siteTitle}</label>
             <input 
+              id="site-title"
               type="text" 
               required
               value={siteTitle} 
@@ -85,8 +99,9 @@ function InstallForm() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="block font-semibold text-text-secondary text-sm">{t.adminUsername}</label>
+            <label htmlFor="admin-username" className="block font-semibold text-text-secondary text-sm">{t.adminUsername}</label>
             <input 
+              id="admin-username"
               type="text" 
               required
               value={username} 
@@ -96,21 +111,27 @@ function InstallForm() {
             <p className="text-[11px] text-text-muted mt-0.5">{t.adminUsernameDesc}</p>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="block font-semibold text-text-secondary text-sm">{t.adminPassword}</label>
-            <input 
-              type="password" 
-              required
-              value={password} 
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted" 
-            />
-            <p className="text-[11px] text-text-muted mt-0.5">{t.adminPasswordDesc}</p>
-          </div>
+          {authConfig.local && (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="admin-password" className="block font-semibold text-text-secondary text-sm">{t.adminPassword}</label>
+              <input
+                id="admin-password"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                autoComplete="new-password"
+                className="w-full px-4 py-3 bg-background-tertiary border border-border rounded-xl text-base text-text focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all placeholder-text-muted"
+              />
+              <p className="text-[11px] text-text-muted mt-0.5">{t.adminPasswordDesc}</p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-1.5 mb-2">
-            <label className="block font-semibold text-text-secondary text-sm">{t.adminEmail}</label>
+            <label htmlFor="admin-email" className="block font-semibold text-text-secondary text-sm">{t.adminEmail}</label>
             <input 
+              id="admin-email"
               type="email" 
               required
               value={email} 

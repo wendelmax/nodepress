@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { OptionService } from "@/services/option.service"
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export async function generateMetadata(): Promise<Metadata> {
   const options = await OptionService.getOptions(['seo_site_title', 'seo_meta_description', 'seo_og_image', 'seo_twitter_handle'])
@@ -39,7 +28,7 @@ export default async function RootLayout({
   const analyticsId = options['analytics_ga4_id']
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en">
       <body>
         {children}
         {analyticsId && <GoogleAnalytics gaId={analyticsId} />}

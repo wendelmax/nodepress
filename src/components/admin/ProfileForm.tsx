@@ -7,10 +7,11 @@ import {
   PageHeader, SettingsSection, FieldRow, SaveButton, StatusMessage,
   inputCls, selectCls
 } from "@/components/admin/SettingsUI"
+import { normalizeRole } from "@/lib/role-normalization.mjs"
 
 export default function ProfileForm({ user }: { user: any }) {
   const router = useRouter()
-  const userRole = user.meta?.find((m: any) => m.metaKey === 'capabilities')?.metaValue || 'administrator'
+  const userRole = normalizeRole(user.meta?.find((m: any) => m.metaKey === 'capabilities')?.metaValue)
 
   const [formData, setFormData] = useState({
     email: user.userEmail || '',
@@ -96,7 +97,7 @@ export default function ProfileForm({ user }: { user: any }) {
               onChange={e => set('role', e.target.value)}
               className={selectCls}
             >
-              <option value="administrator">Administrador</option>
+              <option value="admin">Administrador</option>
               <option value="editor">Editor</option>
               <option value="author">Autor</option>
               <option value="contributor">Colaborador</option>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { UserService } from '@/services/user.service'
+import { canChangeUserRole, canEditUser } from '@/lib/authorization.mjs'
 
 export async function GET(
   request: Request,
@@ -12,6 +13,10 @@ export async function GET(
   }
 
   const { id: paramId } = await params
+  if (!canEditUser((session.user as any)?.role, (session.user as any)?.id, paramId)) {
+    return NextResponse.json({ code: 'rest_cannot_read', message: 'Sorry, you are not allowed to read users.', data: { status: 403 } }, { status: 403 })
+  }
+
   const id = parseInt(paramId)
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
@@ -31,12 +36,20 @@ export async function PUT(
   }
 
   const { id: paramId } = await params
+  if (!canEditUser((session.user as any)?.role, (session.user as any)?.id, paramId)) {
+    return NextResponse.json({ code: 'rest_cannot_edit', message: 'Sorry, you are not allowed to edit this user.', data: { status: 403 } }, { status: 403 })
+  }
+
   const id = parseInt(paramId)
   if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
 
   try {
     const body = await request.json()
     const { email, displayName, url, newPassword, role } = body
+
+    if (role !== undefined && !canChangeUserRole((session.user as any)?.role)) {
+      return NextResponse.json({ code: 'rest_cannot_edit_role', message: 'Only administrators can change user roles.', data: { status: 403 } }, { status: 403 })
+    }
 
     const user = await UserService.update(id, { email, displayName, url, newPassword, role })
 

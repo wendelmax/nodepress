@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import Link from "next/link"
+import { checkInstallation } from "@/lib/install"
 import { TaxonomyService } from "@/services/taxonomy.service"
 import { PostService } from "@/services/post.service"
 import { OptionService } from "@/services/option.service"
@@ -7,6 +7,7 @@ import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  await checkInstallation()
   const { slug } = await params
 
   // 1. Fetch term info

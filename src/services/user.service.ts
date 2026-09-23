@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { normalizeRole } from "@/lib/role-normalization.mjs"
 
 export class UserService {
   /**
@@ -77,20 +78,21 @@ export class UserService {
     }
 
     if (data.role) {
+      const normalizedRole = normalizeRole(data.role)
       const capability = await prisma.userMeta.findFirst({
         where: { userId: id, metaKey: 'capabilities' }
       })
       if (capability) {
         await prisma.userMeta.update({
           where: { umetaId: capability.umetaId },
-          data: { metaValue: data.role }
+          data: { metaValue: normalizedRole }
         })
       } else {
         await prisma.userMeta.create({
           data: {
             userId: id,
             metaKey: 'capabilities',
-            metaValue: data.role
+            metaValue: normalizedRole
           }
         })
       }
@@ -130,7 +132,7 @@ export class UserService {
         meta: data.role ? {
           create: {
             metaKey: 'capabilities',
-            metaValue: data.role
+            metaValue: normalizeRole(data.role)
           }
         } : undefined
       }

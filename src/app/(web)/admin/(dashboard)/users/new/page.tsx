@@ -114,7 +114,7 @@ export default function NewUserPage() {
               onChange={e => set('role', e.target.value)}
               className={selectCls}
             >
-              <option value="administrator">Administrador</option>
+              <option value="admin">Administrador</option>
               <option value="editor">Editor</option>
               <option value="author">Autor</option>
               <option value="contributor">Colaborador</option>

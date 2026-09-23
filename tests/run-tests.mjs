@@ -1,0 +1,6 @@
+import "./access-control.test.mjs"
+import "./auth-config.test.mjs"
+import "./authorization.test.mjs"
+import "./local-auth.test.mjs"
+import "./role-normalization.test.mjs"
+import "./user-identity-linking.test.mjs"
