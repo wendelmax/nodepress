@@ -49,6 +49,7 @@ export default async function HomePage() {
 
   // Determine permalinks and homepage settings
   const options = await OptionService.getOptions(['permalink_structure', 'show_on_front', 'page_on_front'])
+  const themeOptions = await ThemeService.getRenderOptions(options)
   const structure = options['permalink_structure'] || '/%postname%/'
   const showOnFront = options['show_on_front'] || 'posts'
   const pageOnFront = options['page_on_front']
@@ -62,7 +63,7 @@ export default async function HomePage() {
     if (!isNaN(pageId)) {
       const page = await PostService.getById(pageId)
       if (page && page.postStatus === 'publish') {
-        return <Theme.SinglePage post={page} options={options} />
+        return <Theme.SinglePage post={page} options={themeOptions} />
       }
     }
   }
@@ -75,6 +76,6 @@ export default async function HomePage() {
     permalink: generatePermalink(post, structure)
   }))
 
-  return <Theme.Archive posts={posts} options={options} />
+  return <Theme.Archive posts={posts} options={themeOptions} />
 }
 

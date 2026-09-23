@@ -14,6 +14,9 @@ import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
 import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink, ImageIcon } from "lucide-react"
 import { AdminI18nProvider } from "@/components/admin/AdminI18nProvider"
 import { getAdminDictionary } from "@/i18n"
+import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
+import { MenuService } from "@/services/menu.service"
+import { PluginMenu } from "@/components/admin/PluginMenu"
 import "@/plugins/registry"
 import '../admin.css'
 
@@ -61,7 +64,12 @@ export default async function AdminLayout({
     matchPaths: [`/admin/posts?type=${c.slug}`]
   }))
 
+  await ensureActivePluginsLoaded()
   const pluginMenuLinks = await HookService.doAction('admin_sidebar_menu')
+  const aggregatedPluginMenus = MenuService.getPluginMenuTree('admin', (capability) => {
+    if (!capability) return true
+    return (session.user as { role?: string }).role === 'admin'
+  })
 
   const navGroups = [
     {
@@ -141,6 +149,7 @@ export default async function AdminLayout({
                   icon={item.icon} 
                 />
               ))}
+              {group.label === dict.sidebar.content && <PluginMenu menus={aggregatedPluginMenus} />}
             </div>
           ))}
         </nav>

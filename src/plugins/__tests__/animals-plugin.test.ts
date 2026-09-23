@@ -1,0 +1,43 @@
+import { describe, expect, it, vi } from 'vitest'
+import { animalsPlugin } from '../animals'
+import { registeredPlugins } from '../registry'
+
+describe('animals plugin', () => {
+  it('is registered and contributes admin and public menus', async () => {
+    expect(registeredPlugins).toContain(animalsPlugin)
+
+    const menus = {
+      addAdmin: vi.fn(() => vi.fn()),
+      addPublic: vi.fn(() => vi.fn()),
+    }
+    const contentTypes = { register: vi.fn(() => vi.fn()) }
+
+    await animalsPlugin.register({
+      pluginId: animalsPlugin.id,
+      hooks: { addAction: vi.fn(() => vi.fn()), addFilter: vi.fn(() => vi.fn()) },
+      menus,
+      contentTypes,
+      events: { on: vi.fn(() => vi.fn()) },
+      jobs: { add: vi.fn(() => vi.fn()) },
+      routes: { add: vi.fn(() => vi.fn()) },
+      commands: { add: vi.fn(() => vi.fn()) },
+    })
+
+    expect(menus.addAdmin).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'animals',
+      label: 'Animais',
+      href: '/admin/animals',
+      capability: 'animals.read',
+    }))
+    expect(menus.addPublic).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'animals-public',
+      label: 'Animais',
+      href: '/animais',
+    }))
+    expect(contentTypes.register).toHaveBeenCalledWith(expect.objectContaining({ id: 'animal' }))
+  })
+
+  it('uses the generic entity storage without a domain-specific table migration', () => {
+    expect(animalsPlugin.migrations ?? []).toHaveLength(0)
+  })
+})

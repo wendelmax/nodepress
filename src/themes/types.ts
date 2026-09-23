@@ -1,4 +1,5 @@
 import React from 'react'
+import type { MenuNode } from '@/services/menu.types'
 
 export interface ThemeMeta {
   name: string
@@ -8,10 +9,21 @@ export interface ThemeMeta {
   slug: string
 }
 
+export interface ThemeRenderContext {
+  options: Record<string, string>
+  menus: MenuNode[]
+}
+
+export interface ThemeRenderOptions {
+  [key: string]: unknown
+  menus: MenuNode[]
+}
+
 export interface NodePressTheme {
   meta: ThemeMeta
-  SinglePost: React.ComponentType<{ post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: any }>
-  SinglePage: React.ComponentType<{ post: any, options?: any }>
-  Archive: React.ComponentType<{ posts: any[], title?: string, options?: any }>
-  NotFound?: React.ComponentType<{ options?: any }>
+  supportsPluginMenus?: boolean
+  SinglePost: React.ComponentType<{ post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: ThemeRenderOptions }>
+  SinglePage: React.ComponentType<{ post: any, options?: ThemeRenderOptions }>
+  Archive: React.ComponentType<{ posts: any[], title?: string, options?: ThemeRenderOptions }>
+  NotFound?: React.ComponentType<{ options?: ThemeRenderOptions }>
 }

@@ -1,31 +1,24 @@
-import { NextResponse } from 'next/server'
-import { auth } from "@/auth"
+import { auth } from '@/auth'
+import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
 import { MenuService } from '@/services/menu.service'
+import type { PluginSurface } from '@/plugins/types'
 
-export async function GET() {
-  try {
-    const menus = await MenuService.getMenus()
-    return NextResponse.json(menus)
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch menus' }, { status: 500 })
-  }
-}
-
-export async function POST(request: Request) {
-  const session = await auth()
-  if (!session || !session.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function GET(request: Request) {
+  const surface = new URL(request.url).searchParams.get('surface') as PluginSurface | null
+  if (surface !== 'admin' && surface !== 'public') {
+    return Response.json({ error: 'surface must be admin or public' }, { status: 400 })
   }
 
-  try {
-    const body = await request.json()
-    if (!body.name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    }
-
-    const menu = await MenuService.createMenu(body.name)
-    return NextResponse.json(menu, { status: 201 })
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create menu' }, { status: 500 })
+  await ensureActivePluginsLoaded()
+  const session = surface === 'admin' ? await auth() : null
+  const role = session?.user ? (session.user as { role?: string }).role : undefined
+  if (surface === 'admin' && role !== 'admin') {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const menus = MenuService.getPluginMenuTree(
+    surface,
+    (capability) => surface === 'public' ? !capability : role === 'admin',
+  )
+  return Response.json({ menus })
 }

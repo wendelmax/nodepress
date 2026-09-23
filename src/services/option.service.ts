@@ -93,6 +93,31 @@ export class OptionService {
     }
   }
 
+  static async getActivePluginIds(): Promise<string[]> {
+    const options = await this.getOptions(['active_plugins'])
+    if (!options.active_plugins) return []
+    try {
+      const parsed = JSON.parse(options.active_plugins)
+      return Array.isArray(parsed) && parsed.every((id) => typeof id === 'string')
+        ? [...new Set(parsed)]
+        : []
+    } catch {
+      return []
+    }
+  }
+
+  static async setActivePluginIds(ids: string[]): Promise<void> {
+    await this.saveOptions({ active_plugins: JSON.stringify([...new Set(ids)]) })
+  }
+
+  static clearCache(keys?: string[]): void {
+    if (!keys) {
+      this.cache.clear()
+      return
+    }
+    for (const key of keys) this.cache.delete(key)
+  }
+
   /**
    * Updates or creates options in the database.
    * Only allows updating options defined in ALLOWED_OPTIONS.

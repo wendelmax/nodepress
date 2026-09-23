@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import prisma from '@/lib/prisma'
+import { errorResponse } from '@/core/errors'
 
 export async function POST(request: Request) {
   const session = await auth()
@@ -122,8 +123,7 @@ export async function POST(request: Request) {
       message: `Import completed. ${importedPosts} posts and ${importedOptions} options were imported.` 
     })
 
-  } catch (error: any) {
-    console.error("Import Error:", error)
-    return NextResponse.json({ error: `Import failed: ${error.message}` }, { status: 500 })
+  } catch (error: unknown) {
+    return errorResponse(error, 'Import failed', { endpoint: 'legacy-import' })
   }
 }

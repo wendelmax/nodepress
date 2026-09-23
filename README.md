@@ -210,6 +210,11 @@ HookService.addAction('admin_top_bar', () => {
 
 Os plugins podem registrar ações e filtros usando o `HookService`.
 
+Plugins TypeScript confiáveis também podem usar manifestos tipados com hooks,
+migrations, capacidades, ciclo de vida e menus administrativos/públicos. Plugins
+legados baseados apenas em importações de efeitos colaterais continuam carregando
+pela camada de compatibilidade.
+
 ## Desenvolvimento de temas
 
 Crie um tema em `src/themes/meu-tema/` e registre-o em `src/themes/registry.ts`. Um tema implementa `SinglePost`, `SinglePage` e `Archive`, podendo também fornecer `NotFound`.

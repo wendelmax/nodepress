@@ -1,6 +1,8 @@
 import { OptionService } from './option.service'
 import { themes } from '@/themes/registry'
-import { NodePressTheme } from '@/themes/types'
+import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
+import { MenuService } from '@/services/menu.service'
+import type { NodePressTheme, ThemeRenderOptions } from '@/themes/types'
 
 export class ThemeService {
   static async getActiveThemeSlug(): Promise<string> {
@@ -20,5 +22,11 @@ export class ThemeService {
 
   static getAvailableThemes(): NodePressTheme['meta'][] {
     return Object.values(themes).map(theme => theme.meta)
+  }
+
+  static async getRenderOptions(options: Record<string, string>): Promise<ThemeRenderOptions> {
+    await ensureActivePluginsLoaded()
+    const menus = MenuService.getPluginMenuTree('public', (capability) => !capability)
+    return { ...options, menus }
   }
 }

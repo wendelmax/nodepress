@@ -30,6 +30,7 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
   }))
 
   const Theme = await ThemeService.getActiveTheme()
+  const themeOptions = await ThemeService.getRenderOptions(options)
 
-  return <Theme.Archive posts={posts} title={`Tag: ${term.name}`} options={options} />
+  return <Theme.Archive posts={posts} title={`Tag: ${term.name}`} options={themeOptions} />
 }

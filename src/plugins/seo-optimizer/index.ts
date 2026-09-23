@@ -1,7 +1,10 @@
 import { HookService } from '@/services/hook.service';
 
 /**
- * An example plugin that automatically appends a canonical signature or SEO block 
+ * Plugin legado carregado por efeito colateral em src/plugins/legacy.ts.
+ * Plugins novos devem usar NodePressPlugin.register para obter cleanup no lifecycle.
+ *
+ * Este plugin automaticamente appends a canonical signature or SEO block
  * to the end of every post content before it is rendered on the frontend.
  */
 HookService.addFilter('the_content', async (content: string, post: any) => {

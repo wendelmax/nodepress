@@ -225,3 +225,59 @@ model FormSubmission {
   @@index([createdAt])
   @@map("np_form_submissions")
 }
+
+model PluginMigration {
+  id            Int      @id @default(autoincrement())
+  pluginId      String   @map("plugin_id") @db.VarChar(100)
+  migrationId   String   @map("migration_id") @db.VarChar(150)
+  checksum      String   @db.VarChar(128)
+  pluginVersion String   @map("plugin_version") @db.VarChar(50)
+  appliedAt     DateTime @default(now()) @map("applied_at")
+
+  @@unique([pluginId, migrationId])
+  @@index([pluginId])
+  @@map("np_plugin_migrations")
+}
+
+model ContentTypeDefinition {
+  id        String   @id @db.VarChar(100)
+  label     String   @db.VarChar(180)
+  version   String   @db.VarChar(50)
+  fields    Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("np_content_types")
+}
+
+model ContentRecord {
+  id          String   @id @default(cuid()) @db.VarChar(30)
+  contentType String   @map("content_type") @db.VarChar(100)
+  tenantId    String?  @map("tenant_id") @db.VarChar(100)
+  title       String   @db.VarChar(255)
+  slug        String   @db.VarChar(255)
+  status      String   @default("draft") @db.VarChar(20)
+  data        Json
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([contentType, tenantId, slug])
+  @@index([contentType, status])
+  @@index([tenantId])
+  @@map("np_content_records")
+}
+
+model PayloadImportRecord {
+  id         String   @id @default(cuid()) @db.VarChar(30)
+  source     String   @db.VarChar(100)
+  collection String   @db.VarChar(150)
+  sourceId   String   @map("source_id") @db.VarChar(255)
+  targetId   String   @map("target_id") @db.VarChar(100)
+  targetType String   @map("target_type") @db.VarChar(100)
+  slug       String   @db.VarChar(255)
+  importedAt DateTime @default(now()) @map("imported_at")
+
+  @@unique([source, collection, sourceId])
+  @@index([targetType, targetId])
+  @@map("np_import_records")
+}
