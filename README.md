@@ -52,10 +52,8 @@ NodePress é um CMS inspirado no WordPress para publicação e gestão de sites.
 2. Instale as dependências:
 
    ```bash
-   npm ci --legacy-peer-deps
+   npm ci
    ```
-
-   O parâmetro `--legacy-peer-deps` é necessário devido ao peer dependency antigo do `react-quill` com React 19.
 
 3. Crie o arquivo de ambiente:
 
