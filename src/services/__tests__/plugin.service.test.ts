@@ -143,12 +143,17 @@ describe('PluginService', () => {
     const runner = new FakeRunner()
     const runtime = new FakeRuntime()
     const plugin = makePlugin('animals', {
-      onActivate: async () => { throw new Error('activate failed') },
+      onActivate: async () => {
+        runtime.events.push('activate')
+        throw new Error('activate failed')
+      },
+      onDeactivate: async () => { runtime.events.push('compensate') },
     })
     const service = new PluginService({ plugins: [plugin], store, runner, runtime })
 
     await expect(service.activate('animals')).rejects.toThrow('activate failed')
 
+    expect(runtime.events).toEqual(['runtime', 'activate', 'runtime-cleanup', 'compensate'])
     expect(runtime.cleanupCalls).toEqual(['animals'])
     expect(store.ids).toEqual([])
   })
@@ -186,6 +191,24 @@ describe('PluginService', () => {
     expect(runtime.cleanupCalls).toEqual([])
   })
 
+  it('restores runtime when persisting deactivation fails', async () => {
+    const store = new FakeStore()
+    store.ids = ['animals']
+    store.failWrites = true
+    const runner = new FakeRunner()
+    const runtime = new FakeRuntime()
+    const plugin = makePlugin('animals', {
+      onActivate: async () => { runtime.events.push('reactivate') },
+      onDeactivate: async () => { runtime.events.push('deactivate') },
+    })
+    const service = new PluginService({ plugins: [plugin], store, runner, runtime })
+
+    await expect(service.deactivate('animals')).rejects.toThrow('persist failed')
+
+    expect(runtime.events).toEqual(['deactivate', 'runtime-cleanup', 'runtime', 'reactivate'])
+    expect(store.ids).toEqual(['animals'])
+  })
+
   it('runs onActivate when loading a persisted plugin', async () => {
     const store = new FakeStore()
     store.ids = ['animals']
@@ -199,6 +222,25 @@ describe('PluginService', () => {
     await service.loadActive()
 
     expect(runtime.events).toEqual(['runtime', 'activate'])
+  })
+
+  it('compensates a failed onActivate when loading a persisted plugin', async () => {
+    const store = new FakeStore()
+    store.ids = ['animals']
+    const runner = new FakeRunner()
+    const runtime = new FakeRuntime()
+    const plugin = makePlugin('animals', {
+      onActivate: async () => {
+        runtime.events.push('activate')
+        throw new Error('boot activation failed')
+      },
+      onDeactivate: async () => { runtime.events.push('compensate') },
+    })
+    const service = new PluginService({ plugins: [plugin], store, runner, runtime })
+
+    await expect(service.loadActive()).rejects.toThrow('boot activation failed')
+
+    expect(runtime.events).toEqual(['runtime', 'activate', 'runtime-cleanup', 'compensate'])
   })
 
   it('runs onUninstall and forgets migrations for an inactive plugin', async () => {

@@ -62,14 +62,14 @@ export class PluginService {
 
       await this.options.runner.runPending(plugin)
       const cleanup = await this.options.runtime.activate(plugin)
-      let lifecycleActivated = false
+      let lifecycleStarted = false
       try {
+        lifecycleStarted = Boolean(plugin.onActivate)
         await plugin.onActivate?.()
-        lifecycleActivated = true
         await this.options.store.setActivePluginIds([...activeIds, pluginId])
       } catch (error) {
         cleanup()
-        if (lifecycleActivated) {
+        if (lifecycleStarted) {
           try {
             await plugin.onDeactivate?.()
           } catch (compensationError) {
@@ -91,7 +91,19 @@ export class PluginService {
 
       await plugin.onDeactivate?.()
       this.options.runtime.deactivate(pluginId)
-      await this.options.store.setActivePluginIds(activeIds.filter((id) => id !== pluginId))
+      try {
+        await this.options.store.setActivePluginIds(activeIds.filter((id) => id !== pluginId))
+      } catch (error) {
+        let cleanup: (() => void) | undefined
+        try {
+          cleanup = await this.options.runtime.activate(plugin)
+          await plugin.onActivate?.()
+        } catch (compensationError) {
+          cleanup?.()
+          console.error(`Plugin deactivation compensation failed: ${plugin.id}`, compensationError)
+        }
+        throw error
+      }
       return this.status(plugin, false)
     })
   }
@@ -116,10 +128,18 @@ export class PluginService {
     for (const plugin of ordered.filter((candidate) => activeIds.includes(candidate.id))) {
       await this.options.runner.runPending(plugin)
       const cleanup = await this.options.runtime.activate(plugin)
+      const lifecycleStarted = Boolean(plugin.onActivate)
       try {
         await plugin.onActivate?.()
       } catch (error) {
         cleanup()
+        if (lifecycleStarted) {
+          try {
+            await plugin.onDeactivate?.()
+          } catch (compensationError) {
+            console.error(`Plugin boot compensation failed: ${plugin.id}`, compensationError)
+          }
+        }
         throw error
       }
     }
