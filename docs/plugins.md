@@ -41,6 +41,24 @@ Use `menus.addAdmin` para a navegação do painel e `menus.addPublic` para a nav
 
 O agregador ordena irmãos por posição e ID, deduplica IDs mantendo a primeira contribuição, valida pais/ciclos e filtra itens protegidos. Menus públicos com capability não aparecem para visitantes. A API também está disponível em `GET /api/menus?surface=admin|public`; a superfície administrativa exige sessão admin.
 
+## Páginas administrativas dinâmicas
+
+Plugins podem registrar uma página própria no painel usando o hook
+`admin_plugin_page_<slug>`. O retorno pode ser um Server Component ou Client
+Component React, e múltiplos handlers para o mesmo slug são renderizados na
+ordem de prioridade:
+
+```tsx
+register({ hooks }) {
+  hooks.addAction('admin_plugin_page_reports', () => <ReportsDashboard />)
+}
+```
+
+A página fica disponível em `/admin/plugins/<slug>`. Se nenhum handler estiver
+registrado para o slug, o painel mostra um fallback amigável. A rota herda a
+autenticação e o layout administrativo; o plugin continua responsável por
+verificar capabilities dentro do próprio conteúdo quando necessário.
+
 ## Migrations
 
 Migrations são executadas antes da ativação e recebem um `Prisma.TransactionClient`. Cada `(pluginId, migrationId)` é registrado em `np_plugin_migrations` com checksum SHA-256. A mesma migration é ignorada quando o checksum não mudou; se o código mudar depois de aplicado, a ativação falha para evitar drift silencioso.
