@@ -4,9 +4,9 @@
 
 **Goal:** Allow active plugins to contribute client-safe Puck components and apply the `puck_registered_components` filter consistently in the editor and public renderer.
 
-**Architecture:** Keep `puckConfig` as an immutable, runtime-neutral base. Add a pure component merger, a server resolver that loads active plugin runtime state before applying filters, and a client resolver that fetches active plugin IDs before applying the same filter to client-safe plugin declarations. `PuckBuilder` falls back to the base config while the client resolver loads; `BlockRenderer` awaits the server resolver only for Puck content.
+**Architecture:** Keep `puckConfig` as an immutable, runtime-neutral base. Add a pure component merger, a server resolver that loads active plugin runtime state before applying the server `HookService` filters, and a client resolver that fetches active plugin IDs before applying the same filter contract through a client-local registry to client-safe plugin declarations. `PuckBuilder` falls back to the base config while the client resolver loads; `BlockRenderer` awaits the server resolver only for Puck content.
 
-**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, `@measured/puck`, Vitest, existing `HookService` and plugin lifecycle services.
+**Tech Stack:** Next.js 16 App Router, React 19, TypeScript, `@measured/puck`, Vitest, existing `HookService` and plugin lifecycle services, plus a client-local Puck hook registry that does not import server plugin loading.
 
 **Spec:** `docs/superpowers/specs/2026-09-24-puck-component-filter-design.md`
 
@@ -15,7 +15,7 @@
 - Keep `puckConfig` free of database access and hook execution so it remains importable by both browser and server code.
 - Only active plugins contribute `puck.components` to either resolver.
 - Do not execute plugin `register` callbacks in the browser.
-- Apply `HookService.applyFilters('puck_registered_components', components)` after the base/plugin merge.
+- Apply the server `HookService` or client-local registry to the same `puck_registered_components` tag after the base/plugin merge.
 - Never mutate `puckConfig.components`; each resolver starts from a fresh shallow copy.
 - Preserve the existing Puck data format and the existing base components.
 - On client resolution failure, log the failure and keep the base config usable.
@@ -178,10 +178,12 @@ git commit -m "feat: resolve active plugin Puck components on the server"
 
 **Files:**
 - Create: `src/lib/puck/client-config.ts`
+- Create: `src/plugins/puck-client-registry.ts`
+- Create: `src/services/puck-client-hook.service.ts`
 - Test: `src/lib/puck/__tests__/client-config.test.ts`
 
 **Interfaces:**
-- `getClientPuckConfig(): Promise<Config<any>>` fetches `/api/admin/plugins`, selects `active` plugin IDs, merges client-safe declarations, and applies `HookService.applyFilters`.
+- `getClientPuckConfig(): Promise<Config<any>>` fetches `/api/admin/plugins`, selects `active` plugin IDs, merges declarations from the static client-safe registry, and applies the client-local registry to the same `puck_registered_components` tag.
 - A rejected fetch or filter is thrown by this loader; `PuckBuilder` owns the user-facing fallback to `puckConfig`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -197,7 +199,7 @@ vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
   ] }),
 }))
 
-const cleanup = HookService.addFilter('puck_registered_components', (components) => ({
+const cleanup = ClientPuckHookService.addFilter('puck_registered_components', (components) => ({
   ...components,
   Filtered: components.Heading,
 }))
@@ -223,7 +225,7 @@ Expected: FAIL because `getClientPuckConfig` does not exist.
 
 - [ ] **Step 3: Implement the client resolver**
 
-Use the existing admin endpoint and the shared merger. Do not import `plugin-factory` or execute plugin lifecycle callbacks in this file:
+Use the existing admin endpoint, the shared merger, and the static client-safe registry. Do not import `plugin-factory`, the server plugin registry, or execute plugin lifecycle callbacks in this file. The client-local hook registry must preserve the filter tag and priority ordering without importing server-only modules:
 
 ```ts
 export async function getClientPuckConfig(): Promise<Config<any>> {
@@ -231,8 +233,8 @@ export async function getClientPuckConfig(): Promise<Config<any>> {
   if (!response.ok) throw new Error(`Failed to load active plugins: ${response.status}`)
   const payload = await response.json() as { plugins?: Array<{ id: string; active: boolean }> }
   const activeIds = new Set((payload.plugins ?? []).filter((plugin) => plugin.active).map((plugin) => plugin.id))
-  const components = mergePuckComponents(puckConfig.components, registeredPlugins, activeIds)
-  const filtered = await HookService.applyFilters('puck_registered_components', components)
+  const components = mergePuckComponents(puckConfig.components, clientPuckPlugins, activeIds)
+  const filtered = await ClientPuckHookService.applyFilters('puck_registered_components', components)
   return { ...puckConfig, components: filtered }
 }
 ```
