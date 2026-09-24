@@ -74,6 +74,53 @@ export const reportsPlugin = {
 
 As migrations são transacionais: se alguma falhar, nenhuma linha da migration ledger é persistida e o plugin não é ativado. O campo `down` é opcional para ferramentas futuras; desativar o plugin não executa rollback e nunca apaga dados.
 
+## Lifecycle
+
+Plugins podem declarar callbacks opcionais para controlar recursos próprios:
+
+```ts
+export const reportsPlugin: NodePressPlugin = {
+  id: 'reports',
+  name: 'Relatórios',
+  version: '1.0.0',
+  migrations: [createReports],
+  async onActivate() {
+    // Inicializa integrações externas depois das migrations.
+  },
+  async onDeactivate() {
+    // Libera recursos externos; o NodePress remove hooks e menus depois.
+  },
+  async onUninstall() {
+    // Remove dados/tabelas do plugin, se essa for a política do produto.
+  },
+  register({ hooks, menus }) {
+    // contribuições reversíveis do runtime
+  },
+}
+```
+
+A ativação executa migrations, registra as contribuições de runtime, chama
+`onActivate` e só então persiste o plugin em `active_plugins`. Se uma etapa
+falhar, a ativação não é persistida e as contribuições já registradas são
+removidas. No carregamento inicial, plugins persistidos ativos repetem o
+`onActivate` depois de carregar suas migrations.
+
+A desativação chama `onDeactivate` antes de remover hooks, menus e outras
+contribuições. Ela preserva as tabelas e os dados do plugin. Se o callback
+falhar, o plugin continua ativo para permitir nova tentativa.
+
+Para uma remoção explícita, o plugin deve estar inativo e um administrador pode
+chamar:
+
+```text
+POST /api/admin/plugins/<id>/uninstall
+```
+
+O NodePress chama `onUninstall` e remove apenas o ledger de migrations do
+plugin, permitindo uma futura ativação que execute novamente migrations
+idempotentes. O core não executa `down` nem apaga tabelas automaticamente; a
+limpeza de dados é responsabilidade do próprio plugin.
+
 ## Ativação e desativação
 
 Use a tela de plugins ou os endpoints autenticados:

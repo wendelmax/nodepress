@@ -49,11 +49,18 @@ export class NodePressPluginRuntime implements PluginRuntime {
       },
     }
 
-    await plugin.register(context)
     const cleanup = () => {
-      for (const callback of cleanupCallbacks.splice(0)) callback()
+      for (const callback of cleanupCallbacks.splice(0).reverse()) callback()
       this.cleanups.delete(plugin.id)
     }
+
+    try {
+      await plugin.register(context)
+    } catch (error) {
+      cleanup()
+      throw error
+    }
+
     this.cleanups.set(plugin.id, cleanup)
     return cleanup
   }

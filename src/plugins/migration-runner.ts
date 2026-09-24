@@ -22,6 +22,7 @@ export interface PluginMigrationTransaction {
 export interface PluginMigrationDatabase {
   pluginMigration: {
     findMany(args: { where: { pluginId: string } }): Promise<AppliedPluginMigration[]>
+    deleteMany(args: { where: { pluginId: string } }): Promise<unknown>
   }
   $transaction<T>(callback: (tx: PluginMigrationTransaction) => Promise<T>): Promise<T>
 }
@@ -64,6 +65,11 @@ export class PluginMigrationRunner {
         })
       }
     })
+  }
+
+  async forget(pluginId: string): Promise<void> {
+    const database = await this.getDatabase()
+    await database.pluginMigration.deleteMany({ where: { pluginId } })
   }
 
   private async getDatabase(): Promise<PluginMigrationDatabase> {

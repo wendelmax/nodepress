@@ -5,6 +5,7 @@ import type { PluginCommandDefinition, PluginJobDefinition, PluginRouteDefinitio
 
 export type PluginSurface = 'admin' | 'public'
 export type PluginCapability = string
+export type PluginLifecycleHook = () => void | Promise<void>
 
 export interface PluginMenuItem {
   id: string
@@ -74,6 +75,9 @@ export interface NodePressPlugin {
   id: string
   name: string
   version: string
+  onActivate?: PluginLifecycleHook
+  onDeactivate?: PluginLifecycleHook
+  onUninstall?: PluginLifecycleHook
   engine?: { nodepress: string }
   dependencies?: Record<string, string>
   permissions?: PluginCapability[]

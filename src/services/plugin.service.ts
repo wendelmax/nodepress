@@ -22,7 +22,7 @@ export interface PluginStatus {
 export interface PluginServiceOptions {
   plugins: NodePressPlugin[]
   store: PluginActivationStore
-  runner: Pick<PluginMigrationRunner, 'runPending'>
+  runner: Pick<PluginMigrationRunner, 'runPending' | 'forget'>
   runtime: PluginRuntime
 }
 
@@ -62,10 +62,20 @@ export class PluginService {
 
       await this.options.runner.runPending(plugin)
       const cleanup = await this.options.runtime.activate(plugin)
+      let lifecycleStarted = false
       try {
+        lifecycleStarted = Boolean(plugin.onActivate)
+        await plugin.onActivate?.()
         await this.options.store.setActivePluginIds([...activeIds, pluginId])
       } catch (error) {
         cleanup()
+        if (lifecycleStarted) {
+          try {
+            await plugin.onDeactivate?.()
+          } catch (compensationError) {
+            console.error(`Plugin activation compensation failed: ${plugin.id}`, compensationError)
+          }
+        }
         throw error
       }
 
@@ -79,8 +89,35 @@ export class PluginService {
       const activeIds = await this.options.store.getActivePluginIds()
       if (!activeIds.includes(pluginId)) return this.status(plugin, false)
 
+      await plugin.onDeactivate?.()
       this.options.runtime.deactivate(pluginId)
-      await this.options.store.setActivePluginIds(activeIds.filter((id) => id !== pluginId))
+      try {
+        await this.options.store.setActivePluginIds(activeIds.filter((id) => id !== pluginId))
+      } catch (error) {
+        let cleanup: (() => void) | undefined
+        try {
+          cleanup = await this.options.runtime.activate(plugin)
+          await plugin.onActivate?.()
+        } catch (compensationError) {
+          cleanup?.()
+          console.error(`Plugin deactivation compensation failed: ${plugin.id}`, compensationError)
+        }
+        throw error
+      }
+      return this.status(plugin, false)
+    })
+  }
+
+  async uninstall(pluginId: string): Promise<PluginStatus> {
+    return this.withPluginLock(pluginId, async () => {
+      const plugin = this.requirePlugin(pluginId)
+      const activeIds = await this.options.store.getActivePluginIds()
+      if (activeIds.includes(pluginId)) {
+        throw new Error(`Cannot uninstall active plugin: ${pluginId}`)
+      }
+
+      await plugin.onUninstall?.()
+      await this.options.runner.forget(pluginId)
       return this.status(plugin, false)
     })
   }
@@ -90,7 +127,21 @@ export class PluginService {
     const ordered = resolvePluginOrder([...this.pluginsById.values()])
     for (const plugin of ordered.filter((candidate) => activeIds.includes(candidate.id))) {
       await this.options.runner.runPending(plugin)
-      await this.options.runtime.activate(plugin)
+      const cleanup = await this.options.runtime.activate(plugin)
+      const lifecycleStarted = Boolean(plugin.onActivate)
+      try {
+        await plugin.onActivate?.()
+      } catch (error) {
+        cleanup()
+        if (lifecycleStarted) {
+          try {
+            await plugin.onDeactivate?.()
+          } catch (compensationError) {
+            console.error(`Plugin boot compensation failed: ${plugin.id}`, compensationError)
+          }
+        }
+        throw error
+      }
     }
   }
 

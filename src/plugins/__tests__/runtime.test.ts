@@ -40,4 +40,21 @@ describe('plugin extension registrars', () => {
     await eventRegistry.emit('animal.created', { id: 'animal-2' })
     expect(eventHandler).toHaveBeenCalledTimes(1)
   })
+
+  it('cleans registered contributions when plugin registration fails', async () => {
+    const runtime = new NodePressPluginRuntime()
+    const plugin: NodePressPlugin = {
+      id: 'broken',
+      name: 'Broken',
+      version: '1.0.0',
+      register({ contentTypes }) {
+        contentTypes.register({ id: 'broken-content', label: 'Broken', version: '1.0.0', fields: {} })
+        throw new Error('registration failed')
+      },
+    }
+
+    await expect(runtime.activate(plugin)).rejects.toThrow('registration failed')
+
+    expect(contentTypeRegistry.get('broken-content')).toBeUndefined()
+  })
 })
