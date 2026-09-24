@@ -69,10 +69,12 @@ O conteúdo de `puck.components` é código client-safe e será empacotado com o
 editor. O callback `register` continua sendo executado pelo runtime ativo no
 servidor; ele pode registrar filtros para regras ou substituições server-side.
 Para que um componente adicionado apareça tanto no editor quanto no frontend,
-ele deve estar em `puck.components`. Um filtro server-side pode fazer ajustes
-específicos do renderer, mas não é uma forma de transportar funções React para o
-browser. Plugins que importarem APIs exclusivamente server-side não devem
-referenciá-las no módulo usado pela seção `puck`.
+ele deve estar em `puck.components` e o manifesto client-safe deve ser incluído
+na allowlist estática `src/plugins/puck-client-registry.ts`. Um filtro
+server-side pode fazer ajustes específicos do renderer, mas não é uma forma de
+transportar funções React para o browser. Plugins que importarem APIs
+exclusivamente server-side não devem referenciá-las no módulo usado pela seção
+`puck`.
 
 ### 3. Resolver server-side
 
@@ -113,13 +115,15 @@ requisições e entre instâncias do editor.
 ```text
 base config
    ├─ server: active plugins → puck.components → HookService filter → BlockRenderer
-   └─ client: active plugin IDs → client-safe puck.components → HookService filter → PuckBuilder
+   └─ client: active plugin IDs → client-safe puck.components → client hook registry filter → PuckBuilder
 ```
 
 O endpoint de plugins continua sendo a fonte de verdade dos IDs ativos no
 editor. O servidor continua sendo a fonte de verdade dos plugins ativos para a
 renderização pública. Assim, a declaração `puck.components` mantém paridade;
-filtros adicionais podem ser específicos de cada runtime.
+filtros adicionais podem ser específicos de cada runtime. O registry client-side
+mantém a mesma tag e a mesma ordenação por prioridade do HookService, mas não
+carrega o lifecycle server-side nem o registry dinâmico de plugins.
 
 ## Compatibilidade e falhas
 

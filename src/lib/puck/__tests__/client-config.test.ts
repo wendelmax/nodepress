@@ -1,10 +1,10 @@
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { HookService } from '@/services/hook.service'
+import { ClientPuckHookService } from '@/services/puck-client-hook.service'
 import { getClientPuckConfig } from '../client-config'
 
-vi.mock('@/plugins/registry', () => ({
-  registeredPlugins: [
+vi.mock('@/plugins/puck-client-registry', () => ({
+  clientPuckPlugins: [
     {
       id: 'active',
       puck: { components: { Card: { render: () => React.createElement('article') } } },
@@ -28,7 +28,7 @@ describe('client Puck config resolver', () => {
         { id: 'inactive', active: false },
       ],
     }), { status: 200 })))
-    const cleanup = HookService.addFilter('puck_registered_components', (components) => ({
+    const cleanup = ClientPuckHookService.addFilter('puck_registered_components', (components) => ({
       ...components,
       Filtered: components.Card,
     }))

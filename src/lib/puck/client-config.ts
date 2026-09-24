@@ -1,6 +1,6 @@
 import type { Config } from '@measured/puck'
-import { HookService } from '@/services/hook.service'
-import { registeredPlugins } from '@/plugins/registry'
+import { ClientPuckHookService } from '@/services/puck-client-hook.service'
+import { clientPuckPlugins } from '@/plugins/puck-client-registry'
 import { mergePuckComponents } from './components'
 import { puckConfig } from './config'
 
@@ -20,8 +20,8 @@ export async function getClientPuckConfig(): Promise<Config<any>> {
       .filter((plugin) => plugin.active)
       .map((plugin) => plugin.id),
   )
-  const components = mergePuckComponents(puckConfig.components, registeredPlugins, activePluginIds)
-  const filteredComponents = await HookService.applyFilters(
+  const components = mergePuckComponents(puckConfig.components, clientPuckPlugins, activePluginIds)
+  const filteredComponents = await ClientPuckHookService.applyFilters(
     'puck_registered_components',
     components,
   )

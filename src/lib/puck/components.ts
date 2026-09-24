@@ -1,9 +1,11 @@
 import type { NodePressPlugin } from '@/plugins/types'
 import type { PuckComponents } from './types'
 
+export type PuckComponentSource = Pick<NodePressPlugin, 'id' | 'puck'>
+
 export function mergePuckComponents(
   base: PuckComponents,
-  plugins: NodePressPlugin[],
+  plugins: PuckComponentSource[],
   activePluginIds: ReadonlySet<string>,
 ): PuckComponents {
   const components = { ...base }
