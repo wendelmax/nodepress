@@ -31,3 +31,29 @@ If `/api/health` reports `unhealthy`, stop traffic to the release, inspect struc
 ## Observability
 
 Logs are JSON records with an event name and optional request, plugin, job, or tenant fields. Public API responses contain stable error codes and generic messages; SQL, stack traces, and credentials remain server-side only. The health endpoint reports database, migration, plugin, storage, and queue status.
+
+## Legacy coexistence and cutover
+
+The temporary `nodepress-legacy-bridge` is an operational migration tool, not a second source of truth. Keep the legacy application authoritative for a domain until its reconciliation report is `passed` and the cutover is explicitly approved.
+
+For each domain:
+
+1. Run a shadow export with a fixed watermark and record the `runId`.
+2. Review counts, IDs, checksums and failed items; do not activate on blocking errors.
+3. Freeze legacy writes, run the final delta, and repeat reconciliation.
+4. Move the domain through `shadow -> ready -> frozen -> active` using the protected admin API.
+5. Route reads and administrative writes to NodePress; keep the legacy domain read-only during stabilization.
+6. For rollback, block NodePress writes, preserve the run and audit events, and route back only after reconciling post-cutover writes.
+
+The bridge uses separate credentials and databases. NodePress must never access legacy tables directly. Keep `runId`, `legacyId`, request IDs, counts, checksums and operator identity in the audit trail, without logging payloads, tokens or personal data.
+
+### Kill switch and retirement
+
+Set routing mode to `legacy` to return public traffic to the legacy application. This does not reopen writes for an already-active domain; rollback requires an explicit, audited decision.
+
+- [ ] All domains are active in NodePress and stable for the agreed period.
+- [ ] Final backup is restorable and migration reports are archived.
+- [ ] No blocking reconciliation errors or open incidents remain.
+- [ ] Legacy tokens, jobs and admin links are revoked.
+- [ ] Legal/LGPD retention requirements are approved before deletion.
+- [ ] The bridge is removed only after its evidence package is retained.
