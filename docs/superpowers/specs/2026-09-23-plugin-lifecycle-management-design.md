@@ -148,4 +148,3 @@ expor stack trace ou SQL.
 8. Migrations continuam idempotentes, transacionais e protegidas por checksum.
 9. Hooks e menus de plugins tipados desaparecem após desativação.
 10. Plugins legados existentes continuam funcionando.
-
