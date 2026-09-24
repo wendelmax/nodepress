@@ -22,7 +22,7 @@ export interface PluginStatus {
 export interface PluginServiceOptions {
   plugins: NodePressPlugin[]
   store: PluginActivationStore
-  runner: Pick<PluginMigrationRunner, 'runPending'>
+  runner: Pick<PluginMigrationRunner, 'runPending' | 'forget'>
   runtime: PluginRuntime
 }
 
@@ -92,6 +92,20 @@ export class PluginService {
       await plugin.onDeactivate?.()
       this.options.runtime.deactivate(pluginId)
       await this.options.store.setActivePluginIds(activeIds.filter((id) => id !== pluginId))
+      return this.status(plugin, false)
+    })
+  }
+
+  async uninstall(pluginId: string): Promise<PluginStatus> {
+    return this.withPluginLock(pluginId, async () => {
+      const plugin = this.requirePlugin(pluginId)
+      const activeIds = await this.options.store.getActivePluginIds()
+      if (activeIds.includes(pluginId)) {
+        throw new Error(`Cannot uninstall active plugin: ${pluginId}`)
+      }
+
+      await plugin.onUninstall?.()
+      await this.options.runner.forget(pluginId)
       return this.status(plugin, false)
     })
   }

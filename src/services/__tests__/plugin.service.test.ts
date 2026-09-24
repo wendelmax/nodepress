@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { PluginService } from '../plugin.service'
 import type { NodePressPlugin } from '@/plugins/types'
 
@@ -20,11 +20,22 @@ class FakeStore {
 
 class FakeRunner {
   calls: string[] = []
+  forgetCalls: string[] = []
   shouldFail = false
+  private readonly onForget?: (pluginId: string) => void
+
+  constructor(options: { onForget?: (pluginId: string) => void } = {}) {
+    this.onForget = options.onForget
+  }
 
   async runPending(plugin: NodePressPlugin) {
     this.calls.push(plugin.id)
     if (this.shouldFail) throw new Error('migration failed')
+  }
+
+  async forget(pluginId: string) {
+    this.forgetCalls.push(pluginId)
+    this.onForget?.(pluginId)
   }
 }
 
@@ -188,5 +199,52 @@ describe('PluginService', () => {
     await service.loadActive()
 
     expect(runtime.events).toEqual(['runtime', 'activate'])
+  })
+
+  it('runs onUninstall and forgets migrations for an inactive plugin', async () => {
+    const store = new FakeStore()
+    const runtime = new FakeRuntime()
+    const calls: string[] = []
+    const runner = new FakeRunner({ onForget: (pluginId) => calls.push(`forget:${pluginId}`) })
+    const plugin = makePlugin('animals', {
+      onUninstall: async () => { calls.push('uninstall') },
+    })
+    const service = new PluginService({ plugins: [plugin], store, runner, runtime })
+
+    const result = await service.uninstall('animals')
+
+    expect(result.active).toBe(false)
+    expect(calls).toEqual(['uninstall', 'forget:animals'])
+    expect(runner.forgetCalls).toEqual(['animals'])
+  })
+
+  it('rejects uninstall for an active plugin without running hooks or forget', async () => {
+    const store = new FakeStore()
+    store.ids = ['animals']
+    const runtime = new FakeRuntime()
+    const runner = new FakeRunner()
+    const onUninstall = vi.fn()
+    const plugin = makePlugin('animals', { onUninstall })
+    const service = new PluginService({ plugins: [plugin], store, runner, runtime })
+
+    await expect(service.uninstall('animals')).rejects.toThrow(/active/i)
+
+    expect(onUninstall).not.toHaveBeenCalled()
+    expect(runner.forgetCalls).toEqual([])
+    expect(store.ids).toEqual(['animals'])
+  })
+
+  it('does not forget migrations when onUninstall fails', async () => {
+    const store = new FakeStore()
+    const runtime = new FakeRuntime()
+    const runner = new FakeRunner()
+    const plugin = makePlugin('animals', {
+      onUninstall: async () => { throw new Error('uninstall failed') },
+    })
+    const service = new PluginService({ plugins: [plugin], store, runner, runtime })
+
+    await expect(service.uninstall('animals')).rejects.toThrow('uninstall failed')
+
+    expect(runner.forgetCalls).toEqual([])
   })
 })

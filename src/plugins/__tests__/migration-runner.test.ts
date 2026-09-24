@@ -19,6 +19,9 @@ class FakeMigrationDatabase {
       this.rows.push(data)
       return data
     },
+    deleteMany: async ({ where }: { where: { pluginId: string } }) => {
+      this.rows = this.rows.filter((row) => row.pluginId !== where.pluginId)
+    },
   }
 
   async $transaction<T>(callback: (tx: FakeMigrationDatabase) => Promise<T>): Promise<T> {
@@ -92,5 +95,19 @@ describe('PluginMigrationRunner', () => {
 
     await expect(new PluginMigrationRunner(db).runPending(plugin(migrations))).rejects.toThrow('boom')
     expect(db.rows).toEqual([])
+  })
+
+  it('forgets only the migrations belonging to the requested plugin', async () => {
+    const db = new FakeMigrationDatabase()
+    db.rows.push(
+      { pluginId: 'animals', migrationId: '001-first', checksum: 'animals', pluginVersion: '1.0.0' },
+      { pluginId: 'reports', migrationId: '001-first', checksum: 'reports', pluginVersion: '1.0.0' },
+    )
+
+    await new PluginMigrationRunner(db).forget('animals')
+
+    expect(db.rows).toEqual([
+      { pluginId: 'reports', migrationId: '001-first', checksum: 'reports', pluginVersion: '1.0.0' },
+    ])
   })
 })
