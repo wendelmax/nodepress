@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Puck, Data } from "@measured/puck";
+import type { Config } from "@measured/puck";
 import "@measured/puck/puck.css";
 import { puckConfig } from "@/lib/puck/config";
+import { getClientPuckConfig } from "@/lib/puck/client-config";
 
 const darkPuckStyles = `
   /* Isolate Puck from Tailwind Preflight */
@@ -41,6 +44,24 @@ interface PuckBuilderProps {
 }
 
 export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps) {
+  const [config, setConfig] = useState<Config<any>>(puckConfig)
+
+  useEffect(() => {
+    let mounted = true
+
+    getClientPuckConfig()
+      .then((resolvedConfig) => {
+        if (mounted) setConfig(resolvedConfig)
+      })
+      .catch((error) => {
+        console.error("Failed to load plugin Puck components:", error)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   // Parse initial data if it's a string
   let data: Data = { content: [], root: {} };
   try {
@@ -57,7 +78,7 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
     <div className="puck-wrapper w-full flex flex-col">
       <style>{darkPuckStyles}</style>
       <Puck
-        config={puckConfig}
+        config={config}
         data={data}
         onPublish={onPublish}
       />

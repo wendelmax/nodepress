@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client'
 import type { ContentTypeDefinition, ContentTypeRegistry } from '@/modules/content'
 import type { NodePressEventHandler } from '@/core/events/registry'
 import type { PluginCommandDefinition, PluginJobDefinition, PluginRouteDefinition } from './runtime-registries'
+import type { PuckComponents } from '@/lib/puck/types'
 
 export type PluginSurface = 'admin' | 'public'
 export type PluginCapability = string
@@ -75,6 +76,9 @@ export interface NodePressPlugin {
   id: string
   name: string
   version: string
+  puck?: {
+    components?: PuckComponents
+  }
   onActivate?: PluginLifecycleHook
   onDeactivate?: PluginLifecycleHook
   onUninstall?: PluginLifecycleHook

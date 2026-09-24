@@ -1,6 +1,7 @@
 import type { Config } from "@measured/puck";
 import React from "react";
 import { FormEmbed } from "@/components/FormEmbed";
+export type { PuckComponents } from './types';
 
 type Props = {
   Hero: { title: string; subtitle: string; align: "left" | "center" | "right"; padding: number };

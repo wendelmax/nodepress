@@ -59,6 +59,39 @@ registrado para o slug, o painel mostra um fallback amigável. A rota herda a
 autenticação e o layout administrativo; o plugin continua responsável por
 verificar capabilities dentro do próprio conteúdo quando necessário.
 
+## Componentes Puck
+
+Plugins podem adicionar blocos ao editor visual e ao renderer público declarando
+componentes client-safe no manifesto:
+
+```tsx
+import type { NodePressPlugin } from '@/plugins/types'
+
+export const reportsPlugin: NodePressPlugin = {
+  id: 'reports',
+  name: 'Relatórios',
+  version: '1.0.0',
+  puck: {
+    components: {
+      ReportsTable: {
+        fields: { title: { type: 'text' } },
+        render: ({ title }) => <section>{title}</section>,
+      },
+    },
+  },
+}
+```
+
+`puck.components` deve conter apenas código que possa ser empacotado no
+browser. Plugins que expõem componentes ao editor também precisam ser incluídos
+na allowlist `src/plugins/puck-client-registry.ts`; essa lista só pode importar
+módulos sem dependências server-only. Somente plugins ativos contribuem com seus
+componentes. Depois do merge, o NodePress executa o filtro
+`puck_registered_components`, que pode adicionar ou substituir componentes no
+runtime correspondente. O editor começa com os componentes base enquanto
+consulta os plugins ativos; se essa consulta falhar, ele mantém a configuração
+base. O callback `register` do plugin não é executado no browser.
+
 ## Migrations
 
 Migrations são executadas antes da ativação e recebem um `Prisma.TransactionClient`. Cada `(pluginId, migrationId)` é registrado em `np_plugin_migrations` com checksum SHA-256. A mesma migration é ignorada quando o checksum não mudou; se o código mudar depois de aplicado, a ativação falha para evitar drift silencioso.
