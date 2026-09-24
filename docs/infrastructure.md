@@ -44,3 +44,11 @@ add provider-specific imports to domain modules.
 
 For a multi-instance deployment, configure shared cache, durable queue, and
 shared object storage before scaling beyond one application process.
+
+## Legacy media migration
+
+The temporary legacy bridge uses `ObjectStoragePort` through
+`MediaTransfer`. Media keys are deterministic (`legacy-media/<legacyId>`), the
+SHA-256 checksum is verified after upload, and the mapping is persisted only
+after verification. A failed first-time mapping save removes the newly created
+object so retries do not leave orphaned media.
