@@ -12,6 +12,9 @@ describe('Puck component contributions', () => {
     const plugins = [
       {
         id: 'active',
+        name: 'Active',
+        version: '1.0.0',
+        register() {},
         puck: {
           components: {
             Heading: { render: () => React.createElement('h2') },
@@ -21,6 +24,9 @@ describe('Puck component contributions', () => {
       },
       {
         id: 'inactive',
+        name: 'Inactive',
+        version: '1.0.0',
+        register() {},
         puck: {
           components: {
             Secret: { render: () => React.createElement('aside') },

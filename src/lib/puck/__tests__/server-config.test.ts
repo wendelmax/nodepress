@@ -28,10 +28,16 @@ describe('server Puck config resolver', () => {
   it('loads active plugin components before applying the Puck filter', async () => {
     const activePlugin = {
       id: 'active',
+      name: 'Active',
+      version: '1.0.0',
+      register() {},
       puck: { components: { Card: { render: () => React.createElement('article') } } },
     } as NodePressPlugin
     const inactivePlugin = {
       id: 'inactive',
+      name: 'Inactive',
+      version: '1.0.0',
+      register() {},
       puck: { components: { Secret: { render: () => React.createElement('aside') } } },
     } as NodePressPlugin
     const seenKeys: string[] = []

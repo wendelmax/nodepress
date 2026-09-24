@@ -1,0 +1,40 @@
+import { describe, expect, it, vi } from 'vitest'
+import BlockRenderer from '../BlockRenderer'
+
+const mocks = vi.hoisted(() => ({
+  Render: vi.fn(() => null),
+  getServerPuckConfig: vi.fn(),
+}))
+
+vi.mock('@measured/puck', () => ({
+  Render: mocks.Render,
+}))
+
+vi.mock('@/lib/puck/server-config', () => ({
+  getServerPuckConfig: mocks.getServerPuckConfig,
+}))
+
+describe('BlockRenderer', () => {
+  it('uses the resolved Puck config only for Puck content', async () => {
+    const serverConfig = { components: { Heading: {} } }
+    mocks.getServerPuckConfig.mockResolvedValue(serverConfig)
+
+    const puckResult = await BlockRenderer({
+      content: JSON.stringify({ root: {}, content: [] }),
+    })
+
+    expect(mocks.getServerPuckConfig).toHaveBeenCalledOnce()
+    expect(puckResult).toMatchObject({ props: { config: serverConfig } })
+  })
+
+  it('preserves legacy branches without loading the Puck resolver', async () => {
+    mocks.getServerPuckConfig.mockClear()
+
+    await BlockRenderer({
+      content: JSON.stringify({ blocks: [{ type: 'paragraph', data: { text: 'legacy' } }] }),
+    })
+    await BlockRenderer({ content: '<p>legacy html</p>' })
+
+    expect(mocks.getServerPuckConfig).not.toHaveBeenCalled()
+  })
+})

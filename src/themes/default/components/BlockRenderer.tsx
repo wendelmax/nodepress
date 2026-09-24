@@ -1,12 +1,12 @@
 import React from 'react'
 import { Render } from '@measured/puck'
-import { puckConfig } from '@/lib/puck/config'
+import { getServerPuckConfig } from '@/lib/puck/server-config'
 
 interface BlockRendererProps {
   content: string;
 }
 
-export default function BlockRenderer({ content }: BlockRendererProps) {
+export default async function BlockRenderer({ content }: BlockRendererProps) {
   let isEditorJs = false
   let isPuck = false
   let parsedContent: any = null
@@ -28,7 +28,8 @@ export default function BlockRenderer({ content }: BlockRendererProps) {
   }
 
   if (isPuck) {
-    return <Render config={puckConfig} data={parsedContent} />
+    const config = await getServerPuckConfig()
+    return <Render config={config} data={parsedContent} />
   }
 
   if (!isEditorJs) {
