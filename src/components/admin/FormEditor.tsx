@@ -23,13 +23,14 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
     () => form.meta?.find((m: any) => m.metaKey === '_np_admission_modality')?.metaValue || ''
   )
   const [processes, setProcesses] = useState<any[]>([])
-  const [loadingProcesses, setLoadingProcesses] = useState(false)
+  const [processesLoaded, setProcessesLoaded] = useState(false)
+  const loadingProcesses = isAdmissionForm && !processesLoaded
 
   useEffect(() => {
     if (!isAdmissionForm) return
     let cancelled = false
     void (async () => {
-      setLoadingProcesses(true)
+      setProcessesLoaded(false)
       try {
         const response = await fetch('/api/admissions/processes')
         const data = await response.json()
@@ -37,7 +38,7 @@ export default function FormEditor({ form, submissions }: { form: any, submissio
       } catch {
         if (!cancelled) setProcesses([])
       } finally {
-        if (!cancelled) setLoadingProcesses(false)
+        if (!cancelled) setProcessesLoaded(true)
       }
     })()
     return () => { cancelled = true }
