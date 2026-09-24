@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { getServiceToken, admissionsBaseUrl, tenantId } from '@/lib/admissions-service-token'
+import { dispatchFormSubmissionHooks } from '@/services/form-submission-hooks'
 
 export async function POST(request: Request) {
   try {
@@ -52,6 +53,13 @@ export async function POST(request: Request) {
         payload: JSON.stringify(payloadData),
         status: 'unread'
       }
+    })
+
+    await dispatchFormSubmissionHooks({
+      formId: formId.toString(),
+      formSlug: form.postName || undefined,
+      submissionId: submission.id,
+      data: payloadData,
     })
 
     if (isAdmissionForm) {
