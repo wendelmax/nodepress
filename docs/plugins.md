@@ -92,6 +92,43 @@ runtime correspondente. O editor começa com os componentes base enquanto
 consulta os plugins ativos; se essa consulta falhar, ele mantém a configuração
 base. O callback `register` do plugin não é executado no browser.
 
+## Rotas, jobs e comandos
+
+Plugins podem registrar superfícies de runtime pelo contexto:
+
+```ts
+register({ routes, jobs, commands }) {
+  routes.add({
+    id: 'reports.health',
+    method: 'GET',
+    path: '/health',
+    handler: async (_request, context) => Response.json({
+      ok: true,
+      requestId: context.requestId,
+    }),
+  })
+
+  jobs.add({
+    id: 'reports.sync',
+    handler: (payload, context) => syncReports(payload, context),
+  })
+
+  commands.add({
+    id: 'reports.reindex',
+    handler: (args, context) => reindexReports(args, context),
+  })
+}
+```
+
+Rotas ficam disponíveis sob `/api/plugins/<path>` e recebem um
+`NodePressContext`. O método HTTP e o caminho precisam ser únicos entre todos os
+plugins ativos; barras finais são normalizadas e um conflito falha durante o
+registro, evitando que a ordem de ativação escolha silenciosamente um handler.
+
+Jobs e comandos são executados por seus IDs através do runtime interno. Um ID
+desconhecido produz erro explícito. Todas as contribuições continuam vinculadas
+ao lifecycle do plugin e são removidas quando ele é desativado.
+
 ## Bloco PostShowcase
 
 O bloco built-in `PostShowcase` exibe conteúdo publicado dentro do editor Puck
