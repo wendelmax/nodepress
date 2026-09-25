@@ -129,6 +129,25 @@ Jobs e comandos são executados por seus IDs através do runtime interno. Um ID
 desconhecido produz erro explícito. Todas as contribuições continuam vinculadas
 ao lifecycle do plugin e são removidas quando ele é desativado.
 
+## Capabilities
+
+O manifesto declara as capabilities que o plugin pode usar. O runtime expõe
+essa declaração pelo contexto:
+
+```ts
+register({ capabilities }) {
+  if (capabilities.has('reports.read')) {
+    capabilities.require('reports.read')
+  }
+}
+```
+
+`require` lança um erro explícito quando a capability não foi declarada. Menus
+que informam `capability` também passam por essa validação, inclusive os itens
+filhos; assim, um plugin não consegue publicar uma superfície protegida por uma
+permissão que não possui no manifesto. A mesma API será usada pelas futuras
+interfaces de settings, secrets e serviços de domínio.
+
 ## Bloco PostShowcase
 
 O bloco built-in `PostShowcase` exibe conteúdo publicado dentro do editor Puck
