@@ -61,25 +61,20 @@ export function PostShowcase({
   showDate,
   items: providedItems,
 }: PostShowcaseProps) {
-  const [items, setItems] = useState<PostShowcaseItem[]>(providedItems ?? [])
-  const [loading, setLoading] = useState(providedItems === undefined)
-  const [hasError, setHasError] = useState(false)
+  const queryKey = buildPostShowcaseUrl({ postType, limit, category })
+  const [fetchState, setFetchState] = useState<{
+    key: string | null
+    status: 'idle' | 'ready' | 'error'
+    items: PostShowcaseItem[]
+  }>({ key: null, status: 'idle', items: [] })
 
   useEffect(() => {
-    if (providedItems !== undefined) {
-      setItems(providedItems.filter(isPostShowcaseItem))
-      setLoading(false)
-      setHasError(false)
-      return
-    }
+    if (providedItems !== undefined) return
 
     const controller = new AbortController()
     let active = true
 
-    setLoading(true)
-    setHasError(false)
-
-    fetch(buildPostShowcaseUrl({ postType, limit, category }), { signal: controller.signal })
+    fetch(queryKey, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Failed to load showcase: ${response.status}`)
         return response.json() as Promise<unknown>
@@ -87,21 +82,26 @@ export function PostShowcase({
       .then((payload) => {
         if (!active) return
         const nextItems = Array.isArray(payload) ? payload.filter(isPostShowcaseItem) : []
-        setItems(nextItems)
-        setLoading(false)
+        setFetchState({ key: queryKey, status: 'ready', items: nextItems })
       })
       .catch((error: unknown) => {
         if (!active || (isRecord(error) && error.name === 'AbortError')) return
-        setItems([])
-        setLoading(false)
-        setHasError(true)
+        setFetchState({ key: queryKey, status: 'error', items: [] })
       })
 
     return () => {
       active = false
       controller.abort()
     }
-  }, [category, limit, postType, providedItems])
+  }, [providedItems, queryKey])
+
+  const hasCurrentFetch = fetchState.key === queryKey
+  const items = providedItems?.filter(isPostShowcaseItem)
+    ?? (hasCurrentFetch ? fetchState.items : [])
+  const hasError = providedItems === undefined
+    && hasCurrentFetch
+    && fetchState.status === 'error'
+  const loading = providedItems === undefined && !hasError
 
   if (loading) return <ShowcaseState>Carregando conteúdo...</ShowcaseState>
   if (hasError) return <ShowcaseState>Não foi possível carregar este conteúdo.</ShowcaseState>
