@@ -1,6 +1,7 @@
 import React from 'react'
 import { Render } from '@measured/puck'
 import { getServerPuckConfig } from '@/lib/puck/server-config'
+import { resolvePostShowcaseData } from '@/lib/puck/server-showcase-data'
 
 interface BlockRendererProps {
   content: string;
@@ -29,7 +30,8 @@ export default async function BlockRenderer({ content }: BlockRendererProps) {
 
   if (isPuck) {
     const config = await getServerPuckConfig()
-    return <Render config={config} data={parsedContent} />
+    const resolvedContent = await resolvePostShowcaseData(parsedContent)
+    return <Render config={config} data={resolvedContent} />
   }
 
   if (!isEditorJs) {

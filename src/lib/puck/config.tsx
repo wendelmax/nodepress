@@ -1,6 +1,8 @@
 import type { Config } from "@measured/puck";
 import React from "react";
 import { FormEmbed } from "@/components/FormEmbed";
+import type { PostShowcaseProps } from './post-showcase';
+import { postShowcaseComponent } from './post-showcase';
 export type { PuckComponents } from './types';
 
 type Props = {
@@ -11,6 +13,7 @@ type Props = {
   Spacer: { size: number };
   Image: { url: string; alt: string; objectFit: "cover" | "contain" | "fill" };
   Form: { formId: string };
+  PostShowcase: PostShowcaseProps;
 };
 
 export const puckConfig: Config<Props> = {
@@ -192,6 +195,7 @@ export const puckConfig: Config<Props> = {
           <FormEmbed formId={formId} />
         </div>
       )
-    }
+    },
+    PostShowcase: postShowcaseComponent,
   },
 };

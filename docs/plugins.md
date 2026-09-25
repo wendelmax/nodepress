@@ -92,6 +92,49 @@ runtime correspondente. O editor começa com os componentes base enquanto
 consulta os plugins ativos; se essa consulta falhar, ele mantém a configuração
 base. O callback `register` do plugin não é executado no browser.
 
+## Bloco PostShowcase
+
+O bloco built-in `PostShowcase` exibe conteúdo publicado dentro do editor Puck
+e em páginas públicas. Ele aceita os campos:
+
+- `postType`: `post`, `page` ou um tipo registrado por plugin ativo;
+- `limit`: quantidade de itens entre 1 e 12;
+- `category`: slug opcional da taxonomia `category`;
+- `layout`: `grid`, `list` ou `carousel`;
+- `showExcerpt` e `showDate`: controles de apresentação.
+
+No editor, o campo de tipo consulta `GET /api/content-types` e o preview busca
+`GET /api/posts/showcase?type=...&limit=...&category=...`. A API aplica sempre
+as mesmas regras de segurança: somente conteúdo publicado, tipos ativos e DTO
+público reduzido. Falhas, ausência de categoria e listas vazias resultam em um
+estado neutro no bloco, sem quebrar o editor.
+
+Na renderização pública, o NodePress resolve os itens no servidor antes de
+chamar o `Render` do Puck. Consultas iguais no mesmo documento são
+deduplicadas. HTML legado e conteúdo Editor.js não passam por essa resolução.
+O componente não importa Prisma nem módulos server-only, e os dados resolvidos
+não são persistidos no conteúdo editável.
+
+O JSON persistido contém apenas configuração:
+
+```json
+{
+  "type": "PostShowcase",
+  "props": {
+    "postType": "animal",
+    "limit": 6,
+    "category": "adocao",
+    "layout": "grid",
+    "showExcerpt": true,
+    "showDate": true
+  }
+}
+```
+
+`items` é transitório e só aparece nos props usados durante a renderização
+pública ou no estado local do preview. Títulos, resumos e URLs são renderizados
+como props React; o bloco não usa `dangerouslySetInnerHTML`.
+
 ## Migrations
 
 Migrations são executadas antes da ativação e recebem um `Prisma.TransactionClient`. Cada `(pluginId, migrationId)` é registrado em `np_plugin_migrations` com checksum SHA-256. A mesma migration é ignorada quando o checksum não mudou; se o código mudar depois de aplicado, a ativação falha para evitar drift silencioso.
