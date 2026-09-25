@@ -2,10 +2,10 @@
 
 ## Deployment order
 
-1. Build the image from the exact commit being deployed with `npm ci` and `npm run build`.
+1. Extract the exact compiled release package; do not run a new application build.
 2. Take a PostgreSQL backup before applying migrations.
-3. Run `npx prisma migrate deploy` as a release step, before starting the new application image.
-4. Start the application and verify `GET /api/health`.
+3. Run `npm run migrate:deploy` from the extracted package as a release step, before starting the application.
+4. Start the application with `node server.js` and verify `GET /api/health`.
 5. Confirm the plugin registry and migration check are healthy before routing traffic to the release.
 
 The application should run as a non-root container. Runtime configuration belongs in the secret manager or deployment environment, not in the image or repository.

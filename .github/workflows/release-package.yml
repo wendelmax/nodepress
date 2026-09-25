@@ -67,6 +67,9 @@ jobs:
         run: |
           mkdir -p dist
           node scripts/release/package-standalone.mjs "dist/nodepress-$VERSION"
+          npm install --omit=dev --prefix "dist/nodepress-$VERSION"
+          node scripts/release/verify-package.mjs "dist/nodepress-$VERSION" "$VERSION"
+          npm run migrate:deploy --prefix "dist/nodepress-$VERSION" -- --help
           tar -czf "dist/nodepress-$VERSION.tar.gz" -C dist "nodepress-$VERSION"
           (
             cd dist
