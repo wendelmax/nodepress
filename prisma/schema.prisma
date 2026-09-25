@@ -239,6 +239,19 @@ model PluginMigration {
   @@map("np_plugin_migrations")
 }
 
+model PluginStorage {
+  id         Int      @id @default(autoincrement())
+  pluginId   String   @map("plugin_id") @db.VarChar(100)
+  storageKey String   @map("storage_key") @db.VarChar(191)
+  value      Json
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([pluginId, storageKey])
+  @@index([pluginId])
+  @@map("np_plugin_storage")
+}
+
 model ContentTypeDefinition {
   id        String   @id @db.VarChar(100)
   label     String   @db.VarChar(180)

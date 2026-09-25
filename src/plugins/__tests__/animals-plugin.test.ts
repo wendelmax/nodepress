@@ -19,6 +19,11 @@ describe('animals plugin', () => {
         require: vi.fn(),
         list: vi.fn(() => []),
       },
+      storage: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+      },
       hooks: { addAction: vi.fn(() => vi.fn()), addFilter: vi.fn(() => vi.fn()) },
       menus,
       contentTypes,

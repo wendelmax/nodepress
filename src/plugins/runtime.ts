@@ -6,6 +6,7 @@ import { commandRegistry, jobRegistry, routeRegistry } from './runtime-registrie
 import type { NodePressPlugin, PluginContext, PluginMenuInput, PluginMenuItem } from './types'
 import type { PluginRuntime } from '@/services/plugin.service'
 import { createPluginCapabilities } from './capabilities'
+import { createPluginStorage } from './storage'
 
 export class NodePressPluginRuntime implements PluginRuntime {
   private readonly cleanups = new Map<string, () => void>()
@@ -40,6 +41,7 @@ export class NodePressPluginRuntime implements PluginRuntime {
     const context: PluginContext = {
       pluginId: plugin.id,
       capabilities,
+      storage: createPluginStorage(plugin.id),
       hooks: {
         addAction: (tag, callback, priority) => track(HookService.addAction(tag, callback, priority)),
         addFilter: (tag, callback, priority) => track(HookService.addFilter(tag, callback, priority)),
