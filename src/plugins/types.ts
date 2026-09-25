@@ -4,6 +4,7 @@ import type { NodePressEventHandler } from '@/core/events/registry'
 import type { PluginCommandDefinition, PluginJobDefinition, PluginRouteDefinition } from './runtime-registries'
 import type { PuckComponents } from '@/lib/puck/types'
 import type { PluginCapabilities } from './capabilities'
+import type { PluginStorage } from './storage'
 
 export type PluginSurface = 'admin' | 'public'
 export type PluginCapability = string
@@ -65,6 +66,7 @@ export interface PluginCommandRegistrar {
 export interface PluginContext {
   pluginId: string
   capabilities: PluginCapabilities
+  storage: PluginStorage
   hooks: PluginHookRegistrar
   menus: PluginMenuRegistrar
   contentTypes: PluginContentTypeRegistrar

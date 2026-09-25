@@ -148,6 +148,35 @@ filhos; assim, um plugin não consegue publicar uma superfície protegida por um
 permissão que não possui no manifesto. A mesma API será usada pelas futuras
 interfaces de settings, secrets e serviços de domínio.
 
+## Storage namespaced
+
+Plugins podem persistir configurações e estado pequeno sem acessar o Prisma
+diretamente:
+
+```ts
+register({ storage }) {
+  await storage.set('configuration', {
+    currency: 'BRL',
+    capture: 'automatic',
+  })
+
+  const configuration = await storage.get<{
+    currency: string
+    capture: string
+  }>('configuration')
+
+  await storage.delete('temporary-state')
+}
+```
+
+Os dados são armazenados em `np_plugin_storage` com chave composta pelo ID do
+plugin e pela chave informada. O plugin só consegue ler, atualizar ou apagar
+as chaves da própria namespace; chaves vazias ou inválidas são rejeitadas antes
+de acessar o banco. O valor precisa ser JSON serializável.
+
+Secrets não usam essa API. O backend de secrets deverá oferecer criptografia,
+auditoria e capabilities próprias antes de ser exposto aos plugins.
+
 ## Bloco PostShowcase
 
 O bloco built-in `PostShowcase` exibe conteúdo publicado dentro do editor Puck
