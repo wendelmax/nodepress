@@ -46,3 +46,6 @@ next-env.d.ts
 
 # agent execution ledgers
 /.superpowers/
+
+# local git worktrees
+/.worktrees/

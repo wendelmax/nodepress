@@ -92,6 +92,49 @@ runtime correspondente. O editor começa com os componentes base enquanto
 consulta os plugins ativos; se essa consulta falhar, ele mantém a configuração
 base. O callback `register` do plugin não é executado no browser.
 
+### Contrato de documentos do Builder
+
+Conteúdo visual salvo pelo editor usa o contrato versionado `BuilderDocument`:
+
+```ts
+{
+  version: 1,
+  content: [{ type: 'ReportsTable', props: { title: 'Resumo' } }],
+  root: {},
+  metadata: {
+    editor: 'puck',
+    schemaVersion: 1,
+    updatedAt: '2026-09-26T00:00:00.000Z',
+  },
+}
+```
+
+Documentos Puck antigos no formato `{ content, root }` são normalizados em
+memória e continuam editáveis; eles só recebem `version` e `metadata` quando
+forem salvos novamente. O campo `postContent` continua sendo a fronteira de
+persistência nesta versão, sem migração em lote.
+
+O editor e o renderer público usam o mesmo parser, os mesmos limites de
+tamanho/profundidade e a mesma validação de tipos de componentes. O renderer
+resolve apenas componentes presentes na configuração server-side atual, depois
+de carregar plugins ativos. Se um plugin for desativado ou um componente for
+removido, o documento não é executado nem renderizado parcialmente: a página
+exibe um fallback seguro e registra um aviso observável no servidor. Conteúdo
+corrompido ou com versão incompatível segue o mesmo fallback.
+
+Falhas na resolução client-side mantêm a configuração base do editor e exibem
+um diagnóstico para componentes indisponíveis; nenhum callback `register` é
+executado no browser. HTML legado e Editor.js seguem seus próprios caminhos e
+não carregam o resolver de plugins. Os contextos `post`, `page`, `template` e
+`landing` são aceitos pelo resolver server-side; a primeira versão compartilha
+o conjunto atual de componentes entre eles.
+
+Documentos contêm somente dados declarativos. Não inclua JavaScript, funções,
+imports ou markup executável no JSON do Builder; extensões devem ser fornecidas
+por componentes client-safe registrados no contrato Puck.
+
+O filtro de componentes está detalhado em
+[`2026-09-24-puck-component-filter-design.md`](superpowers/specs/2026-09-24-puck-component-filter-design.md).
 ## Rotas, jobs e comandos
 
 Plugins podem registrar superfícies de runtime pelo contexto:

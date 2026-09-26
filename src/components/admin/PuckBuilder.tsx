@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Puck, Data } from "@measured/puck";
 import type { Config } from "@measured/puck";
 import "@measured/puck/puck.css";
 import { puckConfig } from "@/lib/puck/config";
 import { getClientPuckConfig } from "@/lib/puck/client-config";
+import {
+  canPublishBuilderDocument,
+  createBuilderDocument,
+  createEmptyBuilderDocument,
+  parseBuilderDocument,
+  serializeBuilderDocument,
+  validateBuilderComponents,
+} from "@/lib/puck/document";
 
 const darkPuckStyles = `
   /* Isolate Puck from Tailwind Preflight */
@@ -39,12 +47,25 @@ const darkPuckStyles = `
 `;
 
 interface PuckBuilderProps {
-  initialData: any;
-  onPublish: (data: Data) => void;
+  initialData: string | object;
+  onPublish: (serialized: string) => void;
 }
 
 export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps) {
   const [config, setConfig] = useState<Config<any>>(puckConfig)
+  const parsedInitialData = useMemo(() => parseBuilderDocument(initialData), [initialData])
+  const document = useMemo(() => {
+    if (parsedInitialData.kind === 'puck') return parsedInitialData.document
+
+    console.warn('Puck builder received incompatible initial content', parsedInitialData.kind)
+    return createEmptyBuilderDocument()
+  }, [parsedInitialData])
+  const canPublish = canPublishBuilderDocument(initialData)
+
+  const unknownComponents = useMemo(() => {
+    const validation = validateBuilderComponents(document, new Set(Object.keys(config.components)))
+    return validation.valid ? [] : validation.unknownTypes
+  }, [config, document])
 
   useEffect(() => {
     let mounted = true
@@ -62,25 +83,31 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
     }
   }, [])
 
-  // Parse initial data if it's a string
-  let data: Data = { content: [], root: {} };
-  try {
-    if (typeof initialData === 'string' && initialData.trim() !== '') {
-      data = JSON.parse(initialData);
-    } else if (typeof initialData === 'object' && initialData !== null) {
-      data = initialData;
-    }
-  } catch (e) {
-    console.error("Failed to parse Puck data", e);
-  }
-
   return (
     <div className="puck-wrapper w-full flex flex-col">
       <style>{darkPuckStyles}</style>
+      {unknownComponents.length > 0 && (
+        <div className="bg-amber-100 px-4 py-2 text-sm text-amber-950" role="status">
+          Componentes indisponíveis: {unknownComponents.join(', ')}
+        </div>
+      )}
+      {!canPublish && (
+        <div className="bg-red-100 px-4 py-2 text-sm text-red-950" role="status">
+          O conteúdo inicial é incompatível; a publicação está bloqueada para preservar a versão publicada.
+        </div>
+      )}
       <Puck
         config={config}
-        data={data}
-        onPublish={onPublish}
+        data={document as Data}
+        onPublish={(data) => {
+          if (!canPublish) return
+
+          const canonicalDocument = createBuilderDocument({
+            content: data.content,
+            root: data.root,
+          })
+          onPublish(serializeBuilderDocument(canonicalDocument))
+        }}
       />
     </div>
   );

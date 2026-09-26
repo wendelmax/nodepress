@@ -1,48 +1,69 @@
 import React from 'react'
-import { Render } from '@measured/puck'
+import { Render, type Config, type Data } from '@measured/puck'
+import {
+  parseBuilderDocument,
+  validateBuilderComponents,
+} from '@/lib/puck/document'
 import { getServerPuckConfig } from '@/lib/puck/server-config'
+import type { BuilderContext } from '@/lib/puck/types'
 import { resolvePostShowcaseData } from '@/lib/puck/server-showcase-data'
 
 interface BlockRendererProps {
   content: string;
+  context?: BuilderContext;
 }
 
-export default async function BlockRenderer({ content }: BlockRendererProps) {
-  let isEditorJs = false
-  let isPuck = false
-  let parsedContent: any = null
+function safeBuilderFallback(code: 'invalid-document' | 'unknown-component', reason: string) {
+  console.warn(`Puck builder content is unavailable: ${reason}`)
+  return (
+    <div
+      className="post-content builder-content-error"
+      data-builder-error={code}
+      role="status"
+    >
+      Conteúdo visual indisponível.
+    </div>
+  )
+}
 
-  try {
-    if (content && content.trim().startsWith('{')) {
-      const data = JSON.parse(content)
-      if (data && data.blocks && Array.isArray(data.blocks)) {
-        isEditorJs = true
-        parsedContent = data
-      } else if (data && data.root && data.content) {
-        isPuck = true
-        parsedContent = data
+export default async function BlockRenderer({ content, context = 'post' }: BlockRendererProps) {
+  const parsed = parseBuilderDocument(content)
+
+  if (parsed.kind === 'invalid') {
+    return safeBuilderFallback('invalid-document', parsed.reason)
+  }
+
+  if (parsed.kind === 'puck') {
+    let config: Config<any>
+
+    try {
+      config = await getServerPuckConfig(context)
+      const validation = validateBuilderComponents(parsed.document, new Set(Object.keys(config.components)))
+
+      if (!validation.valid) {
+        return safeBuilderFallback('unknown-component', 'document contains unavailable components')
       }
+    } catch {
+      return safeBuilderFallback('invalid-document', 'server renderer failed')
     }
-  } catch (e) {
-    isEditorJs = false
-    isPuck = false
+
+    const resolvedContent = await resolvePostShowcaseData(
+      parsed.document as unknown as Parameters<typeof resolvePostShowcaseData>[0],
+    )
+    return <Render config={config} data={resolvedContent as Data} />
   }
 
-  if (isPuck) {
-    const config = await getServerPuckConfig()
-    const resolvedContent = await resolvePostShowcaseData(parsedContent)
-    return <Render config={config} data={resolvedContent} />
-  }
-
-  if (!isEditorJs) {
+  if (parsed.kind === 'html') {
     // Legacy HTML Fallback
     return (
       <div 
         className="post-content legacy-content prose prose-invert max-w-none"
-        dangerouslySetInnerHTML={{ __html: content }} 
+        dangerouslySetInnerHTML={{ __html: parsed.content }}
       />
     )
   }
+
+  const parsedContent = parsed.document as { blocks: Array<Record<string, any>> }
 
   // Render Editor.js JSON Blocks
   return (
