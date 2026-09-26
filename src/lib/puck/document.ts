@@ -2,6 +2,7 @@ import type {
   BuilderDocument,
   BuilderParseResult,
 } from './types'
+import { validateBuilderLayoutDocument } from './layout/schema'
 
 export const MAX_BUILDER_DOCUMENT_BYTES = 1_000_000
 export const MAX_BUILDER_DOCUMENT_DEPTH = 32
@@ -222,7 +223,10 @@ export function canPublishBuilderDocument(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'string' && value.trim() === '') return true
 
-  return parseBuilderDocument(value).kind === 'puck'
+  const parsed = parseBuilderDocument(value)
+  if (parsed.kind !== 'puck') return false
+
+  return validateBuilderLayoutDocument(parsed.document).valid
 }
 
 export function serializeBuilderDocument(document: BuilderDocument): string {

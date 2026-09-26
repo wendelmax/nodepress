@@ -108,4 +108,23 @@ describe('builder document contract', () => {
     expect(canPublishBuilderDocument({ blocks: [] })).toBe(false)
     expect(canPublishBuilderDocument('<p>legacy</p>')).toBe(false)
   })
+
+  it('blocks publishing a Puck document with invalid layout props', () => {
+    expect(canPublishBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Section',
+        props: {
+          content: [],
+          as: 'section',
+          padding: { desktop: 999 },
+          background: 'surface',
+          overlay: 'transparent',
+          border: 'none',
+          radius: { desktop: 0 },
+          visibility: { desktop: true },
+        },
+      }],
+    })).toBe(false)
+  })
 })
