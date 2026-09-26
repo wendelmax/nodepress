@@ -30,6 +30,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/runtime-config.mjs ./scripts/runtime-config.mjs
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/serve.mjs ./scripts/serve.mjs
 USER nextjs
 EXPOSE 3000
-CMD ["node", "--env-file=/var/lib/nodepress/.env", "server.js"]
+CMD ["node", "scripts/serve.mjs", "server.js"]
