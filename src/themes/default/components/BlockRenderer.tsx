@@ -48,7 +48,7 @@ export default async function BlockRenderer({ content, context = 'post' }: Block
     }
 
     const resolvedContent = await resolvePostShowcaseData(
-      parsed.document as Parameters<typeof resolvePostShowcaseData>[0],
+      parsed.document as unknown as Parameters<typeof resolvePostShowcaseData>[0],
     )
     return <Render config={config} data={resolvedContent as Data} />
   }
