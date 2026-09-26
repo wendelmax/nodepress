@@ -4,8 +4,9 @@ import { getPluginService, ensureActivePluginsLoaded } from '@/services/plugin-f
 import { getRegisteredPlugins } from '@/plugins/registry'
 import { mergePuckComponents } from './components'
 import { puckConfig } from './config'
+import type { BuilderContext } from './types'
 
-export async function getServerPuckConfig(): Promise<Config<any>> {
+export async function getServerPuckConfig(_context: BuilderContext = 'post'): Promise<Config<any>> {
   await ensureActivePluginsLoaded()
 
   const [service, plugins] = await Promise.all([
