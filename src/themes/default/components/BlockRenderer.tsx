@@ -4,6 +4,7 @@ import {
   parseBuilderDocument,
   validateBuilderComponents,
 } from '@/lib/puck/document'
+import { validateBuilderLayoutDocument } from '@/lib/puck/layout/schema'
 import { getServerPuckConfig } from '@/lib/puck/server-config'
 import type { BuilderContext } from '@/lib/puck/types'
 import { resolvePostShowcaseData } from '@/lib/puck/server-showcase-data'
@@ -13,7 +14,7 @@ interface BlockRendererProps {
   context?: BuilderContext;
 }
 
-function safeBuilderFallback(code: 'invalid-document' | 'unknown-component', reason: string) {
+function safeBuilderFallback(code: 'invalid-document' | 'unknown-component' | 'invalid-layout', reason: string) {
   console.warn(`Puck builder content is unavailable: ${reason}`)
   return (
     <div
@@ -42,6 +43,11 @@ export default async function BlockRenderer({ content, context = 'post' }: Block
 
       if (!validation.valid) {
         return safeBuilderFallback('unknown-component', 'document contains unavailable components')
+      }
+
+      const layoutValidation = validateBuilderLayoutDocument(parsed.document)
+      if (!layoutValidation.valid) {
+        return safeBuilderFallback('invalid-layout', 'document contains invalid layout props')
       }
     } catch {
       return safeBuilderFallback('invalid-document', 'server renderer failed')
