@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   layoutDataAttributes,
@@ -34,5 +35,26 @@ describe('responsive layout styles', () => {
     expect(layoutDataAttributes('Columns')).toEqual({
       'data-nodepress-layout': 'columns',
     })
+  })
+
+  it('maps container alignment to scoped horizontal margins', () => {
+    expect(layoutStyleVariables({
+      align: { desktop: 'left', tablet: 'center', mobile: 'right' },
+    })).toMatchObject({
+      '--nodepress-layout-margin-left-desktop': '0',
+      '--nodepress-layout-margin-right-desktop': 'auto',
+      '--nodepress-layout-margin-left-tablet': 'auto',
+      '--nodepress-layout-margin-right-tablet': 'auto',
+      '--nodepress-layout-margin-left-mobile': 'auto',
+      '--nodepress-layout-margin-right-mobile': '0',
+    })
+  })
+
+  it('keeps every layout rule scoped and does not target global page elements', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
+
+    expect(css).toContain('[data-nodepress-layout]')
+    expect(css).not.toMatch(/(^|\n)\s*(html|body|\*)\s*\{/)
+    expect(css).not.toContain('dangerouslySetInnerHTML')
   })
 })

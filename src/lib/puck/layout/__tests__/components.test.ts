@@ -3,7 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { layoutComponents } from '../components'
 
-const slot = (label: string) => () => React.createElement('p', null, label)
+const slot = (label: string) => Object.assign(
+  () => React.createElement('p', null, label),
+  { displayName: `LayoutTestSlot-${label}` },
+)
 
 describe('builder layout components', () => {
   it('exposes the four semantic components with native Puck slots', () => {

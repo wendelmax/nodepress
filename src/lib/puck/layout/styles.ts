@@ -77,6 +77,18 @@ export function layoutStyleVariables(input: LayoutStyleInput): LayoutStyleVariab
   setResponsive(variables, 'wrap', input.wrap, (value) => value ? 'wrap' : 'nowrap')
   setResponsive(variables, 'columns', input.columns, (value) => String(value))
 
+  if (input.align !== undefined) {
+    const normalized = normalizeResponsive(input.align)
+    const alignments = [normalized.desktop, normalized.tablet, normalized.mobile]
+    if (alignments.every((value) => value === 'left' || value === 'center' || value === 'right')) {
+      for (const breakpoint of ['desktop', 'tablet', 'mobile'] as const) {
+        const alignment = normalized[breakpoint]
+        variables[`--nodepress-layout-margin-left-${breakpoint}`] = alignment === 'left' ? '0' : 'auto'
+        variables[`--nodepress-layout-margin-right-${breakpoint}`] = alignment === 'right' ? '0' : 'auto'
+      }
+    }
+  }
+
   if (input.stackOnMobile !== undefined) {
     variables['--nodepress-layout-stack-on-mobile'] = input.stackOnMobile ? '1' : '0'
     if (input.stackOnMobile) variables['--nodepress-layout-columns-mobile'] = '1'
