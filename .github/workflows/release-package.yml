@@ -1,0 +1,115 @@
+name: Release compiled package
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+concurrency:
+  group: nodepress-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: >-
+      github.event.pull_request.merged == true &&
+      !startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Resolve release version
+        id: version
+        env:
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          CURRENT_VERSION="$(node -p "require('./package.json').version")"
+          VERSION_JSON="$(node scripts/release/version.mjs --branch "$HEAD_BRANCH" --current "$CURRENT_VERSION")"
+          RELEASE_TYPE="$(node -e "console.log(JSON.parse(process.argv[1]).releaseType)" "$VERSION_JSON")"
+          NEXT_VERSION="$(node -e "console.log(JSON.parse(process.argv[1]).version)" "$VERSION_JSON")"
+
+          npm version "$RELEASE_TYPE" --no-git-tag-version
+
+          echo "release_type=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved $HEAD_BRANCH to $RELEASE_TYPE release v$NEXT_VERSION"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate and validate Prisma client
+        run: |
+          npx prisma generate
+          npx prisma validate
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Assemble deployable package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          mkdir -p dist
+          node scripts/release/package-standalone.mjs "dist/nodepress-$VERSION"
+          npm install --omit=dev --prefix "dist/nodepress-$VERSION"
+          node scripts/release/verify-package.mjs "dist/nodepress-$VERSION" "$VERSION"
+          npm run migrate:deploy --prefix "dist/nodepress-$VERSION" -- --help
+          tar -czf "dist/nodepress-$VERSION.tar.gz" -C dist "nodepress-$VERSION"
+          (
+            cd dist
+            zip -qr "nodepress-$VERSION.zip" "nodepress-$VERSION"
+          )
+          sha256sum "dist/nodepress-$VERSION.tar.gz" "dist/nodepress-$VERSION.zip" > "dist/SHA256SUMS"
+
+      - name: Commit version and tag release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_TYPE: ${{ steps.version.outputs.release_type }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$VERSION [$RELEASE_TYPE]"
+          git tag -a "v$VERSION" -m "NodePress v$VERSION"
+          git push origin HEAD:main
+          git push origin "v$VERSION"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            "dist/nodepress-$VERSION.tar.gz" \
+            "dist/nodepress-$VERSION.zip" \
+            dist/SHA256SUMS \
+            --verify-tag \
+            --title "NodePress v$VERSION" \
+            --generate-notes
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodepress-${{ steps.version.outputs.version }}
+          path: |
+            dist/nodepress-${{ steps.version.outputs.version }}.tar.gz
+            dist/nodepress-${{ steps.version.outputs.version }}.zip
+            dist/SHA256SUMS
+          if-no-files-found: error

@@ -14,6 +14,16 @@ describe('animals plugin', () => {
 
     await animalsPlugin.register({
       pluginId: animalsPlugin.id,
+      capabilities: {
+        has: vi.fn(),
+        require: vi.fn(),
+        list: vi.fn(() => []),
+      },
+      storage: {
+        get: vi.fn(),
+        set: vi.fn(),
+        delete: vi.fn(),
+      },
       hooks: { addAction: vi.fn(() => vi.fn()), addFilter: vi.fn(() => vi.fn()) },
       menus,
       contentTypes,

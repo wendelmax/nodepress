@@ -135,6 +135,133 @@ por componentes client-safe registrados no contrato Puck.
 
 O filtro de componentes está detalhado em
 [`2026-09-24-puck-component-filter-design.md`](superpowers/specs/2026-09-24-puck-component-filter-design.md).
+## Rotas, jobs e comandos
+
+Plugins podem registrar superfícies de runtime pelo contexto:
+
+```ts
+register({ routes, jobs, commands }) {
+  routes.add({
+    id: 'reports.health',
+    method: 'GET',
+    path: '/health',
+    handler: async (_request, context) => Response.json({
+      ok: true,
+      requestId: context.requestId,
+    }),
+  })
+
+  jobs.add({
+    id: 'reports.sync',
+    handler: (payload, context) => syncReports(payload, context),
+  })
+
+  commands.add({
+    id: 'reports.reindex',
+    handler: (args, context) => reindexReports(args, context),
+  })
+}
+```
+
+Rotas ficam disponíveis sob `/api/plugins/<path>` e recebem um
+`NodePressContext`. O método HTTP e o caminho precisam ser únicos entre todos os
+plugins ativos; barras finais são normalizadas e um conflito falha durante o
+registro, evitando que a ordem de ativação escolha silenciosamente um handler.
+
+Jobs e comandos são executados por seus IDs através do runtime interno. Um ID
+desconhecido produz erro explícito. Todas as contribuições continuam vinculadas
+ao lifecycle do plugin e são removidas quando ele é desativado.
+
+## Capabilities
+
+O manifesto declara as capabilities que o plugin pode usar. O runtime expõe
+essa declaração pelo contexto:
+
+```ts
+register({ capabilities }) {
+  if (capabilities.has('reports.read')) {
+    capabilities.require('reports.read')
+  }
+}
+```
+
+`require` lança um erro explícito quando a capability não foi declarada. Menus
+que informam `capability` também passam por essa validação, inclusive os itens
+filhos; assim, um plugin não consegue publicar uma superfície protegida por uma
+permissão que não possui no manifesto. A mesma API será usada pelas futuras
+interfaces de settings, secrets e serviços de domínio.
+
+## Storage namespaced
+
+Plugins podem persistir configurações e estado pequeno sem acessar o Prisma
+diretamente:
+
+```ts
+register({ storage }) {
+  await storage.set('configuration', {
+    currency: 'BRL',
+    capture: 'automatic',
+  })
+
+  const configuration = await storage.get<{
+    currency: string
+    capture: string
+  }>('configuration')
+
+  await storage.delete('temporary-state')
+}
+```
+
+Os dados são armazenados em `np_plugin_storage` com chave composta pelo ID do
+plugin e pela chave informada. O plugin só consegue ler, atualizar ou apagar
+as chaves da própria namespace; chaves vazias ou inválidas são rejeitadas antes
+de acessar o banco. O valor precisa ser JSON serializável.
+
+Secrets não usam essa API. O backend de secrets deverá oferecer criptografia,
+auditoria e capabilities próprias antes de ser exposto aos plugins.
+
+## Bloco PostShowcase
+
+O bloco built-in `PostShowcase` exibe conteúdo publicado dentro do editor Puck
+e em páginas públicas. Ele aceita os campos:
+
+- `postType`: `post`, `page` ou um tipo registrado por plugin ativo;
+- `limit`: quantidade de itens entre 1 e 12;
+- `category`: slug opcional da taxonomia `category`;
+- `layout`: `grid`, `list` ou `carousel`;
+- `showExcerpt` e `showDate`: controles de apresentação.
+
+No editor, o campo de tipo consulta `GET /api/content-types` e o preview busca
+`GET /api/posts/showcase?type=...&limit=...&category=...`. A API aplica sempre
+as mesmas regras de segurança: somente conteúdo publicado, tipos ativos e DTO
+público reduzido. Falhas, ausência de categoria e listas vazias resultam em um
+estado neutro no bloco, sem quebrar o editor.
+
+Na renderização pública, o NodePress resolve os itens no servidor antes de
+chamar o `Render` do Puck. Consultas iguais no mesmo documento são
+deduplicadas. HTML legado e conteúdo Editor.js não passam por essa resolução.
+O componente não importa Prisma nem módulos server-only, e os dados resolvidos
+não são persistidos no conteúdo editável.
+
+O JSON persistido contém apenas configuração:
+
+```json
+{
+  "type": "PostShowcase",
+  "props": {
+    "postType": "animal",
+    "limit": 6,
+    "category": "adocao",
+    "layout": "grid",
+    "showExcerpt": true,
+    "showDate": true
+  }
+}
+```
+
+`items` é transitório e só aparece nos props usados durante a renderização
+pública ou no estado local do preview. Títulos, resumos e URLs são renderizados
+como props React; o bloco não usa `dangerouslySetInnerHTML`.
 
 ## Migrations
 

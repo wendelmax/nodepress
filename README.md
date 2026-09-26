@@ -87,6 +87,8 @@ NodePress é um CMS inspirado no WordPress para publicação e gestão de sites.
 
 Se `DATABASE_URL` não estiver definido, o NodePress direcionará para `/setup-config` para configurar o banco. Depois, `/admin/install` cria as tabelas e o registro administrativo inicial.
 
+Em produção, prefira fornecer `DATABASE_URL`, `NEXTAUTH_SECRET` e `NEXTAUTH_URL` por variáveis de ambiente ou por um secret manager. Quando o assistente for necessário, ele persiste o bootstrap em `NODEPRESS_CONFIG_DIR` — `/var/lib/nodepress` na imagem Docker — e não no diretório da aplicação.
+
 ### Modos de autenticação
 
 `AUTH_MODE` controla os provedores disponíveis:
@@ -114,6 +116,7 @@ O arquivo [`env.example`](env.example) contém todos os nomes de variáveis espe
 | `DATABASE_URL` | Sim | Conexão PostgreSQL |
 | `NEXTAUTH_SECRET` | Sim | Assinatura da sessão |
 | `NEXTAUTH_URL` | Sim | URL pública da aplicação |
+| `NODEPRESS_CONFIG_DIR` | Apenas assistente | Diretório persistente para a configuração inicial |
 | `AUTH_MODE` | Sim | `local`, `keycloak` ou `hybrid` |
 | `NEXT_PUBLIC_KEYCLOAK_URL` | Keycloak/hybrid | URL base do Keycloak |
 | `AUTH_KEYCLOAK_REALM` | Keycloak/hybrid | Realm usado pelo cliente |
@@ -159,6 +162,7 @@ docker build \
 docker run --rm \
   --name nodepress \
   --env-file .env \
+  --volume nodepress-data:/var/lib/nodepress \
   -p 3000:3000 \
   nodepress
 ```

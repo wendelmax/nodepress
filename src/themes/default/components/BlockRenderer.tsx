@@ -6,6 +6,7 @@ import {
 } from '@/lib/puck/document'
 import { getServerPuckConfig } from '@/lib/puck/server-config'
 import type { BuilderContext } from '@/lib/puck/types'
+import { resolvePostShowcaseData } from '@/lib/puck/server-showcase-data'
 
 interface BlockRendererProps {
   content: string;
@@ -46,7 +47,10 @@ export default async function BlockRenderer({ content, context = 'post' }: Block
       return safeBuilderFallback('invalid-document', 'server renderer failed')
     }
 
-    return <Render config={config} data={parsed.document as Data} />
+    const resolvedContent = await resolvePostShowcaseData(
+      parsed.document as Parameters<typeof resolvePostShowcaseData>[0],
+    )
+    return <Render config={config} data={resolvedContent as Data} />
   }
 
   if (parsed.kind === 'html') {

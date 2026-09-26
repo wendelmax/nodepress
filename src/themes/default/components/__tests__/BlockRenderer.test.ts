@@ -4,6 +4,7 @@ import BlockRenderer from '../BlockRenderer'
 const mocks = vi.hoisted(() => ({
   Render: vi.fn(() => null),
   getServerPuckConfig: vi.fn(),
+  resolvePostShowcaseData: vi.fn(async (data) => data),
 }))
 
 vi.mock('@measured/puck', () => ({
@@ -14,15 +15,23 @@ vi.mock('@/lib/puck/server-config', () => ({
   getServerPuckConfig: mocks.getServerPuckConfig,
 }))
 
+vi.mock('@/lib/puck/server-showcase-data', () => ({
+  resolvePostShowcaseData: mocks.resolvePostShowcaseData,
+}))
+
 describe('BlockRenderer', () => {
   beforeEach(() => {
     mocks.Render.mockClear()
     mocks.getServerPuckConfig.mockReset()
+    mocks.resolvePostShowcaseData.mockReset()
+    mocks.resolvePostShowcaseData.mockImplementation(async (data) => data)
   })
 
   it('uses the resolved Puck config only for Puck content', async () => {
     const serverConfig = { components: { Heading: {} } }
     mocks.getServerPuckConfig.mockResolvedValue(serverConfig)
+    const resolvedData = { root: {}, content: [{ type: 'PostShowcase', props: { items: [] } }] }
+    mocks.resolvePostShowcaseData.mockResolvedValue(resolvedData)
 
     const puckResult = await BlockRenderer({
       content: JSON.stringify({ root: {}, content: [] }),
@@ -30,12 +39,9 @@ describe('BlockRenderer', () => {
 
     expect(mocks.getServerPuckConfig).toHaveBeenCalledOnce()
     expect(mocks.getServerPuckConfig).toHaveBeenCalledWith('post')
-    expect(puckResult).toMatchObject({
-      props: {
-        config: serverConfig,
-        data: expect.objectContaining({ version: 1 }),
-      },
-    })
+    expect(mocks.resolvePostShowcaseData).toHaveBeenCalledOnce()
+    expect(mocks.resolvePostShowcaseData).toHaveBeenCalledWith(expect.objectContaining({ version: 1 }))
+    expect(puckResult).toMatchObject({ props: { config: serverConfig, data: resolvedData } })
   })
 
   it('preserves legacy branches without loading the Puck resolver', async () => {
@@ -45,6 +51,7 @@ describe('BlockRenderer', () => {
     await BlockRenderer({ content: '<p>legacy html</p>' })
 
     expect(mocks.getServerPuckConfig).not.toHaveBeenCalled()
+    expect(mocks.resolvePostShowcaseData).not.toHaveBeenCalled()
   })
 
   it('passes the explicit context to the server resolver', async () => {
