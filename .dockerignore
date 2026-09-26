@@ -1,0 +1,11 @@
+.git
+.gitignore
+.worktrees
+node_modules
+.next
+dist
+coverage
+.env
+.env.*
+*.log
+Dockerfile*

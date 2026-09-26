@@ -6,6 +6,7 @@ const projectRoot = process.cwd();
 const outputDirectory = path.resolve(projectRoot, process.argv[2] ?? 'dist/package');
 const packageJsonPath = path.join(projectRoot, 'package.json');
 const packageLockPath = path.join(projectRoot, 'package-lock.json');
+const prismaConfigPath = path.join(projectRoot, 'prisma.config.ts');
 const standaloneDirectory = path.join(projectRoot, '.next/standalone');
 const staticDirectory = path.join(projectRoot, '.next/static');
 const publicDirectory = path.join(projectRoot, 'public');
@@ -33,6 +34,7 @@ await assertExists(path.join(standaloneDirectory, 'server.js'), 'Next standalone
 await assertExists(staticDirectory, 'Next static assets');
 await assertExists(packageLockPath, 'package lockfile');
 await assertExists(prismaDirectory, 'Prisma schema and migrations');
+await assertExists(prismaConfigPath, 'Prisma configuration');
 
 await fs.rm(outputDirectory, { recursive: true, force: true });
 await fs.mkdir(outputDirectory, { recursive: true });
@@ -42,6 +44,7 @@ await fs.mkdir(path.join(outputDirectory, '.next'), { recursive: true });
 await copyInto(staticDirectory, path.join(outputDirectory, '.next/static'));
 await copyInto(packageJsonPath, path.join(outputDirectory, 'package.json'));
 await copyInto(packageLockPath, path.join(outputDirectory, 'package-lock.json'));
+await copyInto(prismaConfigPath, path.join(outputDirectory, 'prisma.config.ts'));
 await copyInto(prismaDirectory, path.join(outputDirectory, 'prisma'));
 
 try {

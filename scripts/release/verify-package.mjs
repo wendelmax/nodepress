@@ -31,6 +31,7 @@ for (const [relativePath, description] of [
   ['server.js', 'standalone server'],
   ['.next/static', 'Next static assets'],
   ['package-lock.json', 'production lockfile'],
+  ['prisma.config.ts', 'Prisma configuration'],
   ['prisma/schema.prisma', 'Prisma schema'],
   ['prisma/migrations', 'Prisma migrations'],
 ]) {
