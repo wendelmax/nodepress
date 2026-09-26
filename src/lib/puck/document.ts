@@ -190,13 +190,23 @@ export function validateBuilderComponents(
   const unknownTypes: string[] = []
   const seen = new Set<string>()
 
-  for (const entry of document.content) {
-    if (!isRecord(entry) || typeof entry.type !== 'string') continue
-    if (componentIds.has(entry.type) || seen.has(entry.type)) continue
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    if (!isRecord(value)) return
 
-    seen.add(entry.type)
-    unknownTypes.push(entry.type)
+    if (typeof value.type === 'string' && !componentIds.has(value.type) && !seen.has(value.type)) {
+      seen.add(value.type)
+      unknownTypes.push(value.type)
+    }
+
+    Object.values(value).forEach(visit)
   }
+
+  visit(document.content)
+  visit(document.root)
 
   return unknownTypes.length === 0
     ? { valid: true }

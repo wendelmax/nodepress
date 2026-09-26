@@ -3,6 +3,7 @@ import React from "react";
 import { FormEmbed } from "@/components/FormEmbed";
 import type { PostShowcaseProps } from './post-showcase';
 import { postShowcaseComponent } from './post-showcase';
+import { layoutComponents } from './layout/components';
 export type { PuckComponents } from './types';
 
 type Props = {
@@ -14,10 +15,15 @@ type Props = {
   Image: { url: string; alt: string; objectFit: "cover" | "contain" | "fill" };
   Form: { formId: string };
   PostShowcase: PostShowcaseProps;
+  Section: any;
+  Container: any;
+  Columns: any;
+  Stack: any;
 };
 
-export const puckConfig: Config<Props> = {
+export const puckConfig: Config<any> = {
   components: {
+    ...layoutComponents,
     Hero: {
       fields: {
         title: { type: "text" },
@@ -78,14 +84,14 @@ export const puckConfig: Config<Props> = {
       },
       render: ({ title, level, align }) => {
         const Tag = level as any;
-        const sizeClass = {
+        const sizeClass = ({
           h1: "text-4xl font-extrabold",
           h2: "text-3xl font-bold",
           h3: "text-2xl font-bold",
           h4: "text-xl font-bold",
           h5: "text-lg font-semibold",
           h6: "text-base font-semibold",
-        }[level];
+        } as Record<string, string>)[String(level)];
         return <Tag style={{ textAlign: align }} className={`text-white my-4 ${sizeClass}`}>{title}</Tag>;
       },
     },
@@ -140,11 +146,11 @@ export const puckConfig: Config<Props> = {
       },
       render: ({ label, href, variant, align }) => {
         const baseClass = "inline-flex items-center justify-center px-6 py-3 rounded-xl font-bold transition-all duration-200";
-        const variantClass = {
+        const variantClass = ({
           primary: "bg-primary-gradient text-white hover:shadow-neon",
           secondary: "bg-white/10 text-white hover:bg-white/20",
           outline: "border border-border text-text hover:border-primary/50 hover:text-white",
-        }[variant];
+        } as Record<string, string>)[String(variant)];
         return (
           <div style={{ textAlign: align }} className="my-4 w-full">
             <a href={href} className={`${baseClass} ${variantClass} no-underline`}>

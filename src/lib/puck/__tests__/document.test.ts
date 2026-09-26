@@ -90,6 +90,31 @@ describe('builder document contract', () => {
     expect(validateBuilderComponents(result.document, new Set())).toEqual({ valid: true })
   })
 
+  it('validates component types nested inside layout slots', () => {
+    const result = parseBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Section',
+        props: {
+          content: [{ type: 'NestedRemovedCard', props: {} }],
+        },
+      }, {
+        type: 'Columns',
+        props: {
+          column2: [{ type: 'NestedUnknownWidget', props: {} }],
+        },
+      }],
+    })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set(['Section', 'Columns']))).toEqual({
+      valid: false,
+      unknownTypes: ['NestedRemovedCard', 'NestedUnknownWidget'],
+    })
+  })
+
   it('adapts published Puck data to a canonical document without losing its tree', () => {
     const document = createBuilderDocument({
       root: { title: 'Home' },

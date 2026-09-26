@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { NodePressPlugin } from '@/plugins/types'
 import type { PuckComponents } from '../types'
 import { mergePuckComponents } from '../components'
+import { puckConfig } from '../config'
 
 describe('Puck component contributions', () => {
   it('merges only active plugin components without mutating the base map', () => {
@@ -42,5 +43,14 @@ describe('Puck component contributions', () => {
     expect(merged.Heading).not.toBe(base.Heading)
     expect(base).not.toHaveProperty('Card')
     expect(base).not.toHaveProperty('Secret')
+  })
+
+  it('registers the semantic layout components in the base configuration', () => {
+    expect(puckConfig.components).toEqual(expect.objectContaining({
+      Section: expect.any(Object),
+      Container: expect.any(Object),
+      Columns: expect.any(Object),
+      Stack: expect.any(Object),
+    }))
   })
 })
