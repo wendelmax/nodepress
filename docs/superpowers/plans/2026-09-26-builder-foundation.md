@@ -144,10 +144,11 @@ git commit -m "feat: validate builder component availability"
 
 **Files:**
 - Modify: `src/components/admin/PuckBuilder.tsx`
+- Modify: `src/components/admin/PostEditor.tsx` to preserve the canonical serialized string instead of serializing it a second time
 - Test: `src/lib/puck/__tests__/document.test.ts` and the existing Puck/editor tests
 
 **Interfaces:**
-- `PuckBuilder` continues accepting `initialData: string | object` and exposes `onPublish: (serialized: string) => void`, preserving the existing `PostEditor` state boundary.
+- `PuckBuilder` continues accepting `initialData: string | object` and exposes `onPublish: (serialized: string) => void`; `PostEditor` stores that canonical string directly.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -172,7 +173,7 @@ Expected: PASS, with existing Puck plugin resolver tests unchanged.
 - [ ] **Step 5: Commit client persistence integration**
 
 ```bash
-git add src/components/admin/PuckBuilder.tsx src/lib/puck/__tests__/document.test.ts
+git add src/components/admin/PuckBuilder.tsx src/components/admin/PostEditor.tsx src/lib/puck/document.ts src/lib/puck/__tests__/document.test.ts
 git commit -m "feat: persist canonical builder documents"
 ```
 
