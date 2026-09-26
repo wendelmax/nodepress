@@ -36,14 +36,14 @@
 }
 
 [data-nodepress-layout='columns'] {
-  display: grid;
+  display: var(--nodepress-layout-display-desktop, grid);
   grid-template-columns: repeat(var(--nodepress-layout-columns-desktop, 2), minmax(0, 1fr));
   gap: var(--nodepress-layout-gap-desktop, 0);
   align-items: var(--nodepress-layout-align-desktop, stretch);
 }
 
 [data-nodepress-layout='stack'] {
-  display: flex;
+  display: var(--nodepress-layout-display-desktop, flex);
   flex-direction: var(--nodepress-layout-direction-desktop, column);
   flex-wrap: var(--nodepress-layout-wrap-desktop, nowrap);
   align-items: var(--nodepress-layout-align-desktop, stretch);
@@ -68,12 +68,14 @@
   }
 
   [data-nodepress-layout='columns'] {
+    display: var(--nodepress-layout-display-tablet, grid);
     grid-template-columns: repeat(var(--nodepress-layout-columns-tablet, var(--nodepress-layout-columns-desktop, 2)), minmax(0, 1fr));
     gap: var(--nodepress-layout-gap-tablet, var(--nodepress-layout-gap-desktop, 0));
     align-items: var(--nodepress-layout-align-tablet, var(--nodepress-layout-align-desktop, stretch));
   }
 
   [data-nodepress-layout='stack'] {
+    display: var(--nodepress-layout-display-tablet, flex);
     flex-direction: var(--nodepress-layout-direction-tablet, var(--nodepress-layout-direction-desktop, column));
     flex-wrap: var(--nodepress-layout-wrap-tablet, var(--nodepress-layout-wrap-desktop, nowrap));
     align-items: var(--nodepress-layout-align-tablet, var(--nodepress-layout-align-desktop, stretch));
@@ -99,12 +101,14 @@
   }
 
   [data-nodepress-layout='columns'] {
+    display: var(--nodepress-layout-display-mobile, grid);
     grid-template-columns: repeat(var(--nodepress-layout-columns-mobile, var(--nodepress-layout-columns-tablet, var(--nodepress-layout-columns-desktop, 2))), minmax(0, 1fr));
     gap: var(--nodepress-layout-gap-mobile, var(--nodepress-layout-gap-tablet, var(--nodepress-layout-gap-desktop, 0)));
     align-items: var(--nodepress-layout-align-mobile, var(--nodepress-layout-align-tablet, var(--nodepress-layout-align-desktop, stretch)));
   }
 
   [data-nodepress-layout='stack'] {
+    display: var(--nodepress-layout-display-mobile, flex);
     flex-direction: var(--nodepress-layout-direction-mobile, var(--nodepress-layout-direction-tablet, var(--nodepress-layout-direction-desktop, column)));
     flex-wrap: var(--nodepress-layout-wrap-mobile, var(--nodepress-layout-wrap-tablet, var(--nodepress-layout-wrap-desktop, nowrap)));
     align-items: var(--nodepress-layout-align-mobile, var(--nodepress-layout-align-tablet, var(--nodepress-layout-align-desktop, stretch)));

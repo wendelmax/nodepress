@@ -57,4 +57,15 @@ describe('responsive layout styles', () => {
     expect(css).not.toMatch(/(^|\n)\s*(html|body|\*)\s*\{/)
     expect(css).not.toContain('dangerouslySetInnerHTML')
   })
+
+  it('preserves component display modes while honoring responsive visibility', () => {
+    expect(layoutStyleVariables({
+      displayMode: 'grid',
+      visibility: { desktop: false, mobile: true },
+    })).toMatchObject({
+      '--nodepress-layout-display-desktop': 'none',
+      '--nodepress-layout-display-tablet': 'none',
+      '--nodepress-layout-display-mobile': 'grid',
+    })
+  })
 })

@@ -197,7 +197,7 @@ export function validateBuilderComponents(
     }
     if (!isRecord(value)) return
 
-    if (typeof value.type === 'string' && !componentIds.has(value.type) && !seen.has(value.type)) {
+    if (typeof value.type === 'string' && isRecord(value.props) && !componentIds.has(value.type) && !seen.has(value.type)) {
       seen.add(value.type)
       unknownTypes.push(value.type)
     }

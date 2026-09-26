@@ -115,6 +115,21 @@ describe('builder document contract', () => {
     })
   })
 
+  it('does not treat arbitrary prop metadata with a type key as a component', () => {
+    const result = parseBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Widget',
+        props: { metadata: { type: 'not-a-component' } },
+      }],
+    })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set(['Widget']))).toEqual({ valid: true })
+  })
+
   it('adapts published Puck data to a canonical document without losing its tree', () => {
     const document = createBuilderDocument({
       root: { title: 'Home' },

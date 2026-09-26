@@ -72,4 +72,11 @@ describe('builder layout components', () => {
     expect(markup).toContain('--nodepress-layout-direction-mobile:column')
     expect(markup).toContain('stack content')
   })
+
+  it('labels the Stack wrap control independently from visibility', () => {
+    expect(layoutComponents.Stack.fields.wrap).toMatchObject({
+      type: 'object',
+      label: 'Wrap',
+    })
+  })
 })

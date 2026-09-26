@@ -10,6 +10,7 @@ import type {
 import { normalizeResponsive } from './schema'
 
 export type LayoutStyleInput = {
+  displayMode?: 'block' | 'grid' | 'flex'
   padding?: ResponsiveInput<number>
   gap?: ResponsiveInput<number>
   maxWidth?: ResponsiveInput<MaxWidthToken>
@@ -76,6 +77,15 @@ export function layoutStyleVariables(input: LayoutStyleInput): LayoutStyleVariab
   setResponsive(variables, 'justify', input.justify, formatAlign)
   setResponsive(variables, 'wrap', input.wrap, (value) => value ? 'wrap' : 'nowrap')
   setResponsive(variables, 'columns', input.columns, (value) => String(value))
+
+  if (input.displayMode !== undefined) {
+    const visibility = normalizeResponsive(input.visibility ?? true)
+    for (const breakpoint of ['desktop', 'tablet', 'mobile'] as const) {
+      variables[`--nodepress-layout-display-${breakpoint}`] = visibility[breakpoint]
+        ? input.displayMode
+        : 'none'
+    }
+  }
 
   if (input.align !== undefined) {
     const normalized = normalizeResponsive(input.align)

@@ -80,6 +80,11 @@ const visibilityField = responsiveSelectField('Visibility', [
   { label: 'Hidden', value: false },
 ])
 
+const wrapField = responsiveSelectField('Wrap', [
+  { label: 'Wrap', value: true },
+  { label: 'No wrap', value: false },
+])
+
 const commonFields = {
   as: { type: 'select', label: 'HTML element', options: TAG_OPTIONS },
   ariaLabel: { type: 'text', label: 'ARIA label' },
@@ -161,6 +166,7 @@ function columnsRender(input: unknown) {
         gap: props.gap,
         align: props.align,
         visibility: props.visibility,
+        displayMode: 'grid',
         stackOnMobile: props.stackOnMobile,
       })),
     },
@@ -187,6 +193,7 @@ function stackRender(input: unknown) {
         justify: props.justify,
         wrap: props.wrap,
         visibility: props.visibility,
+        displayMode: 'flex',
       })),
     },
     renderSlot(props.content),
@@ -274,7 +281,7 @@ export const layoutComponents = {
       gap: responsiveNumberField('Gap', 128),
       align: responsiveSelectField('Alignment', ALIGN_OPTIONS),
       justify: responsiveSelectField('Justify', VERTICAL_ALIGN_OPTIONS),
-      wrap: visibilityField,
+      wrap: wrapField,
       visibility: visibilityField,
     },
     defaultProps: {
