@@ -1,5 +1,5 @@
 import React from 'react'
-import { Render, type Data } from '@measured/puck'
+import { Render, type Config, type Data } from '@measured/puck'
 import {
   parseBuilderDocument,
   validateBuilderComponents,
@@ -33,18 +33,20 @@ export default async function BlockRenderer({ content, context = 'post' }: Block
   }
 
   if (parsed.kind === 'puck') {
+    let config: Config<any>
+
     try {
-      const config = await getServerPuckConfig(context)
+      config = await getServerPuckConfig(context)
       const validation = validateBuilderComponents(parsed.document, new Set(Object.keys(config.components)))
 
       if (!validation.valid) {
         return safeBuilderFallback('unknown-component', 'document contains unavailable components')
       }
-
-      return <Render config={config} data={parsed.document as Data} />
     } catch {
       return safeBuilderFallback('invalid-document', 'server renderer failed')
     }
+
+    return <Render config={config} data={parsed.document as Data} />
   }
 
   if (parsed.kind === 'html') {
