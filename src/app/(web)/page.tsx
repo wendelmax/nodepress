@@ -5,8 +5,10 @@ import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 import type { Metadata } from "next"
 
-export const revalidate = 86400 // Revalidate daily by default (can be triggered instantly via revalidatePath)
-export const dynamic = 'force-static' // Force SSG
+// The home page depends on runtime-only configuration and database state.
+// Static generation can capture the setup redirect before the container loads
+// its persisted DATABASE_URL, leaving an installed site stuck in the wizard.
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   const options = await OptionService.getOptions(['blogname', 'blogdescription', 'show_on_front', 'page_on_front'])
