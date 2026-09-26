@@ -182,6 +182,26 @@ export function isBuilderDocument(value: unknown): value is BuilderDocument {
     && isMetadata(value.metadata)
 }
 
+export function validateBuilderComponents(
+  document: BuilderDocument,
+  componentIds: ReadonlySet<string>,
+): { valid: true } | { valid: false; unknownTypes: string[] } {
+  const unknownTypes: string[] = []
+  const seen = new Set<string>()
+
+  for (const entry of document.content) {
+    if (!isRecord(entry) || typeof entry.type !== 'string') continue
+    if (componentIds.has(entry.type) || seen.has(entry.type)) continue
+
+    seen.add(entry.type)
+    unknownTypes.push(entry.type)
+  }
+
+  return unknownTypes.length === 0
+    ? { valid: true }
+    : { valid: false, unknownTypes }
+}
+
 export function serializeBuilderDocument(document: BuilderDocument): string {
   if (!isBuilderDocument(document)) {
     throw new Error('cannot serialize an invalid builder document')

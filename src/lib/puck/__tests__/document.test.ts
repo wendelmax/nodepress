@@ -5,6 +5,7 @@ import {
   MAX_BUILDER_DOCUMENT_DEPTH,
   parseBuilderDocument,
   serializeBuilderDocument,
+  validateBuilderComponents,
 } from '../document'
 
 function makeNestedValue(depth: number): Record<string, unknown> {
@@ -53,5 +54,37 @@ describe('builder document contract', () => {
   it('keeps Editor.js and HTML content on their existing branches', () => {
     expect(parseBuilderDocument({ blocks: [] }).kind).toBe('editorjs')
     expect(parseBuilderDocument('<p>legacy</p>').kind).toBe('html')
+  })
+
+  it('validates component types against the resolved component set', () => {
+    const result = parseBuilderDocument({
+      root: {},
+      content: [
+        { type: 'Heading', props: {} },
+        { type: 'RemovedPluginCard', props: {} },
+        { type: 'RemovedPluginCard', props: {} },
+        { type: 'UnknownWidget', props: {} },
+      ],
+    })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set(['Heading']))).toEqual({
+      valid: false,
+      unknownTypes: ['RemovedPluginCard', 'UnknownWidget'],
+    })
+    expect(validateBuilderComponents(result.document, new Set(['Heading', 'RemovedPluginCard', 'UnknownWidget']))).toEqual({
+      valid: true,
+    })
+  })
+
+  it('accepts an empty document when no component types are registered', () => {
+    const result = parseBuilderDocument({ root: {}, content: [] })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set())).toEqual({ valid: true })
   })
 })
