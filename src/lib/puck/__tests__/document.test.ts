@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createEmptyBuilderDocument,
+  createBuilderDocument,
   MAX_BUILDER_DOCUMENT_BYTES,
   MAX_BUILDER_DOCUMENT_DEPTH,
   parseBuilderDocument,
@@ -86,5 +87,16 @@ describe('builder document contract', () => {
     if (result.kind !== 'puck') return
 
     expect(validateBuilderComponents(result.document, new Set())).toEqual({ valid: true })
+  })
+
+  it('adapts published Puck data to a canonical document without losing its tree', () => {
+    const document = createBuilderDocument({
+      root: { title: 'Home' },
+      content: [{ type: 'Heading', props: { title: 'Hello' } }],
+    }, '2026-09-26T00:00:00.000Z')
+
+    const result = parseBuilderDocument(serializeBuilderDocument(document))
+
+    expect(result).toEqual({ kind: 'puck', document })
   })
 })

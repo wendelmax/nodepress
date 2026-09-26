@@ -202,6 +202,22 @@ export function validateBuilderComponents(
     : { valid: false, unknownTypes }
 }
 
+export function createBuilderDocument(
+  data: Pick<BuilderDocument, 'content' | 'root'>,
+  updatedAt = new Date().toISOString(),
+): BuilderDocument {
+  return {
+    version: 1,
+    content: data.content,
+    root: data.root,
+    metadata: {
+      editor: 'puck',
+      schemaVersion: 1,
+      updatedAt,
+    },
+  }
+}
+
 export function serializeBuilderDocument(document: BuilderDocument): string {
   if (!isBuilderDocument(document)) {
     throw new Error('cannot serialize an invalid builder document')

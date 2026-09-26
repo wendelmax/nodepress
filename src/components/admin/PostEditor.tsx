@@ -288,7 +288,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
             {editorMode === 'puck' ? (
               <PuckBuilder 
                 initialData={content} 
-                onPublish={(data) => setContent(JSON.stringify(data))} 
+                onPublish={(data) => setContent(data)}
               />
             ) : (
               <div className="p-6 md:p-8 bg-transparent min-h-[400px]">
