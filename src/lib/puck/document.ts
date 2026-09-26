@@ -218,6 +218,13 @@ export function createBuilderDocument(
   }
 }
 
+export function canPublishBuilderDocument(value: unknown): boolean {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string' && value.trim() === '') return true
+
+  return parseBuilderDocument(value).kind === 'puck'
+}
+
 export function serializeBuilderDocument(document: BuilderDocument): string {
   if (!isBuilderDocument(document)) {
     throw new Error('cannot serialize an invalid builder document')

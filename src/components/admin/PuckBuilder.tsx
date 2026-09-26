@@ -7,6 +7,7 @@ import "@measured/puck/puck.css";
 import { puckConfig } from "@/lib/puck/config";
 import { getClientPuckConfig } from "@/lib/puck/client-config";
 import {
+  canPublishBuilderDocument,
   createBuilderDocument,
   createEmptyBuilderDocument,
   parseBuilderDocument,
@@ -52,14 +53,14 @@ interface PuckBuilderProps {
 
 export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps) {
   const [config, setConfig] = useState<Config<any>>(puckConfig)
+  const parsedInitialData = useMemo(() => parseBuilderDocument(initialData), [initialData])
   const document = useMemo(() => {
-    const result = parseBuilderDocument(initialData)
+    if (parsedInitialData.kind === 'puck') return parsedInitialData.document
 
-    if (result.kind === 'puck') return result.document
-
-    console.warn('Puck builder received incompatible initial content', result.kind)
+    console.warn('Puck builder received incompatible initial content', parsedInitialData.kind)
     return createEmptyBuilderDocument()
-  }, [initialData])
+  }, [parsedInitialData])
+  const canPublish = canPublishBuilderDocument(initialData)
 
   const unknownComponents = useMemo(() => {
     const validation = validateBuilderComponents(document, new Set(Object.keys(config.components)))
@@ -90,10 +91,17 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
           Componentes indisponíveis: {unknownComponents.join(', ')}
         </div>
       )}
+      {!canPublish && (
+        <div className="bg-red-100 px-4 py-2 text-sm text-red-950" role="status">
+          O conteúdo inicial é incompatível; a publicação está bloqueada para preservar a versão publicada.
+        </div>
+      )}
       <Puck
         config={config}
         data={document as Data}
         onPublish={(data) => {
+          if (!canPublish) return
+
           const canonicalDocument = createBuilderDocument({
             content: data.content,
             root: data.root,

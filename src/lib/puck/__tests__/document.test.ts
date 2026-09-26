@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createEmptyBuilderDocument,
   createBuilderDocument,
+  canPublishBuilderDocument,
   MAX_BUILDER_DOCUMENT_BYTES,
   MAX_BUILDER_DOCUMENT_DEPTH,
   parseBuilderDocument,
@@ -98,5 +99,13 @@ describe('builder document contract', () => {
     const result = parseBuilderDocument(serializeBuilderDocument(document))
 
     expect(result).toEqual({ kind: 'puck', document })
+  })
+
+  it('allows publishing only valid Puck content or a new empty document', () => {
+    expect(canPublishBuilderDocument({ root: {}, content: [] })).toBe(true)
+    expect(canPublishBuilderDocument('')).toBe(true)
+    expect(canPublishBuilderDocument('{"root":')).toBe(false)
+    expect(canPublishBuilderDocument({ blocks: [] })).toBe(false)
+    expect(canPublishBuilderDocument('<p>legacy</p>')).toBe(false)
   })
 })
