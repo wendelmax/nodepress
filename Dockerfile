@@ -18,9 +18,12 @@ RUN npm run build
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
-    PORT=3000
+    PORT=3000 \
+    NODEPRESS_CONFIG_DIR=/var/lib/nodepress \
+    NODE_OPTIONS=--env-file=/var/lib/nodepress/.env
 WORKDIR /app
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+RUN mkdir -p /var/lib/nodepress && touch /var/lib/nodepress/.env && chown -R nextjs:nodejs /var/lib/nodepress
 COPY --from=builder /app/package.json /app/package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

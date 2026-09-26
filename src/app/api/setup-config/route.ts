@@ -21,8 +21,10 @@ export async function POST(request: Request) {
     const encodedPassword = encodeURIComponent(password)
     const databaseUrl = `postgresql://${username}:${encodedPassword}@${host}:${port}/${dbName}`
 
-    // Write to .env file
-    const envPath = path.join(process.cwd(), '.env')
+    // Persist bootstrap configuration outside the application directory so
+    // production images can remain read-only while the installer still works.
+    const configDirectory = process.env.NODEPRESS_CONFIG_DIR || path.join(process.cwd(), '.nodepress')
+    const envPath = path.join(configDirectory, '.env')
     let envContent = ''
     
     if (fs.existsSync(envPath)) {
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
     if (!envContent.includes('NEXTAUTH_SECRET=')) {
       const secret = crypto.randomBytes(32).toString('hex')
       envContent += `\nNEXTAUTH_SECRET="${secret}"`
+      process.env.NEXTAUTH_SECRET = secret
     }
 
     // Auto-set NEXTAUTH_URL if not exists based on the request origin
@@ -47,10 +50,15 @@ export async function POST(request: Request) {
       // In dev this is typically localhost:3000, but let's grab it from headers if possible
       const hostHeader = request.headers.get('host') || 'localhost:3000'
       const protocol = request.headers.get('x-forwarded-proto') || (hostHeader.includes('localhost') ? 'http' : 'https')
-      envContent += `\nNEXTAUTH_URL="${protocol}://${hostHeader}"`
+      const nextAuthUrl = `${protocol}://${hostHeader}`
+      envContent += `\nNEXTAUTH_URL="${nextAuthUrl}"`
+      process.env.NEXTAUTH_URL = nextAuthUrl
     }
     
-    fs.writeFileSync(envPath, envContent)
+    fs.mkdirSync(configDirectory, { recursive: true })
+    const temporaryEnvPath = `${envPath}.${process.pid}.tmp`
+    fs.writeFileSync(temporaryEnvPath, envContent, { encoding: 'utf8', mode: 0o600 })
+    fs.renameSync(temporaryEnvPath, envPath)
 
     // Overwrite the process variable for the current runtime
     process.env.DATABASE_URL = databaseUrl
