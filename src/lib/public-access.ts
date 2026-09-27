@@ -13,6 +13,10 @@ export interface PublicAccessDecision {
   allowed: boolean
 }
 
+export function isLandingPagesActive(activePluginIds: readonly string[]): boolean {
+  return activePluginIds.includes('landing-pages')
+}
+
 export function evaluatePublicAccess(pathname: string, input: PublicAccessInput): PublicAccessDecision {
   return {
     allowed: isMaintenanceBypassed(pathname, input),

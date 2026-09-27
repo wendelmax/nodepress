@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { evaluatePublicAccess, parseMaintenanceAllowlist } from '../public-access'
+import { evaluatePublicAccess, isLandingPagesActive, parseMaintenanceAllowlist } from '../public-access'
 
 describe('public access policy', () => {
   it('keeps administrative and authentication paths available during maintenance', () => {
@@ -27,5 +27,10 @@ describe('public access policy', () => {
       '203.0.113.7',
       '198.51.100.4',
     ])
+  })
+
+  it('only enables landing page resolution when the plugin is active', () => {
+    expect(isLandingPagesActive(['animals', 'landing-pages'])).toBe(true)
+    expect(isLandingPagesActive(['animals'])).toBe(false)
   })
 })

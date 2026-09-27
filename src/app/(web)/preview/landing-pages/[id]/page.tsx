@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getLandingPageService } from '@/plugins/landing-pages/factory'
-import { getPublicAccess } from '@/lib/public-access'
+import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
+import { OptionService } from '@/services/option.service'
 import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 
@@ -15,6 +16,7 @@ interface PreviewPageProps {
 async function resolvePreview({ params, searchParams }: PreviewPageProps) {
   const [{ id }, query] = await Promise.all([params, searchParams])
   if (!query.token) return undefined
+  if (!isLandingPagesActive(await OptionService.getActivePluginIds())) return undefined
   return getLandingPageService().findPreviewById(id, query.token)
 }
 

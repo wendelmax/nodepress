@@ -9,43 +9,17 @@ import { generatePermalink } from "@/lib/permalinks"
 import { ThemeService } from "@/services/theme.service"
 import type { Metadata } from "next"
 import { getLandingPageService } from '@/plugins/landing-pages/factory'
-import { getPublicAccess } from '@/lib/public-access'
+import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
 
 export const dynamic = 'force-dynamic'
 // export const dynamic = 'force-static' // Not strictly needed if we don't have dynamic functions, and generateStaticParams will tell it to be static anyway.
 
-export async function generateStaticParams() {
-  // The database is a runtime-only dependency (see Dockerfile / DATABASE_URL
-  // docs) and may not be reachable during `next build` (e.g. building the
-  // Docker image with no DB container present). Degrade gracefully to an
-  // empty list in that case: dynamicParams defaults to true, so every slug
-  // still renders correctly on-demand at request time instead of being
-  // statically pre-rendered.
-  try {
-    const posts = await PostService.getAdminList('post', 'publish', 1, 1000)
-    const pages = await PostService.getAdminList('page', 'publish', 1, 1000)
-
-    const params = []
-
-    for (const post of [...posts.posts, ...pages.posts]) {
-      // If you use nested permalinks like /category/post-name, this needs to be split
-      // For simplicity, assuming slug is just [postName] or handled properly
-      params.push({ slug: [post.postName] })
-    }
-
-    return params
-  } catch (err) {
-    console.warn('[generateStaticParams] database unavailable at build time, skipping static pre-render:', err)
-    return []
-  }
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const { slug } = await params
   const postName = slug[slug.length - 1]
-  const landingPagesActive = (await OptionService.getActivePluginIds()).includes('landing-pages')
+  const landingPagesActive = isLandingPagesActive(await OptionService.getActivePluginIds())
   if (landingPagesActive) {
     const landingPage = await getLandingPageService().findPublicBySlug(postName)
     if (landingPage) {
@@ -87,7 +61,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
   // Extract the actual postName which is always the last segment
   const postName = slug[slug.length - 1]
 
-  if ((await OptionService.getActivePluginIds()).includes('landing-pages')) {
+  if (isLandingPagesActive(await OptionService.getActivePluginIds())) {
     const landingPage = await getLandingPageService().findPublicBySlug(postName)
     if (landingPage) return <LandingPageRenderer record={landingPage} />
   }
