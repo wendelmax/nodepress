@@ -76,7 +76,7 @@ export class LandingPageService {
       document: input.document ?? currentData.document,
       status: input.status ?? current.status,
       publishAt: input.publishAt === undefined ? currentData.publishAt : input.publishAt,
-      timezone: input.timezone ?? currentData.timezone,
+      timezone: input.timezone ?? currentData.timezone ?? 'UTC',
       seo: input.seo === undefined ? currentData.seo : input.seo,
     })
 
@@ -103,6 +103,14 @@ export class LandingPageService {
     if (current.status === 'archived') return current
     await this.saveRevision(current)
     return this.options.repository.updateStatus(id, 'archived')
+  }
+
+  get(id: string): Promise<ContentRecord> {
+    return this.require(id)
+  }
+
+  list(): Promise<ContentRecord[]> {
+    return this.options.repository.list(LANDING_PAGE_CONTENT_TYPE)
   }
 
   async rollback(id: string, revisionId: string): Promise<ContentRecord> {
@@ -162,7 +170,10 @@ export class LandingPageService {
   }
 }
 
-function normalizeInput(input: LandingPageInput): Required<Pick<LandingPageInput, 'title' | 'slug' | 'document' | 'status' | 'timezone'>> & Pick<LandingPageInput, 'publishAt' | 'seo'> {
+function normalizeInput(input: LandingPageInput): Required<Pick<LandingPageInput, 'title' | 'slug' | 'document' | 'status' | 'timezone'>> & {
+  publishAt: string | null
+  seo?: Record<string, unknown>
+} {
   const title = input.title.trim()
   if (!title) throw new Error('Landing page title is required')
   if (!input.document || typeof input.document !== 'object' || Array.isArray(input.document)) {
