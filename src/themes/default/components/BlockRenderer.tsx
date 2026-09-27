@@ -8,6 +8,8 @@ import { validateBuilderLayoutDocument } from '@/lib/puck/layout/schema'
 import { getServerPuckConfig } from '@/lib/puck/server-config'
 import type { BuilderContext } from '@/lib/puck/types'
 import { resolvePostShowcaseData } from '@/lib/puck/server-showcase-data'
+import { resolvePatternReferences } from '@/lib/puck/patterns'
+import { patternService } from '@/services/pattern.service'
 
 interface BlockRendererProps {
   content: string;
@@ -53,9 +55,21 @@ export default async function BlockRenderer({ content, context = 'post' }: Block
       return safeBuilderFallback('invalid-document', 'server renderer failed')
     }
 
-    const resolvedContent = await resolvePostShowcaseData(
-      parsed.document as unknown as Parameters<typeof resolvePostShowcaseData>[0],
-    )
+    let resolvedContent: Awaited<ReturnType<typeof resolvePostShowcaseData>>
+    try {
+      const resolvedPatterns = await resolvePatternReferences(
+        parsed.document,
+        async (patternId, version) => {
+          const pattern = await patternService.get(patternId, version)
+          return pattern?.document ?? null
+        },
+      )
+      resolvedContent = await resolvePostShowcaseData(
+        resolvedPatterns as unknown as Parameters<typeof resolvePostShowcaseData>[0],
+      )
+    } catch {
+      return safeBuilderFallback('invalid-document', 'pattern resolution failed')
+    }
     return <Render config={config} data={resolvedContent as Data} />
   }
 
