@@ -4,11 +4,14 @@ import { contentTypeRegistry } from "@/modules/content"
 import { ContentService } from "@/modules/content/content.service"
 import { PrismaContentRepository } from "@/modules/content/prisma-repository"
 import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
+import { getPublicAccess } from "@/lib/public-access"
+import { MaintenanceScreen } from "@/components/public/MaintenanceScreen"
 
 export const dynamic = "force-dynamic"
 
 export default async function AnimalsPublicPage() {
   await ensureActivePluginsLoaded()
+  if (!(await getPublicAccess('/animais')).allowed) return <MaintenanceScreen />
   if (!contentTypeRegistry.get("animal")) notFound()
 
   const service = new ContentService(contentTypeRegistry, new PrismaContentRepository())
