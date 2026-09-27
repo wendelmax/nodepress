@@ -4,6 +4,8 @@ import { OptionService } from "@/services/option.service"
 import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 import type { Metadata } from "next"
+import { getPublicAccess } from '@/lib/public-access'
+import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 
 // The home page depends on runtime-only configuration and database state.
 // Static generation can capture the setup redirect before the container loads
@@ -48,6 +50,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   await checkInstallation()
+  const access = await getPublicAccess('/')
+  if (!access.allowed) return <MaintenanceScreen />
 
   // Determine permalinks and homepage settings
   const options = await OptionService.getOptions(['permalink_structure', 'show_on_front', 'page_on_front'])

@@ -19,6 +19,8 @@ const ALLOWED_OPTIONS = [
   'analytics_ga4_id',
   'active_theme',
   'active_plugins',
+  'landing_pages_maintenance',
+  'landing_pages_allowlist',
   'cron_secret',
   'ai_provider',
   'ai_api_key',
