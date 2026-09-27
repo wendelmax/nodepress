@@ -9,7 +9,13 @@ const DefaultTheme: NodePressTheme = {
     description: "The official minimalist theme for NodePress. Fast, clean, and accessible.",
     author: "NodePress Team",
     version: "1.0.0",
-    slug: "default"
+    slug: "default",
+    slots: ['header', 'footer', 'content', 'sidebar'],
+    tokens: {
+      '--nodepress-color-primary': '#3b82f6',
+      '--nodepress-color-surface': '#111827',
+      '--nodepress-radius-card': '24px',
+    },
   },
   SinglePost,
   SinglePage,

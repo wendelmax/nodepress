@@ -3,6 +3,8 @@ import { themes } from '@/themes/registry'
 import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
 import { MenuService } from '@/services/menu.service'
 import type { NodePressTheme, ThemeRenderOptions } from '@/themes/types'
+import { themeTemplateService } from './theme-template.service'
+import type { ThemeTemplateDefinition, ThemeTemplateResolutionContext } from '@/lib/themes/templates'
 
 export class ThemeService {
   static async getActiveThemeSlug(): Promise<string> {
@@ -27,6 +29,21 @@ export class ThemeService {
   static async getRenderOptions(options: Record<string, string>): Promise<ThemeRenderOptions> {
     await ensureActivePluginsLoaded()
     const menus = MenuService.getPluginMenuTree('public', (capability) => !capability)
-    return { ...options, menus }
+    const theme = await this.getActiveTheme()
+    return {
+      ...options,
+      menus,
+      themeTokens: theme.meta.tokens ?? {},
+      themeSlots: theme.meta.slots ?? [],
+    }
+  }
+
+  static async resolveTemplate(context: Omit<ThemeTemplateResolutionContext, 'themeSlug'>): Promise<ThemeTemplateDefinition | null> {
+    try {
+      const themeSlug = await this.getActiveThemeSlug()
+      return await themeTemplateService.resolve({ ...context, themeSlug })
+    } catch {
+      return null
+    }
   }
 }

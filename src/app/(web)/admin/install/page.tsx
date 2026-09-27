@@ -8,6 +8,8 @@ import { InstallerShell } from '@/components/install/InstallerShell'
 import { InstallLocaleCode, normalizeInstallLocale } from '@/lib/install-locales'
 import { getTranslation } from '@/lib/i18n'
 
+export const dynamic = 'force-dynamic'
+
 type AuthConfig = { local: boolean; keycloak: boolean }
 
 function InstallForm() {

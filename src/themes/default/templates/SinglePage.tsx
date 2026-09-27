@@ -5,14 +5,23 @@ import Image from 'next/image'
 import BlockRenderer from '../components/BlockRenderer'
 import Footer from '../components/Footer'
 import { HookService } from '@/services/hook.service'
+import { ThemeService } from '@/services/theme.service'
+import ThemeTemplateRenderer from '../components/ThemeTemplateRenderer'
+import { getBuilderContentSlot } from '../components/ThemeTemplateContent'
 
 export default async function SinglePage({ post, options = {} }: { post: any, options?: any }) {
   const thumbnailUrl = post.meta?.find((m: any) => m.metaKey === '_thumbnail_url')?.metaValue
-  const template = post.meta?.find((m: any) => m.metaKey === '_np_template')?.metaValue || 'default'
+  const pageTemplate = post.meta?.find((m: any) => m.metaKey === '_np_template')?.metaValue || 'default'
 
   // Extract Custom Fields
   const fieldGroups = options['acf_field_groups'] ? JSON.parse(options['acf_field_groups']) : []
   const customFieldsToDisplay: { label: string, value: string, type: string }[] = []
+
+  const template = await ThemeService.resolveTemplate({ area: 'page', context: 'page', postType: post.postType, slug: post.postName })
+  const contentSlot = getBuilderContentSlot(post)
+  if (template && contentSlot) {
+    return <div className="min-h-screen bg-background text-text font-sans"><Header context="page" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="page" context="page" postType={post.postType} slug={post.postName} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="page" /></div>
+  }
 
   if (post.meta) {
     post.meta.forEach((m: any) => {
@@ -37,9 +46,9 @@ export default async function SinglePage({ post, options = {} }: { post: any, op
 
   return (
     <div className="min-h-screen bg-background text-text font-sans">
-      {template !== 'landing' && <Header />}
+      {pageTemplate !== 'landing' && <Header context="page" />}
 
-      <main className={`${template === 'full-width' ? 'w-full' : 'max-w-4xl'} mx-auto py-12 px-6`}>
+      <main className={`${pageTemplate === 'full-width' ? 'w-full' : 'max-w-4xl'} mx-auto py-12 px-6`}>
         <article className="bg-surface backdrop-blur-md rounded-3xl border border-border shadow-soft overflow-hidden">
           {thumbnailUrl && (
             <div className="w-full relative h-[300px] md:h-[450px]">
@@ -84,7 +93,7 @@ export default async function SinglePage({ post, options = {} }: { post: any, op
         </article>
       </main>
 
-      {template !== 'landing' && <Footer />}
+      {pageTemplate !== 'landing' && <Footer context="page" />}
     </div>
   )
 }

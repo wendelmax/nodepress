@@ -6,6 +6,9 @@ import Image from 'next/image'
 import BlockRenderer from '../components/BlockRenderer'
 import Footer from '../components/Footer'
 import { HookService } from '@/services/hook.service'
+import { ThemeService } from '@/services/theme.service'
+import ThemeTemplateRenderer from '../components/ThemeTemplateRenderer'
+import { getBuilderContentSlot } from '../components/ThemeTemplateContent'
 
 export default async function SinglePost({ post, categories = [], tags = [], initialComments = [], options = {} }: { post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: any }) {
   const isPage = post.postType === 'page'
@@ -14,6 +17,12 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
   // Extract Custom Fields
   const fieldGroups = options['acf_field_groups'] ? JSON.parse(options['acf_field_groups']) : []
   const customFieldsToDisplay: { label: string, value: string, type: string }[] = []
+
+  const template = await ThemeService.resolveTemplate({ area: 'single', context: 'post', postType: post.postType, slug: post.postName, taxonomies: categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug }))) })
+  const contentSlot = getBuilderContentSlot(post)
+  if (template && contentSlot) {
+    return <div className="min-h-screen bg-background text-text font-sans"><Header context="post" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="single" context="post" postType={post.postType} slug={post.postName} taxonomies={categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug })))} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="post" /></div>
+  }
 
   if (post.meta) {
     post.meta.forEach((m: any) => {
@@ -38,7 +47,7 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
 
   return (
     <div className="min-h-screen bg-background text-text font-sans">
-      <Header />
+      <Header context="post" />
 
       <main className="max-w-4xl mx-auto py-12 px-6">
         
@@ -190,7 +199,7 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
         </div>
       </main>
 
-      <Footer />
+      <Footer context="post" />
     </div>
   )
 }
