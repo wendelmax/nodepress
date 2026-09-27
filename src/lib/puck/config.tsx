@@ -19,6 +19,7 @@ type Props = {
   Container: any;
   Columns: any;
   Stack: any;
+  PatternReference: { patternId: string; version?: number };
 };
 
 export const puckConfig: Config<any> = {
@@ -203,5 +204,20 @@ export const puckConfig: Config<any> = {
       )
     },
     PostShowcase: postShowcaseComponent,
+    PatternReference: {
+      fields: {
+        patternId: { type: "text", label: "Pattern ID" },
+        version: { type: "number", label: "Version (optional)" },
+      },
+      defaultProps: { patternId: "", version: undefined },
+      render: ({ patternId, version }) => (
+        <div
+          className="my-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm text-text-secondary"
+          data-pattern-reference={patternId || "missing"}
+        >
+          Referência de pattern{patternId ? `: ${patternId}` : ""}{version ? ` (v${version})` : ""}
+        </div>
+      ),
+    },
   },
 };

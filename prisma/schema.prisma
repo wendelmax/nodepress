@@ -294,3 +294,39 @@ model PayloadImportRecord {
   @@index([targetType, targetId])
   @@map("np_import_records")
 }
+
+model BuilderPattern {
+  id            String                  @id @default(cuid()) @db.VarChar(30)
+  slug          String                  @unique @db.VarChar(120)
+  name          String                  @db.VarChar(120)
+  description   String                  @db.Text
+  kind          String                  @db.VarChar(20)
+  category      String                  @db.VarChar(80)
+  tags          Json
+  engine        String                  @db.VarChar(50)
+  schemaVersion Int                     @map("schema_version")
+  version       Int                     @default(1)
+  document      Json
+  archivedAt    DateTime?               @map("archived_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  versions      BuilderPatternVersion[]
+
+  @@index([kind, category, archivedAt])
+  @@index([archivedAt])
+  @@map("np_builder_patterns")
+}
+
+model BuilderPatternVersion {
+  id            String        @id @default(cuid()) @db.VarChar(30)
+  patternId     String        @map("pattern_id") @db.VarChar(30)
+  version       Int
+  manifest      Json
+  document      Json
+  createdAt     DateTime      @default(now()) @map("created_at")
+  pattern       BuilderPattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@unique([patternId, version])
+  @@index([patternId, version])
+  @@map("np_builder_pattern_versions")
+}
