@@ -330,3 +330,36 @@ model BuilderPatternVersion {
   @@index([patternId, version])
   @@map("np_builder_pattern_versions")
 }
+
+model ThemeTemplate {
+  id          String                @id @default(cuid()) @db.VarChar(30)
+  slug        String                @db.VarChar(120)
+  themeSlug   String                @map("theme_slug") @db.VarChar(80)
+  area        String                @db.VarChar(20)
+  name        String                @db.VarChar(120)
+  conditions  Json
+  priority    Int                   @default(0)
+  enabled     Boolean               @default(false)
+  version     Int                   @default(1)
+  document    Json
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  versions    ThemeTemplateVersion[]
+
+  @@unique([themeSlug, slug])
+  @@index([themeSlug, area, enabled])
+  @@map("np_theme_templates")
+}
+
+model ThemeTemplateVersion {
+  id         String        @id @default(cuid()) @db.VarChar(30)
+  templateId String        @map("template_id") @db.VarChar(30)
+  version    Int
+  document   Json
+  createdAt  DateTime      @default(now()) @map("created_at")
+  template   ThemeTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+  @@index([templateId, version])
+  @@map("np_theme_template_versions")
+}

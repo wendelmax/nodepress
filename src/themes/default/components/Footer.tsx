@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { OptionService } from '@/services/option.service'
 import BlockRenderer from './BlockRenderer'
+import ThemeTemplateRenderer from './ThemeTemplateRenderer'
 
-export default async function Footer() {
+async function DefaultFooter() {
   const options = await OptionService.getOptions(['site_footer_content'])
   const footerContent = options['site_footer_content']
   const currentYear = new Date().getFullYear()
@@ -96,4 +97,9 @@ export default async function Footer() {
       </div>
     </footer>
   )
+}
+
+export default async function Footer({ context = 'home' }: { context?: 'home' | 'post' | 'page' | 'archive' }) {
+  const fallback = await DefaultFooter()
+  return <ThemeTemplateRenderer area="footer" context={context} fallback={fallback} />
 }

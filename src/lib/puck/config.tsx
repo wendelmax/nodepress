@@ -20,6 +20,7 @@ type Props = {
   Columns: any;
   Stack: any;
   PatternReference: { patternId: string; version?: number };
+  ThemeSlot: { slot: "header" | "footer" | "content" | "sidebar"; content: unknown[] };
 };
 
 export const puckConfig: Config<any> = {
@@ -216,6 +217,27 @@ export const puckConfig: Config<any> = {
           data-pattern-reference={patternId || "missing"}
         >
           Referência de pattern{patternId ? `: ${patternId}` : ""}{version ? ` (v${version})` : ""}
+        </div>
+      ),
+    },
+    ThemeSlot: {
+      fields: {
+        slot: {
+          type: "select",
+          label: "Theme slot",
+          options: [
+            { label: "Header", value: "header" },
+            { label: "Footer", value: "footer" },
+            { label: "Content", value: "content" },
+            { label: "Sidebar", value: "sidebar" },
+          ],
+        },
+        content: { type: "slot" },
+      },
+      defaultProps: { slot: "content", content: [] },
+      render: ({ slot, content }) => (
+        <div className="my-4 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm text-text-secondary" data-theme-slot={slot}>
+          Theme slot: {slot}{typeof content === "function" ? content() : null}
         </div>
       ),
     },
