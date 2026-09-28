@@ -31,6 +31,10 @@ describe('animals plugin', () => {
       jobs: { add: vi.fn(() => vi.fn()) },
       routes: { add: vi.fn(() => vi.fn()) },
       commands: { add: vi.fn(() => vi.fn()) },
+      settings: { get: vi.fn(), set: vi.fn(), getAll: vi.fn(), definitions: vi.fn() },
+      secrets: { get: vi.fn(), set: vi.fn(), delete: vi.fn(), has: vi.fn() },
+      slots: { register: vi.fn(() => vi.fn()) },
+      adminPages: { register: vi.fn(() => vi.fn()) },
     })
 
     expect(menus.addAdmin).toHaveBeenCalledWith(expect.objectContaining({
