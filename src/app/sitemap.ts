@@ -1,7 +1,5 @@
 import { MetadataRoute } from 'next'
-import { PostService } from '@/services/post.service'
-import { OptionService } from '@/services/option.service'
-import { generatePermalink } from '@/lib/permalinks'
+import { SeoService } from '@/plugins/seo-optimizer/service'
 
 // The database is a runtime-only dependency (see Dockerfile / DATABASE_URL
 // docs) and may not be reachable during `next build` (e.g. building the
@@ -12,44 +10,13 @@ import { generatePermalink } from '@/lib/permalinks'
 export const revalidate = 86400 // Revalidate daily by default
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = 'http://localhost:3000'
-
   try {
-    const options = await OptionService.getOptions(['siteurl', 'permalink_structure'])
-    const resolvedSiteUrl = options['siteurl'] || siteUrl
-    const structure = options['permalink_structure'] || '/%postname%/'
-
-    // Get all published posts and pages
-    const posts = await PostService.getLatestPublished(1000, 'post')
-    const pages = await PostService.getLatestPublished(1000, 'page')
-
-    const allContent = [...posts, ...pages]
-
-    const sitemapEntries: MetadataRoute.Sitemap = [
-      {
-        url: resolvedSiteUrl,
-        lastModified: new Date(),
-        changeFrequency: 'daily',
-        priority: 1,
-      }
-    ]
-
-    allContent.forEach((post) => {
-      const permalink = generatePermalink(post, structure)
-      sitemapEntries.push({
-        url: `${resolvedSiteUrl}${permalink}`,
-        lastModified: post.postModified,
-        changeFrequency: post.postType === 'page' ? 'weekly' : 'monthly',
-        priority: post.postType === 'page' ? 0.8 : 0.6,
-      })
-    })
-
-    return sitemapEntries
+    return await SeoService.getSitemap() as MetadataRoute.Sitemap
   } catch (err) {
-    console.warn('[sitemap] database unavailable, returning minimal sitemap:', err)
+    console.warn('[sitemap] SEO service unavailable, returning minimal sitemap:', err)
     return [
       {
-        url: siteUrl,
+        url: 'http://localhost:3000',
         lastModified: new Date(),
         changeFrequency: 'daily',
         priority: 1,

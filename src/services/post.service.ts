@@ -102,7 +102,7 @@ export class PostService {
           select: { displayName: true, userLogin: true }
         },
         meta: {
-          where: { metaKey: { in: ['_thumbnail_url', '_thumbnail_id'] } }
+        where: { metaKey: { in: ['_thumbnail_url', '_thumbnail_id', '_seo_title', '_seo_description', '_seo_canonical', '_seo_robots', '_seo_og_image', '_seo_twitter_title', '_seo_twitter_description', '_seo_schema'] } }
         }
       }
     })

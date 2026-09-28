@@ -5,6 +5,7 @@ import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
 import { OptionService } from '@/services/option.service'
 import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
+import { SeoService } from '@/plugins/seo-optimizer/service'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,8 +24,7 @@ async function resolvePreview({ params, searchParams }: PreviewPageProps) {
 export async function generateMetadata(props: PreviewPageProps): Promise<Metadata> {
   const page = await resolvePreview(props)
   if (!page) return {}
-  const seo = page.data.seo as { title?: string; description?: string } | undefined
-  return { title: seo?.title || page.title, description: seo?.description }
+  return SeoService.toNextMetadata(await SeoService.metadataForLandingPage(page, `/preview/landing-pages/${page.id}`))
 }
 
 export default async function LandingPagePreview(props: PreviewPageProps) {
