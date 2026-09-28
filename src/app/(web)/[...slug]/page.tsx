@@ -1,5 +1,5 @@
 import React from "react"
-import { notFound, redirect } from "next/navigation"
+import { notFound, permanentRedirect, redirect } from "next/navigation"
 import Link from "next/link"
 import { PostService } from "@/services/post.service"
 import { TaxonomyService } from "@/services/taxonomy.service"
@@ -12,6 +12,7 @@ import { getLandingPageService } from '@/plugins/landing-pages/factory'
 import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
+import { SeoService } from '@/plugins/seo-optimizer/service'
 
 export const dynamic = 'force-dynamic'
 // export const dynamic = 'force-static' // Not strictly needed if we don't have dynamic functions, and generateStaticParams will tell it to be static anyway.
@@ -23,11 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (landingPagesActive) {
     const landingPage = await getLandingPageService().findPublicBySlug(postName)
     if (landingPage) {
-      const seo = landingPage.data.seo as { title?: string; description?: string } | undefined
-      return {
-        title: seo?.title || landingPage.title,
-        description: seo?.description || undefined,
-      }
+      return SeoService.toNextMetadata(await SeoService.metadataForLandingPage(landingPage, `/${slug.join('/')}`))
     }
   }
   const post = await PostService.getBySlug(postName)
@@ -36,20 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return {}
   }
 
-  const seoTitle = post.meta?.find((m: any) => m.metaKey === '_seo_title')?.metaValue
-  const seoDesc = post.meta?.find((m: any) => m.metaKey === '_seo_description')?.metaValue
-  const thumbnailUrl = post.meta?.find((m: any) => m.metaKey === '_thumbnail_url')?.metaValue
-
-  return {
-    title: seoTitle || post.postTitle,
-    description: seoDesc || undefined,
-    openGraph: {
-      title: seoTitle || post.postTitle,
-      description: seoDesc || undefined,
-      images: thumbnailUrl ? [thumbnailUrl] : [],
-      type: post.postType === 'post' ? 'article' : 'website'
-    }
-  }
+  return SeoService.toNextMetadata(await SeoService.metadataForPost(post, `/${slug.join('/')}`))
 }
 
 export default async function SinglePostPage({ params }: { params: Promise<{ slug: string[] }> }) {
@@ -57,6 +41,13 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
 
   const access = await getPublicAccess(`/${slug.join('/')}`)
   if (!access.allowed) return <MaintenanceScreen />
+
+  const accessedPath = '/' + slug.join('/')
+  const customRedirect = await SeoService.getRedirect(accessedPath)
+  if (customRedirect) {
+    if (customRedirect.status === 301) permanentRedirect(customRedirect.path)
+    redirect(customRedirect.path)
+  }
 
   // Extract the actual postName which is always the last segment
   const postName = slug[slug.length - 1]
@@ -78,8 +69,6 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
   const structure = options['permalink_structure'] || '/%postname%/'
   
   const idealPermalink = generatePermalink(post, structure)
-  const accessedPath = '/' + slug.join('/')
-
   if (accessedPath !== idealPermalink) {
     redirect(idealPermalink) // 301 Permanent Redirect
   }

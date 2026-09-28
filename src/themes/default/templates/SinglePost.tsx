@@ -9,6 +9,10 @@ import { HookService } from '@/services/hook.service'
 import { ThemeService } from '@/services/theme.service'
 import ThemeTemplateRenderer from '../components/ThemeTemplateRenderer'
 import { getBuilderContentSlot } from '../components/ThemeTemplateContent'
+import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
+import { renderPluginSlot } from '@/plugins/slots'
+import { SeoService } from '@/plugins/seo-optimizer/service'
+import { SeoStructuredData } from '@/plugins/seo-optimizer/structured-data'
 
 export default async function SinglePost({ post, categories = [], tags = [], initialComments = [], options = {} }: { post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: any }) {
   const isPage = post.postType === 'page'
@@ -19,9 +23,16 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
   const customFieldsToDisplay: { label: string, value: string, type: string }[] = []
 
   const template = await ThemeService.resolveTemplate({ area: 'single', context: 'post', postType: post.postType, slug: post.postName, taxonomies: categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug }))) })
+  await ensureActivePluginsLoaded()
+  const breadcrumbSlots = await renderPluginSlot('public', 'theme.breadcrumbs', {
+    postTitle: post.postTitle,
+    isPage,
+    categories,
+  })
+  const structuredData = await SeoService.jsonLdForPost(post, `/${post.postName}`)
   const contentSlot = getBuilderContentSlot(post)
   if (template && contentSlot) {
-    return <div className="min-h-screen bg-background text-text font-sans"><Header context="post" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="single" context="post" postType={post.postType} slug={post.postName} taxonomies={categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug })))} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="post" /></div>
+    return <div className="min-h-screen bg-background text-text font-sans"><SeoStructuredData data={structuredData} /><Header context="post" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="single" context="post" postType={post.postType} slug={post.postName} taxonomies={categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug })))} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="post" /></div>
   }
 
   if (post.meta) {
@@ -47,24 +58,26 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
 
   return (
     <div className="min-h-screen bg-background text-text font-sans">
+      <SeoStructuredData data={structuredData} />
       <Header context="post" />
 
       <main className="max-w-4xl mx-auto py-12 px-6">
         
-        {/* Breadcrumbs */}
-        <nav className="mb-8 flex items-center gap-2 text-sm text-text-muted">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <span>/</span>
-          {!isPage && categories.length > 0 && (
-            <>
-              <Link href={`/category/${categories[0].slug}`} className="hover:text-primary transition-colors">
-                {categories[0].name}
-              </Link>
-              <span>/</span>
-            </>
-          )}
-          <span className="text-text-secondary truncate">{post.postTitle}</span>
-        </nav>
+        {breadcrumbSlots.length > 0 ? breadcrumbSlots[0] : (
+          <nav className="mb-8 flex items-center gap-2 text-sm text-text-muted">
+            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+            {!isPage && categories.length > 0 && (
+              <>
+                <span>/</span>
+                <Link href={`/category/${categories[0].slug}`} className="hover:text-primary transition-colors">
+                  {categories[0].name}
+                </Link>
+              </>
+            )}
+            <span>/</span>
+            <span className="text-text-secondary truncate">{post.postTitle}</span>
+          </nav>
+        )}
 
         <article className="bg-surface backdrop-blur-md rounded-3xl border border-border shadow-soft overflow-hidden">
           {thumbnailUrl && (
