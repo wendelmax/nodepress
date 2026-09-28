@@ -1,3 +1,5 @@
 export * from './types'
 export * from './dependencies'
 export * from './runtime-registries'
+export * from './config'
+export * from './slots'
