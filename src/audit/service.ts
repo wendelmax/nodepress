@@ -19,6 +19,11 @@ const DEFAULT_PAGE_SIZE = 25
 const MAX_PAGE_SIZE = 100
 const DEFAULT_RETENTION_DAYS = 90
 
+export function getAuditRetentionDays(value = process.env.AUDIT_LOG_RETENTION_DAYS): number {
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= 3_650 ? parsed : DEFAULT_RETENTION_DAYS
+}
+
 function normalizePage(value: number | undefined): number {
   return Number.isInteger(value) && value && value > 0 ? value : DEFAULT_PAGE
 }
@@ -105,6 +110,11 @@ export class AuditLogService {
       total += result.count
       if (rows.length < safeBatchSize) return total
     }
+  }
+
+  async pruneByRetention(now = new Date(), batchSize = MAX_PAGE_SIZE, retentionValue?: string): Promise<number> {
+    const cutoff = new Date(now.getTime() - getAuditRetentionDays(retentionValue) * 24 * 60 * 60 * 1_000)
+    return this.pruneOlderThan(cutoff, batchSize)
   }
 }
 
