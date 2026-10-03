@@ -57,6 +57,23 @@ describe('AuditLogService', () => {
     }))
   })
 
+  it('exports all matching events in bounded repository pages', async () => {
+    const repository = createRepository({
+      findMany: vi.fn()
+        .mockResolvedValueOnce(Array.from({ length: 100 }, (_, index) => ({ id: index + 1, action: 'post.updated' })))
+        .mockResolvedValueOnce([{ id: 101, action: 'post.updated' }]),
+    })
+    const service = new AuditLogService(repository)
+
+    const result = await service.export({ action: 'post.updated' }, 'json')
+    const exported = JSON.parse(result.body) as { items: Array<{ id: number }> }
+
+    expect(exported.items).toHaveLength(101)
+    expect(exported.items.at(-1)?.id).toBe(101)
+    expect(repository.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({ skip: 0, take: 100 }))
+    expect(repository.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ skip: 100, take: 100 }))
+  })
+
   it('prunes old events in batches until no matching ids remain', async () => {
     const repository = createRepository({
       findMany: vi.fn()

@@ -86,8 +86,23 @@ export class AuditLogService {
   }
 
   async export(query: AuditQuery = {}, format: 'json' | 'csv' = 'json'): Promise<{ body: string; contentType: string; filename: string }> {
-    const result = await this.list({ ...query, page: 1, pageSize: MAX_PAGE_SIZE })
-    const body = serializeAuditLogs(result.items as AuditLogExportRow[], format)
+    const where = buildWhere(query)
+    const items: Array<Partial<AuditLogExportRow> & { id: number }> = []
+    let skip = 0
+
+    while (true) {
+      const page = await this.repository.findMany({
+        where,
+        skip,
+        take: MAX_PAGE_SIZE,
+        orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
+      })
+      items.push(...page)
+      if (page.length < MAX_PAGE_SIZE) break
+      skip += MAX_PAGE_SIZE
+    }
+
+    const body = serializeAuditLogs(items as AuditLogExportRow[], format)
     return {
       body,
       contentType: format === 'csv' ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8',

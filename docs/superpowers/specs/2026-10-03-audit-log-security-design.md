@@ -1,7 +1,7 @@
 # Audit Log e Baseline de Segurança
 
-**Issue:** #72  
-**Data:** 2026-10-03  
+**Issue:** #72
+**Data:** 2026-10-03
 **Status:** Proposta aprovada para especificação
 
 ## Objetivo
