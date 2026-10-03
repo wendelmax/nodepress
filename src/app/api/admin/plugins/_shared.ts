@@ -7,5 +7,8 @@ export async function requireAdmin() {
   if (role !== 'admin') {
     return { response: Response.json({ error: 'Forbidden' }, { status: 403 }) }
   }
-  return { service: await getPluginService() }
+  return {
+    service: await getPluginService(),
+    actorUserId: Number((session?.user as { id?: string | number } | undefined)?.id) || undefined,
+  }
 }

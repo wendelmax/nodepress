@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { PostService } from '@/services/post.service'
 import { TaxonomyService } from '@/services/taxonomy.service'
+import { recordAuditEvent } from '@/audit/record'
 
 export async function GET(
   request: Request,
@@ -75,6 +76,15 @@ async function handleUpdate(request: Request, idStr: string) {
       await TaxonomyService.syncPostTerms(id, termsToConnect)
     }
 
+    recordAuditEvent(request, {
+      action: 'post.updated',
+      resourceType: type || 'post',
+      resourceId: String(id),
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { status: finalStatus, type: type || 'post' },
+    })
+
     return NextResponse.json(post)
   } catch (error) {
     return NextResponse.json({ code: 'rest_invalid_param', message: 'Invalid parameter(s)', data: { status: 400 } }, { status: 400 })
@@ -99,6 +109,14 @@ export async function DELETE(
 
   try {
     const result = await PostService.delete(id, force)
+    recordAuditEvent(request, {
+      action: 'post.deleted',
+      resourceType: 'post',
+      resourceId: String(id),
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { force },
+    })
     return NextResponse.json(result)
   } catch (error: any) {
     if (error.message === 'Not found') {

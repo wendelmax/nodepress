@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { PostService } from '@/services/post.service'
+import { recordAuditEvent } from '@/audit/record'
 
 export async function GET(request: Request) {
   // Let's allow public reading for the frontend feed, 
@@ -63,6 +64,15 @@ export async function POST(request: Request) {
       thumbnailUrl: thumbnailUrl || null,
       metaData: metaData || undefined,
       authorId: parseInt((session.user as any).id)
+    })
+
+    recordAuditEvent(request, {
+      action: 'post.created',
+      resourceType: type || 'post',
+      resourceId: String(post.id),
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { status: finalStatus, type: type || 'post' },
     })
 
     return NextResponse.json(post, { status: 201 })

@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { getSiteUrl } from '@/lib/site-url'
 import { UserService } from '@/services/user.service'
 import { canManageUsers } from '@/lib/authorization.mjs'
+import { recordAuditEvent } from '@/audit/record'
 
 // GET /np-json/np/v2/users
 export async function GET(request: Request) {
@@ -80,6 +81,15 @@ export async function POST(request: Request) {
       password,
       displayName,
       role: role || 'subscriber'
+    })
+
+    recordAuditEvent(request, {
+      action: 'user.created',
+      resourceType: 'user',
+      resourceId: String(user.id),
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { role: role || 'subscriber' },
     })
     
     return NextResponse.json({ success: true, id: user.id })

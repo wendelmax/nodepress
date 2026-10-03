@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { UserService } from '@/services/user.service'
 import { canChangeUserRole, canEditUser } from '@/lib/authorization.mjs'
+import { recordAuditEvent } from '@/audit/record'
 
 export async function GET(
   request: Request,
@@ -52,6 +53,15 @@ export async function PUT(
     }
 
     const user = await UserService.update(id, { email, displayName, url, newPassword, role })
+
+    recordAuditEvent(request, {
+      action: 'user.updated',
+      resourceType: 'user',
+      resourceId: String(id),
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { changedFields: Object.keys(body).filter((key) => key !== 'newPassword') },
+    })
 
     return NextResponse.json(user)
   } catch (error) {
