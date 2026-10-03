@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from "@/auth"
 import { OptionService } from '@/services/option.service'
+import { recordAuditEvent } from '@/audit/record'
 
 export async function GET(request: Request) {
   const session = await auth()
@@ -36,6 +37,14 @@ export async function POST(request: Request) {
     const body = await request.json()
     
     await OptionService.saveOptions(body)
+
+    recordAuditEvent(request, {
+      action: 'settings.updated',
+      resourceType: 'settings',
+      actorUserId: parseInt((session.user as any).id),
+      success: true,
+      metadata: { keys: Object.keys(body) },
+    })
     
     const settingsMap = await OptionService.getOptions()
     return NextResponse.json(settingsMap)

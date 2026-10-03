@@ -363,3 +363,26 @@ model ThemeTemplateVersion {
   @@index([templateId, version])
   @@map("np_theme_template_versions")
 }
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  actorUserId   Int?     @map("actor_user_id")
+  tenantId      String?  @map("tenant_id") @db.VarChar(100)
+  action        String   @db.VarChar(120)
+  resourceType  String   @map("resource_type") @db.VarChar(80)
+  resourceId    String?  @map("resource_id") @db.VarChar(120)
+  success       Boolean  @default(true)
+  correlationId String?  @map("correlation_id") @db.VarChar(128)
+  ipSummary     String?  @map("ip_summary") @db.VarChar(80)
+  metadata      Json?
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([occurredAt, id])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([actorUserId])
+  @@index([tenantId])
+  @@index([success])
+  @@map("np_audit_logs")
+}
