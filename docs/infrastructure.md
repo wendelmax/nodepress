@@ -44,3 +44,12 @@ add provider-specific imports to domain modules.
 
 For a multi-instance deployment, configure shared cache, durable queue, and
 shared object storage before scaling beyond one application process.
+
+## Backup archive storage
+
+Application backup archives use the `BackupStorage` port. The default is a
+private local directory from `BACKUP_LOCAL_ROOT` (default `./data/backups`). A
+private S3-compatible adapter is selected when the `BACKUP_S3_*` environment
+variables are complete; custom endpoints support providers such as MinIO and
+R2. Backup archives are written without a public ACL and are not served from
+the Next.js `public/` directory.

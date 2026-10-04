@@ -1,6 +1,7 @@
 import {
   S3Client,
   DeleteObjectCommand,
+  GetObjectCommand,
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
 import type { StorageDriver } from './StorageDriver'
@@ -78,6 +79,20 @@ export class S3Driver implements StorageDriver {
     return `${this.publicUrl}/${filename}`
   }
 
+  async read(fileUrl: string): Promise<Buffer | undefined> {
+    try {
+      const result = await this.client.send(new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: this.keyFromUrl(fileUrl),
+      }))
+      const body = result.Body as { transformToByteArray?: () => Promise<Uint8Array> } | undefined
+      return body?.transformToByteArray ? Buffer.from(await body.transformToByteArray()) : undefined
+    } catch (error: any) {
+      if (error?.name === 'NoSuchKey' || error?.$metadata?.httpStatusCode === 404) return undefined
+      throw error
+    }
+  }
+
   /**
    * Delete a file from S3 using its stored public URL.
    * Extracts the storage key from the URL suffix.
@@ -85,7 +100,7 @@ export class S3Driver implements StorageDriver {
   async delete(fileUrl: string): Promise<void> {
     // Extract the S3 key from the full URL
     // e.g. "https://bucket.s3.us-east-1.amazonaws.com/photo-a1b2.jpg" → "photo-a1b2.jpg"
-    const key = fileUrl.replace(`${this.publicUrl}/`, '')
+    const key = this.keyFromUrl(fileUrl)
 
     await this.client.send(
       new DeleteObjectCommand({
@@ -93,5 +108,11 @@ export class S3Driver implements StorageDriver {
         Key: key,
       })
     )
+  }
+
+  private keyFromUrl(fileUrl: string): string {
+    return fileUrl.startsWith(`${this.publicUrl}/`)
+      ? fileUrl.slice(this.publicUrl.length + 1)
+      : fileUrl.replace(/^\/+/, '')
   }
 }
