@@ -4,6 +4,7 @@ import {
   BACKUP_FORMAT_VERSION,
   type NodePressBackupPackage,
   type BackupScope,
+  type BackupMediaEntry,
 } from '@/backup/types'
 import { canonicalize } from '@/backup/canonical-json'
 import { createManifest, validatePackageIntegrity } from '@/backup/integrity'
@@ -15,8 +16,8 @@ function createPackage(): NodePressBackupPackage {
     posts: [{ id: 1, postTitle: 'Hello' }],
     options: [{ optionName: 'blogname', optionValue: 'NodePress' }],
   }
-  const media = []
-  const extensions = { theme: 'default', plugins: [{ id: 'seo', version: '1.0.0' }] }
+  const media: BackupMediaEntry[] = []
+  const extensions = { theme: { id: 'default' }, plugins: [{ id: 'seo', version: '1.0.0' }] }
   return {
     manifest: createManifest({
       sourceVersion: '0.4.6',
@@ -49,14 +50,14 @@ describe('NodePress backup package', () => {
 
   it('rejects a package whose payload was changed after export', () => {
     const pkg = createPackage()
-    pkg.database.posts[0].postTitle = 'tampered'
+    ;(pkg.database.posts as Array<Record<string, unknown>>)[0].postTitle = 'tampered'
 
     expect(() => validatePackageIntegrity(pkg, '0.4.7')).toThrow(/checksum/i)
   })
 
   it('rejects unsupported format versions before compatibility checks', () => {
     const pkg = createPackage()
-    pkg.manifest.formatVersion = 2
+    ;(pkg.manifest as { formatVersion: number }).formatVersion = 2
 
     expect(() => validatePackageIntegrity(pkg, '0.4.7')).toThrow(/format/i)
   })

@@ -25,7 +25,7 @@ export interface BackupArtifact {
 
 export interface BackupManifest {
   format: typeof BACKUP_FORMAT
-  formatVersion: typeof BACKUP_FORMAT_VERSION
+  formatVersion: number
   createdAt: string
   source: { nodePressVersion: string }
   compatibility: { minNodePressVersion: string; maxNodePressVersion?: string }
@@ -41,7 +41,7 @@ export interface BackupExtensions {
 
 export interface NodePressBackupPackage {
   manifest: BackupManifest
-  database: Record<string, unknown>
+  database: Record<string, unknown[]>
   media: BackupMediaEntry[]
   extensions: BackupExtensions
 }
@@ -49,7 +49,7 @@ export interface NodePressBackupPackage {
 export interface BackupManifestInput {
   sourceVersion: string
   scope: BackupScope
-  database: Record<string, unknown>
+  database: Record<string, unknown[]>
   media: BackupMediaEntry[]
   extensions: BackupExtensions
   createdAt?: string
