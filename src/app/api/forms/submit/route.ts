@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
     const canonicalForm = await ensureLegacyFormDefinition(post)
     const responseHeaders = deprecationHeaders(canonicalForm.id)
+    console.info('[forms.deprecated]', { legacyFormId: formId, canonicalFormId: canonicalForm.id })
     const security = isRecord(body.security) ? body.security : isRecord(body._security) ? body._security : {}
     const values = { ...body }
     delete values.formId

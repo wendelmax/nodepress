@@ -14,6 +14,7 @@
     "test:coverage": "vitest run --coverage",
     "payload:import": "tsx src/cli/payload-import.ts",
     "forms:migrate-legacy": "tsx src/scripts/migrate-legacy-form-submissions.ts",
+    "test:e2e": "playwright test",
     "validate:ui": "node scripts/validate-ui.mjs",
     "auth:migrate-keycloak": "ts-node --compiler-options {\"module\":\"CommonJS\"} src/scripts/migrate-keycloak-users.ts"
   },
