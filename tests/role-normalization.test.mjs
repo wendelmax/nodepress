@@ -7,6 +7,7 @@ assert.equal(normalizeRole("editor"), "editor")
 assert.equal(normalizeRole("author"), "author")
 assert.equal(normalizeRole("contributor"), "contributor")
 assert.equal(normalizeRole("subscriber"), "subscriber")
+assert.equal(normalizeRole("client"), "client")
 assert.equal(normalizeRole("unknown"), "subscriber")
 assert.equal(normalizeRole(undefined), "subscriber")
 
