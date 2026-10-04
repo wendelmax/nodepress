@@ -5,6 +5,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import { getOriginFromRequest } from '@/lib/site-url'
 import { getAuthProviderAvailability } from '@/lib/auth-config.mjs'
+import { getDefaultActivePluginIds } from '@/plugins/lgpd-consent/activation'
 
 const execAsync = promisify(exec)
 
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
           { optionName: 'blogname', optionValue: siteTitle },
           { optionName: 'admin_email', optionValue: email },
           { optionName: 'site_language', optionValue: siteLang },
+          { optionName: 'active_plugins', optionValue: JSON.stringify(getDefaultActivePluginIds()) },
           { optionName: 'blogdescription', optionValue: '' },
           { optionName: 'permalink_structure', optionValue: '/%postname%/' },
         ]

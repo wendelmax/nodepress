@@ -16,6 +16,10 @@ const descriptions: Record<string, { description: string; author: string }> = {
     description: "Adiciona o tipo de conteúdo de animais, menus administrativos e a página pública de adoção.",
     author: "NodePress Contributors",
   },
+  "lgpd-consent": {
+    description: "Exibe o consentimento configurável e bloqueia scripts opcionais até a escolha do visitante.",
+    author: "NodePress Contributors",
+  },
 }
 
 export default function PluginsPage() {
