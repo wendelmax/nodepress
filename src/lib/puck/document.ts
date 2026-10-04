@@ -3,6 +3,7 @@ import type {
   BuilderParseResult,
 } from './types'
 import { hasUnsafeBuilderCode } from './security'
+import { validateBuilderLayoutDocument } from './layout/schema'
 
 export const MAX_BUILDER_DOCUMENT_BYTES = 1_000_000
 export const MAX_BUILDER_DOCUMENT_DEPTH = 32
@@ -196,13 +197,23 @@ export function validateBuilderComponents(
   const unknownTypes: string[] = []
   const seen = new Set<string>()
 
-  for (const entry of document.content) {
-    if (!isRecord(entry) || typeof entry.type !== 'string') continue
-    if (componentIds.has(entry.type) || seen.has(entry.type)) continue
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    if (!isRecord(value)) return
 
-    seen.add(entry.type)
-    unknownTypes.push(entry.type)
+    if (typeof value.type === 'string' && isRecord(value.props) && !componentIds.has(value.type) && !seen.has(value.type)) {
+      seen.add(value.type)
+      unknownTypes.push(value.type)
+    }
+
+    Object.values(value).forEach(visit)
   }
+
+  visit(document.content)
+  visit(document.root)
 
   return unknownTypes.length === 0
     ? { valid: true }
@@ -229,7 +240,10 @@ export function canPublishBuilderDocument(value: unknown): boolean {
   if (value === null || value === undefined) return true
   if (typeof value === 'string' && value.trim() === '') return true
 
-  return parseBuilderDocument(value).kind === 'puck'
+  const parsed = parseBuilderDocument(value)
+  if (parsed.kind !== 'puck') return false
+
+  return validateBuilderLayoutDocument(parsed.document).valid
 }
 
 export function serializeBuilderDocument(document: BuilderDocument): string {

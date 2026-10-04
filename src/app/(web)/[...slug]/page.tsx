@@ -1,5 +1,5 @@
 import React from "react"
-import { notFound, redirect } from "next/navigation"
+import { notFound, permanentRedirect, redirect } from "next/navigation"
 import Link from "next/link"
 import { PostService } from "@/services/post.service"
 import { TaxonomyService } from "@/services/taxonomy.service"
@@ -8,66 +8,54 @@ import { CommentService } from "@/services/comment.service"
 import { generatePermalink } from "@/lib/permalinks"
 import { ThemeService } from "@/services/theme.service"
 import type { Metadata } from "next"
+import { getLandingPageService } from '@/plugins/landing-pages/factory'
+import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
+import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
+import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
+import { SeoService } from '@/plugins/seo-optimizer/service'
 
-export const revalidate = 86400 // Revalidate daily by default
+export const dynamic = 'force-dynamic'
 // export const dynamic = 'force-static' // Not strictly needed if we don't have dynamic functions, and generateStaticParams will tell it to be static anyway.
-
-export async function generateStaticParams() {
-  // The database is a runtime-only dependency (see Dockerfile / DATABASE_URL
-  // docs) and may not be reachable during `next build` (e.g. building the
-  // Docker image with no DB container present). Degrade gracefully to an
-  // empty list in that case: dynamicParams defaults to true, so every slug
-  // still renders correctly on-demand at request time instead of being
-  // statically pre-rendered.
-  try {
-    const posts = await PostService.getAdminList('post', 'publish', 1, 1000)
-    const pages = await PostService.getAdminList('page', 'publish', 1, 1000)
-
-    const params = []
-
-    for (const post of [...posts.posts, ...pages.posts]) {
-      // If you use nested permalinks like /category/post-name, this needs to be split
-      // For simplicity, assuming slug is just [postName] or handled properly
-      params.push({ slug: [post.postName] })
-    }
-
-    return params
-  } catch (err) {
-    console.warn('[generateStaticParams] database unavailable at build time, skipping static pre-render:', err)
-    return []
-  }
-}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }): Promise<Metadata> {
   const { slug } = await params
   const postName = slug[slug.length - 1]
+  const landingPagesActive = isLandingPagesActive(await OptionService.getActivePluginIds())
+  if (landingPagesActive) {
+    const landingPage = await getLandingPageService().findPublicBySlug(postName)
+    if (landingPage) {
+      return SeoService.toNextMetadata(await SeoService.metadataForLandingPage(landingPage, `/${slug.join('/')}`))
+    }
+  }
   const post = await PostService.getBySlug(postName)
 
   if (!post) {
     return {}
   }
 
-  const seoTitle = post.meta?.find((m: any) => m.metaKey === '_seo_title')?.metaValue
-  const seoDesc = post.meta?.find((m: any) => m.metaKey === '_seo_description')?.metaValue
-  const thumbnailUrl = post.meta?.find((m: any) => m.metaKey === '_thumbnail_url')?.metaValue
-
-  return {
-    title: seoTitle || post.postTitle,
-    description: seoDesc || undefined,
-    openGraph: {
-      title: seoTitle || post.postTitle,
-      description: seoDesc || undefined,
-      images: thumbnailUrl ? [thumbnailUrl] : [],
-      type: post.postType === 'post' ? 'article' : 'website'
-    }
-  }
+  return SeoService.toNextMetadata(await SeoService.metadataForPost(post, `/${slug.join('/')}`))
 }
 
 export default async function SinglePostPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params
 
+  const access = await getPublicAccess(`/${slug.join('/')}`)
+  if (!access.allowed) return <MaintenanceScreen />
+
+  const accessedPath = '/' + slug.join('/')
+  const customRedirect = await SeoService.getRedirect(accessedPath)
+  if (customRedirect) {
+    if (customRedirect.status === 301) permanentRedirect(customRedirect.path)
+    redirect(customRedirect.path)
+  }
+
   // Extract the actual postName which is always the last segment
   const postName = slug[slug.length - 1]
+
+  if (isLandingPagesActive(await OptionService.getActivePluginIds())) {
+    const landingPage = await getLandingPageService().findPublicBySlug(postName)
+    if (landingPage) return <LandingPageRenderer record={landingPage} />
+  }
 
   // Fetch the post
   const post = await PostService.getBySlug(postName)
@@ -81,8 +69,6 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
   const structure = options['permalink_structure'] || '/%postname%/'
   
   const idealPermalink = generatePermalink(post, structure)
-  const accessedPath = '/' + slug.join('/')
-
   if (accessedPath !== idealPermalink) {
     redirect(idealPermalink) // 301 Permanent Redirect
   }

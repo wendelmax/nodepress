@@ -15,6 +15,9 @@ export default function OptionsSeoPage() {
     seo_meta_description: "",
     seo_og_image: "",
     seo_twitter_handle: "",
+    seo_sitemap_enabled: "true",
+    seo_robots_disallow: "/admin/\n/api/",
+    seo_redirects: "[]",
     analytics_ga4_id: ""
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -24,7 +27,7 @@ export default function OptionsSeoPage() {
   const [msg, setMsg] = useState<Msg>(null)
 
   useEffect(() => {
-    fetch('/api/options?keys=seo_site_title,seo_meta_description,seo_og_image,seo_twitter_handle,analytics_ga4_id')
+    fetch('/api/options?keys=seo_site_title,seo_meta_description,seo_og_image,seo_twitter_handle,seo_sitemap_enabled,seo_robots_disallow,seo_redirects,analytics_ga4_id')
       .then(res => res.json())
       .then(data => {
         setOptions({
@@ -32,6 +35,9 @@ export default function OptionsSeoPage() {
           seo_meta_description: data.seo_meta_description || "",
           seo_og_image: data.seo_og_image || "",
           seo_twitter_handle: data.seo_twitter_handle || "",
+          seo_sitemap_enabled: data.seo_sitemap_enabled === "false" ? "false" : "true",
+          seo_robots_disallow: data.seo_robots_disallow || "/admin/\n/api/",
+          seo_redirects: data.seo_redirects || "[]",
           analytics_ga4_id: data.analytics_ga4_id || ""
         })
         setIsLoading(false)
@@ -121,6 +127,26 @@ export default function OptionsSeoPage() {
             <input className={inputCls} type="text" value={options.seo_twitter_handle}
               onChange={e => set('seo_twitter_handle', e.target.value)}
               placeholder="@nodepress" />
+          </FieldRow>
+        </SettingsSection>
+
+        <SettingsSection title="Indexação e redirects" icon={<Search size={18} />}>
+          <FieldRow label="Sitemap XML" hint="Desative apenas se a indexação do site for controlada externamente.">
+            <label className="flex items-center gap-3 text-sm text-text-secondary">
+              <input type="checkbox" checked={options.seo_sitemap_enabled === "true"}
+                onChange={e => set('seo_sitemap_enabled', e.target.checked ? "true" : "false")} />
+              Publicar sitemap.xml
+            </label>
+          </FieldRow>
+
+          <FieldRow label="Caminhos bloqueados no robots.txt" hint="Um caminho por linha. Use apenas caminhos locais, como /admin/.">
+            <textarea className={textareaCls} value={options.seo_robots_disallow}
+              onChange={e => set('seo_robots_disallow', e.target.value)} />
+          </FieldRow>
+
+          <FieldRow label="Redirects JSON" hint={'Formato: [{"source":"/antigo","target":"/novo","status":301}]. Apenas destinos locais são aceitos.'}>
+            <textarea className={textareaCls} value={options.seo_redirects}
+              onChange={e => set('seo_redirects', e.target.value)} />
           </FieldRow>
         </SettingsSection>
 

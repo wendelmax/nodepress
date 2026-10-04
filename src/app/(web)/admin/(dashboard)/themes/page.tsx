@@ -3,6 +3,7 @@ import { themes } from '@/themes/registry'
 import { OptionService } from '@/services/option.service'
 import { PaintBucket, CheckCircle } from 'lucide-react'
 import { ThemeCard } from './ThemeCard'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Aparência | Temas',
@@ -36,6 +37,7 @@ export default async function ThemesPage() {
           )
         })}
       </div>
+      <Link href="/admin/themes/templates" className="inline-flex w-fit items-center rounded-xl border border-border bg-white/5 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-primary hover:text-text">Gerenciar templates do tema →</Link>
     </div>
   )
 }

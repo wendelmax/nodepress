@@ -104,6 +104,35 @@ describe('BlockRenderer', () => {
     })
   })
 
+  it('returns a safe fallback for invalid layout props before resolving content', async () => {
+    mocks.getServerPuckConfig.mockResolvedValue({ components: { Section: {} } })
+
+    const result = await BlockRenderer({
+      content: JSON.stringify({
+        root: {},
+        content: [{
+          type: 'Section',
+          props: {
+            content: [],
+            as: 'section',
+            padding: { desktop: 999 },
+            background: 'surface',
+            overlay: 'transparent',
+            border: 'none',
+            radius: { desktop: 0 },
+            visibility: { desktop: true },
+          },
+        }],
+      }),
+    })
+
+    expect(mocks.resolvePostShowcaseData).not.toHaveBeenCalled()
+    expect(mocks.Render).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      props: { 'data-builder-error': 'invalid-layout' },
+    })
+  })
+
   it('returns a safe fallback for malformed builder content', async () => {
     const result = await BlockRenderer({ content: '{"root":' })
 

@@ -11,7 +11,7 @@ import { OptionService } from "@/services/option.service"
 import { SidebarLink } from "@/components/admin/SidebarLink"
 import { SearchTrigger } from "@/components/admin/SearchTrigger"
 import { CreateNewDropdown } from "@/components/admin/CreateNewDropdown"
-import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink, ImageIcon } from "lucide-react"
+import { LayoutDashboard, FileText, MessageSquare, Tag, Palette, Plug, Menu as MenuIcon, Users, Settings, BookOpen, Link as LinkIcon, Search, Bot, Puzzle, Wrench, Bell, HelpCircle, ClipboardList, ExternalLink, ImageIcon, BookCopy } from "lucide-react"
 import { AdminI18nProvider } from "@/components/admin/AdminI18nProvider"
 import { getAdminDictionary } from "@/i18n"
 import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
@@ -96,6 +96,7 @@ export default async function AdminLayout({
       label: dict.sidebar.appearance || 'Customização',
       items: [
         { href: '/admin/themes', label: dict.sidebar.themes, icon: <Palette size={18} /> },
+        { href: '/admin/patterns', label: 'Patterns', icon: <BookCopy size={18} /> },
         { href: '/admin/plugins', label: dict.sidebar.plugins, icon: <Plug size={18} /> },
         { href: '/admin/leads', label: 'Leads', icon: <Users size={18} /> },
         { href: '/admin/menus', label: 'Menus', icon: <MenuIcon size={18} /> },

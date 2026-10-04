@@ -7,13 +7,14 @@ import "@measured/puck/puck.css";
 import { puckConfig } from "@/lib/puck/config";
 import { getClientPuckConfig } from "@/lib/puck/client-config";
 import {
-  canPublishBuilderDocument,
   createBuilderDocument,
   createEmptyBuilderDocument,
   parseBuilderDocument,
   serializeBuilderDocument,
   validateBuilderComponents,
 } from "@/lib/puck/document";
+import { validateBuilderLayoutDocument } from "@/lib/puck/layout/schema";
+import { isBuilderPublishAllowed } from "@/lib/puck/publish";
 
 const darkPuckStyles = `
   /* Isolate Puck from Tailwind Preflight */
@@ -63,7 +64,9 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
   const initialDiagnostic = parsedInitialData.kind === 'invalid'
     ? parsedInitialData.reason
     : undefined
-  const canPublish = canPublishBuilderDocument(initialData)
+  const canPublish = isBuilderPublishAllowed(initialData, new Set(Object.keys(config.components)))
+  const invalidLayout = parsedInitialData.kind === 'puck'
+    && !validateBuilderLayoutDocument(parsedInitialData.document).valid
 
   const unknownComponents = useMemo(() => {
     const validation = validateBuilderComponents(document, new Set(Object.keys(config.components)))
@@ -98,8 +101,10 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
         <div className="bg-red-100 px-4 py-2 text-sm text-red-950" role="status">
           {initialDiagnostic
             ? `Documento inválido: ${initialDiagnostic}. `
-            : 'O conteúdo inicial é incompatível; '}
-          A publicação está bloqueada para preservar a versão publicada.
+            : invalidLayout
+            ? 'O layout contém valores inválidos; a publicação está bloqueada até a correção.'
+            : 'O conteúdo inicial é incompatível; a publicação está bloqueada para preservar a versão publicada.'}
+          {!initialDiagnostic && !invalidLayout && ' A publicação está bloqueada para preservar a versão publicada.'}
         </div>
       )}
       <Puck

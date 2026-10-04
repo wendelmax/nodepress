@@ -4,6 +4,9 @@ import { OptionService } from "@/services/option.service"
 import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 import type { Metadata } from "next"
+import { getPublicAccess } from '@/lib/public-access'
+import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
+import { SeoService } from '@/plugins/seo-optimizer/service'
 
 // The home page depends on runtime-only configuration and database state.
 // Static generation can capture the setup redirect before the container loads
@@ -20,34 +23,18 @@ export async function generateMetadata(): Promise<Metadata> {
     if (!isNaN(pageId)) {
       const page = await PostService.getById(pageId)
       if (page && page.postStatus === 'publish') {
-        const seoTitle = page.meta?.find((m: any) => m.metaKey === '_seo_title')?.metaValue
-        const seoDesc = page.meta?.find((m: any) => m.metaKey === '_seo_description')?.metaValue
-        return {
-          title: seoTitle || `${page.postTitle} - ${siteName}`,
-          description: seoDesc || siteDesc,
-          openGraph: {
-            title: seoTitle || `${page.postTitle} - ${siteName}`,
-            description: seoDesc || siteDesc,
-            type: 'website'
-          }
-        }
+        return SeoService.toNextMetadata(await SeoService.metadataForPost(page, '/'))
       }
     }
   }
 
-  return {
-    title: `${siteName} - ${siteDesc}`,
-    description: siteDesc,
-    openGraph: {
-      title: `${siteName} - ${siteDesc}`,
-      description: siteDesc,
-      type: 'website'
-    }
-  }
+  return SeoService.toNextMetadata(await SeoService.metadataForSite('/', { title: siteName, excerpt: siteDesc, type: 'page' }))
 }
 
 export default async function HomePage() {
   await checkInstallation()
+  const access = await getPublicAccess('/')
+  if (!access.allowed) return <MaintenanceScreen />
 
   // Determine permalinks and homepage settings
   const options = await OptionService.getOptions(['permalink_structure', 'show_on_front', 'page_on_front'])

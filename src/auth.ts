@@ -7,6 +7,7 @@ import { getAuthProviderAvailability } from "@/lib/auth-config.mjs"
 import { normalizeRole } from "@/lib/role-normalization.mjs"
 import { verifyLocalCredentials } from "@/lib/local-auth.mjs"
 import { linkKeycloakIdentity } from "@/lib/user-identity-linking.mjs"
+import { recordAuditEvent } from '@/audit/record'
 
 type AppRole = "admin" | "editor" | "author" | "contributor" | "subscriber"
 
@@ -33,7 +34,7 @@ if (availability.local) {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        return verifyLocalCredentials(credentials, async (identifier: string) => {
+        const user = await verifyLocalCredentials(credentials, async (identifier: string) => {
           return prisma.user.findFirst({
             where: {
               OR: [{ userLogin: identifier }, { userEmail: identifier }],
@@ -41,6 +42,15 @@ if (availability.local) {
             include: { meta: true },
           })
         })
+        if (!user) {
+          recordAuditEvent(undefined, {
+            action: 'auth.login.failed',
+            resourceType: 'auth',
+            success: false,
+            metadata: { provider: 'credentials' },
+          })
+        }
+        return user
       },
     }),
   )
@@ -64,6 +74,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  events: {
+    async signIn({ user, account }) {
+      recordAuditEvent(undefined, {
+        action: 'auth.login.succeeded',
+        resourceType: 'auth',
+        actorUserId: user.id ? Number(user.id) || undefined : undefined,
+        success: true,
+        metadata: { provider: account?.provider || 'unknown' },
+      })
+    },
+    async signOut(message) {
+      const token = 'token' in message ? message.token as { id?: string } | null : null
+      recordAuditEvent(undefined, {
+        action: 'auth.logout',
+        resourceType: 'auth',
+        actorUserId: token?.id ? Number(token.id) || undefined : undefined,
+        success: true,
+      })
+    },
+  },
   callbacks: {
     async jwt({ token, account, profile, user }) {
       if (account?.provider === "credentials" && user) {

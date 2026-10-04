@@ -1,6 +1,6 @@
-import type { NodePressPlugin } from '@/plugins/types'
+import type { NodePressPlugin, PluginHealth } from '@/plugins/types'
 import type { PluginMigrationRunner } from '@/plugins/migration-runner'
-import { resolvePluginOrder } from '@/plugins/dependencies'
+import { NODEPRESS_ENGINE_VERSION, resolvePluginOrder, satisfies } from '@/plugins/dependencies'
 
 export interface PluginActivationStore {
   getActivePluginIds(): Promise<string[]>
@@ -17,6 +17,11 @@ export interface PluginStatus {
   name: string
   version: string
   active: boolean
+}
+
+export interface PluginDetailedStatus extends PluginStatus {
+  engineCompatible: boolean
+  health: PluginHealth
 }
 
 export interface PluginServiceOptions {
@@ -46,6 +51,27 @@ export class PluginService {
       version: plugin.version,
       active: activeIds.has(plugin.id),
     }))
+  }
+
+  async getStatus(pluginId: string): Promise<PluginDetailedStatus> {
+    const plugin = this.requirePlugin(pluginId)
+    const activeIds = new Set(await this.options.store.getActivePluginIds())
+    return {
+      ...this.status(plugin, activeIds.has(pluginId)),
+      engineCompatible: !plugin.engine?.nodepress || satisfies(NODEPRESS_ENGINE_VERSION, plugin.engine.nodepress),
+      health: await this.getHealth(pluginId),
+    }
+  }
+
+  async getHealth(pluginId: string): Promise<PluginHealth> {
+    const plugin = this.requirePlugin(pluginId)
+    if (!plugin.health) return { status: 'healthy', checkedAt: new Date().toISOString() }
+    try {
+      const health = await plugin.health()
+      return { ...health, checkedAt: health.checkedAt ?? new Date().toISOString() }
+    } catch {
+      return { status: 'unhealthy', message: 'Plugin health check failed', checkedAt: new Date().toISOString() }
+    }
   }
 
   async activate(pluginId: string): Promise<PluginStatus> {
