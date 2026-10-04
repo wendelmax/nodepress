@@ -1,129 +1,58 @@
 import { NextResponse } from 'next/server'
-import { auth } from "@/auth"
-import prisma from '@/lib/prisma'
+import { auth } from '@/auth'
+import { getBackupService } from '@/backup/factory'
+import { recordAuditEvent } from '@/audit/record'
 import { errorResponse } from '@/core/errors'
 
 export async function POST(request: Request) {
   const session = await auth()
-  
-  if (!session || !session.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const role = session?.user ? (session.user as { role?: string }).role : undefined
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
+    const file = formData.get('file')
+    if (!(file instanceof File)) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    let pkg: any
+    try {
+      pkg = JSON.parse(await file.text())
+    } catch {
+      return NextResponse.json({ error: 'Invalid backup JSON' }, { status: 400 })
+    }
+    if (!pkg || typeof pkg !== 'object' || !pkg.manifest || !pkg.database || !Array.isArray(pkg.media) || !pkg.extensions) {
+      return NextResponse.json({ error: 'Invalid NodePress backup package' }, { status: 400 })
     }
 
-    const fileContents = await file.text()
-    const json = JSON.parse(fileContents)
-
-    if (!json.version || !json.data) {
-      return NextResponse.json({ error: 'Invalid NodePress export file format.' }, { status: 400 })
-    }
-
-    const { posts = [], users = [], taxonomies = [], options = [] } = json.data
-    
-    // We will do a simple/dumb import: we will try to insert posts that don't exist by ID
-    // Note: In a real advanced importer, we would map old IDs to new IDs. For this MVP we just import everything and if ID exists, we skip.
-    
-    let importedPosts = 0
-    let importedOptions = 0
-
-    // 1. Import Options (bulk)
-    if (options.length > 0) {
-      const validOptions = options
-        .filter((opt: any) => typeof opt?.optionName === 'string' && opt.optionName.trim().length > 0)
-        .map((opt: any) => ({ ...opt, optionName: opt.optionName.trim() }))
-
-      const optionNames = validOptions
-        .map((opt: any) => opt.optionName)
-
-      const existingOptions = await prisma.option.findMany({
-        where: { optionName: { in: optionNames } },
-        select: { optionName: true }
-      })
-      const existingOptionSet = new Set(existingOptions.map(o => o.optionName))
-
-      const missingOptions = validOptions
-        .filter((opt: any) => !existingOptionSet.has(opt.optionName))
-        .map((opt: any) => ({
-          optionName: opt.optionName,
-          optionValue: opt.optionValue ?? '',
-          autoload: opt.autoload ?? 'yes'
-        }))
-
-      if (missingOptions.length > 0) {
-        const created = await prisma.option.createMany({
-          data: missingOptions,
-          skipDuplicates: true
-        })
-        importedOptions = created.count
-      }
-    }
-
-    // 2. Import Posts + Meta (bulk)
-    if (posts.length > 0) {
-      const postIds = posts
-        .map((p: any) => Number(p.id))
-        .filter((id: number) => Number.isSafeInteger(id) && id > 0)
-
-      const existingPosts = await prisma.post.findMany({
-        where: { id: { in: postIds } },
-        select: { id: true }
-      })
-      const existingPostSet = new Set(existingPosts.map(p => p.id))
-
-      const missingPostsRaw = posts.filter((p: any) => {
-        const postId = Number(p.id)
-        return Number.isSafeInteger(postId) && postId > 0 && !existingPostSet.has(postId)
-      })
-
-      const postData = missingPostsRaw.map((p: any) => {
-        const { meta, author, comments, ...baseData } = p
-        return {
-          ...baseData,
-          id: Number(p.id)
-        }
-      })
-
-      if (postData.length > 0) {
-        const createdPosts = await prisma.post.createMany({
-          data: postData,
-          skipDuplicates: true
-        })
-        importedPosts = createdPosts.count
-      }
-
-      const postMetaData = missingPostsRaw.flatMap((p: any) => {
-        const postId = Number(p.id)
-        const meta = Array.isArray(p.meta) ? p.meta : []
-        return meta
-          .filter((m: any) => typeof m.metaKey === 'string')
-          .map((m: any) => ({
-            postId,
-            metaKey: m.metaKey,
-            metaValue: m.metaValue ?? ''
-          }))
-      })
-
-      if (postMetaData.length > 0) {
-        await prisma.postMeta.createMany({
-          data: postMetaData,
-          skipDuplicates: true
-        })
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: `Import completed. ${importedPosts} posts and ${importedOptions} options were imported.` 
+    const confirm = formData.get('confirm') === 'true'
+    const dryRun = !confirm || formData.get('dryRun') === 'true'
+    const audit = (event: Parameters<typeof recordAuditEvent>[1]) => recordAuditEvent(request, {
+      ...event,
+      actorUserId: Number((session.user as { id?: string | number }).id) || undefined,
     })
-
-  } catch (error: unknown) {
-    return errorResponse(error, 'Import failed', { endpoint: 'legacy-import' })
+    const service = await getBackupService({
+      audit: (event) => audit({
+        action: event.action,
+        resourceType: 'backup',
+        resourceId: event.operationId,
+        success: event.success,
+        metadata: { stage: event.stage, ...event.details },
+      }),
+    })
+    const options = {
+      confirm,
+      dryRun,
+      fromUrl: stringValue(formData.get('fromUrl')),
+      toUrl: stringValue(formData.get('toUrl')),
+    }
+    const result = dryRun ? await service.dryRun(pkg, options) : await service.restore(pkg, options)
+    return NextResponse.json({ success: true, ...result })
+  } catch (error) {
+    return errorResponse(error, 'Backup import failed', { endpoint: 'backup-import' })
   }
+}
+
+function stringValue(value: FormDataEntryValue | null): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }

@@ -141,7 +141,7 @@ export class BackupService {
   }
 
   private async progress(value: BackupProgress): Promise<void> {
-    await this.dependencies.onProgress?.(value)
+    try { await this.dependencies.onProgress?.(value) } catch { /* observers must not change restore semantics */ }
   }
 
   private async audit(value: BackupAuditEvent): Promise<void> {

@@ -38,29 +38,33 @@ export default function ImportExportPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!confirm(`Atenção: Você está prestes a importar dados do arquivo ${file.name}. Isso pode sobrescrever dados existentes. Deseja continuar?`)) {
-      e.target.value = ''
-      return
-    }
-
     setIsImporting(true)
     setMsg(null)
 
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('dryRun', 'true')
 
     try {
-      const res = await fetch('/api/import', {
+      const previewResponse = await fetch('/api/import', {
         method: 'POST',
         body: formData
       })
-      const data = await res.json()
-      
-      if (res.ok && data.success) {
-        setMsg({ type: 'success', text: data.message })
-      } else {
-        throw new Error(data.error || 'Falha ao importar')
+      const preview = await previewResponse.json()
+      if (!previewResponse.ok || !preview.success) throw new Error(preview.error || 'Falha ao validar o backup')
+
+      const shouldRestore = confirm(`Validação concluída para ${file.name}. Revise o plano (${JSON.stringify(preview.counts)}). O restore não sobrescreve registros existentes. Deseja confirmar?`)
+      if (!shouldRestore) {
+        setMsg({ type: 'success', text: 'Dry-run concluído; nenhuma alteração foi feita.' })
+        return
       }
+
+      formData.set('dryRun', 'false')
+      formData.set('confirm', 'true')
+      const restoreResponse = await fetch('/api/import', { method: 'POST', body: formData })
+      const result = await restoreResponse.json()
+      if (!restoreResponse.ok || !result.success) throw new Error(result.error || 'Falha ao importar')
+      setMsg({ type: 'success', text: `Restore concluído. ${result.mediaImported ?? 0} mídia importada.` })
     } catch (err: any) {
       setMsg({ type: 'error', text: err.message || 'Erro durante a importação.' })
     } finally {

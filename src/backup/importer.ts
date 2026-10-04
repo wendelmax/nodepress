@@ -1,5 +1,7 @@
 import type { BackupSection, NodePressBackupPackage, BackupMediaEntry } from './types'
 
+const SUPPORTED_SECTIONS = new Set<BackupSection>(['users', 'posts', 'taxonomies', 'options'])
+
 export type ExistingIds = Partial<Record<BackupSection, ReadonlySet<string | number>>>
 
 export interface ImportPlanOptions {
@@ -23,6 +25,7 @@ export function planImport(pkg: NodePressBackupPackage, options: ImportPlanOptio
   const existingIds = options.existingIds ?? {}
 
   for (const [section, value] of Object.entries(pkg.database)) {
+    if (!SUPPORTED_SECTIONS.has(section as BackupSection)) throw new Error(`Unsupported backup section: ${section}`)
     if (!Array.isArray(value)) throw new Error(`Backup section ${section} must be an array`)
     const typedSection = section as BackupSection
     const rows = value.map((row) => normalizeValue(row, options.fromUrl, options.toUrl))

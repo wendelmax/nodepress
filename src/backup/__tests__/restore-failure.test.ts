@@ -101,4 +101,22 @@ describe('backup restore safety', () => {
     expect(media.deleted).toEqual(media.uploaded)
     expect(database.transactionCalls).toBe(0)
   })
+
+  it('does not delete committed media when a progress observer fails', async () => {
+    const database = new FakeDatabase()
+    const media = new FakeMediaStorage()
+    const service = new BackupService({
+      currentVersion: '0.4.7',
+      provider,
+      database,
+      mediaStorage: media,
+      onProgress: async () => { throw new Error('observer failed') },
+    })
+
+    const result = await service.restore(await createPackage(), { confirm: true })
+
+    expect(result.dryRun).toBe(false)
+    expect(database.committed).toBe(true)
+    expect(media.deleted).toHaveLength(0)
+  })
 })

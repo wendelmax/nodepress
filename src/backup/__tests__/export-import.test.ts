@@ -53,4 +53,10 @@ describe('backup export and import planning', () => {
 
     expect(() => planImport(invalid)).toThrow(/posts/i)
   })
+
+  it('rejects unknown database sections instead of ignoring them', () => {
+    const invalid = { manifest: {}, database: { unsupported: [] }, media: [], extensions: { plugins: [] } } as any
+
+    expect(() => planImport(invalid)).toThrow(/unsupported|section/i)
+  })
 })

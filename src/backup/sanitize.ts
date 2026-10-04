@@ -30,6 +30,14 @@ export function sanitizeBackupData<T extends Record<string, unknown>>(data: T): 
     })
   }
 
+  if (Array.isArray(data.posts)) {
+    result.posts = data.posts.map((post) => {
+      if (!post || typeof post !== 'object') return post
+      const { postPassword: _postPassword, ...safePost } = post as Record<string, unknown>
+      return safePost
+    })
+  }
+
   delete result.pluginStorage
 
   if (data.extensions && typeof data.extensions === 'object') {

@@ -40,6 +40,8 @@ const ALLOWED_OPTIONS = [
   's3_endpoint',
   's3_public_url',
   'optimize_webp',
+  'backup_schedule',
+  'backup_last_run_at',
 ]
 
 const OPTIONS_CACHE_TTL_MS = 30_000
