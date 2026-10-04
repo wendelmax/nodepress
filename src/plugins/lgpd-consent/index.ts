@@ -4,6 +4,8 @@ import { normalizeConsentConfig, DEFAULT_CONSENT_CONFIG } from './consent-servic
 import { createConsentMigration } from './migration'
 import { createConsentRepository } from './repository'
 import { createConsentRoutes } from './routes'
+import { createElement } from 'react'
+import { ConsentManager } from './ConsentManager'
 
 const CONFIG_KEYS = ['lgpd_policy_version', 'lgpd_policy_url', 'lgpd_retention_days']
 
@@ -22,7 +24,7 @@ export const lgpdConsentPlugin: NodePressPlugin = {
   version: '1.0.0',
   permissions: ['privacy.manage'],
   migrations: [createConsentMigration],
-  register({ menus, routes, commands }) {
+  register({ hooks, menus, routes, commands }) {
     const repository = createConsentRepository()
     const dependencies = {
       getConfig,
@@ -43,6 +45,9 @@ export const lgpdConsentPlugin: NodePressPlugin = {
     }
 
     for (const route of createConsentRoutes(dependencies)) routes.add(route)
+    hooks.addAction('public_body_end', ({ locale, analyticsId }: { locale?: string; analyticsId?: string }) => (
+      createElement(ConsentManager, { locale: locale ?? 'pt-BR', analyticsId })
+    ), 5)
     commands.add({
       id: 'lgpd-consent.cleanup',
       async handler() {
