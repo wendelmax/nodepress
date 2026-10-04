@@ -69,6 +69,10 @@ export class FormService {
     })
   }
 
+  async getDefinition(formId: string): Promise<FormDefinition> {
+    return this.getForm(formId)
+  }
+
   async listSubmissions(formId: string): Promise<FormSubmission[]> {
     await this.getForm(formId)
     return this.repository.listSubmissions(formId)

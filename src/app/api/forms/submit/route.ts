@@ -1,121 +1,97 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { getServiceToken, admissionsBaseUrl, tenantId } from '@/lib/admissions-service-token'
-import { dispatchFormSubmissionHooks } from '@/services/form-submission-hooks'
+import { getFormSubmissionOrchestrator } from '@/modules/forms'
+import { ensureLegacyFormDefinition, LegacyFormMappingError } from '@/modules/forms/legacy-form-adapter'
 
 export async function POST(request: Request) {
+  const headers = deprecationHeaders()
   try {
     const body = await request.json()
-    const { formId, ...data } = body
+    if (!isRecord(body)) return json({ error: 'Invalid JSON body' }, 400, headers)
 
-    if (!formId) {
-      return NextResponse.json({ error: 'formId is required' }, { status: 400 })
+    const rawFormId = body.formId
+    if (rawFormId === undefined || rawFormId === null || String(rawFormId).trim() === '') {
+      return json({ error: 'formId is required' }, 400, headers)
     }
+    const formId = Number(rawFormId)
+    if (!Number.isInteger(formId) || formId < 1) return json({ error: 'formId must be a positive integer' }, 400, headers)
 
-    // Verify if form exists
-    const form = await prisma.post.findUnique({
-      where: { id: parseInt(formId, 10) },
-      include: { meta: true }
+    const post = await prisma.post.findUnique({
+      where: { id: formId },
+      select: { id: true, postType: true, postName: true, postTitle: true, postContent: true },
+    })
+    if (!post || post.postType !== 'form') return json({ error: 'Form not found' }, 404, headers)
+
+    const canonicalForm = await ensureLegacyFormDefinition(post)
+    const responseHeaders = deprecationHeaders(canonicalForm.id)
+    const security = isRecord(body.security) ? body.security : isRecord(body._security) ? body._security : {}
+    const values = { ...body }
+    delete values.formId
+    delete values.security
+    delete values._security
+    delete values.idempotencyKey
+    delete values.uploads
+
+    const orchestrator = await getFormSubmissionOrchestrator()
+    const idempotencyKey = typeof body.idempotencyKey === 'string'
+      ? body.idempotencyKey
+      : request.headers.get('idempotency-key') || undefined
+    const result = await orchestrator.submit({
+      formId: canonicalForm.id,
+      values,
+      ...(isRecord(body.uploads) ? { uploads: body.uploads as never } : {}),
+      ...(idempotencyKey ? { idempotencyKey } : {}),
+      security: {
+        originKey: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+          || request.headers.get('x-real-ip')
+          || 'unknown',
+        identityKey: request.headers.get('x-user-id') || undefined,
+        honeypotValue: security.honeypotValue,
+        captchaToken: typeof security.captchaToken === 'string' ? security.captchaToken : undefined,
+        consent: isRecord(security.consent)
+          ? {
+              accepted: security.consent.accepted === true,
+              ...(typeof security.consent.policyVersion === 'string' ? { policyVersion: security.consent.policyVersion } : {}),
+            }
+          : undefined,
+      },
     })
 
-    if (!form || form.postType !== 'form') {
-      return NextResponse.json({ error: 'Form not found' }, { status: 404 })
+    if (result.outcome === 'securityFailure') {
+      const securityHeaders = new Headers(responseHeaders)
+      if (result.security.retryAfterSeconds !== undefined) securityHeaders.set('Retry-After', String(result.security.retryAfterSeconds))
+      return NextResponse.json({ code: result.security.code, message: result.security.message }, {
+        status: result.security.code === 'RATE_LIMITED' ? 429 : 400,
+        headers: securityHeaders,
+      })
     }
+    if (result.outcome === 'duplicate') return json({ success: true, duplicate: true, ...result.original }, 200, responseHeaders)
 
-    const isAdmissionForm = form.meta.some(m => m.metaKey === '_np_form_kind' && m.metaValue === 'admission')
-
-    if (isAdmissionForm) {
-      const { name, email, phone } = data as Record<string, string>
-      if (!name || !email || !phone) {
-        return NextResponse.json(
-          { error: 'Este formulário requer os campos "name", "email" e "phone".' },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Capture basic request info
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'Unknown IP'
-    const userAgent = request.headers.get('user-agent') || 'Unknown Browser'
-
-    // Create submission in the FormSubmission table
-    const payloadData = {
-      ...data,
-      _metadata: {
-        ip,
-        userAgent
-      }
-    }
-
-    const submission = await prisma.formSubmission.create({
-      data: {
-        formId: formId.toString(),
-        payload: JSON.stringify(payloadData),
-        status: 'unread'
-      }
-    })
-
-    await dispatchFormSubmissionHooks({
-      formId: formId.toString(),
-      formSlug: form.postName || undefined,
-      submissionId: submission.id,
-      data: payloadData,
-    })
-
-    if (isAdmissionForm) {
-      const processId = form.meta.find(m => m.metaKey === '_np_admission_process_id')?.metaValue || ''
-      const modality = form.meta.find(m => m.metaKey === '_np_admission_modality')?.metaValue || ''
-
-      if (!processId || !modality) {
-        return NextResponse.json(
-          { error: 'Formulário de admissão mal configurado (falta processo seletivo ou modalidade).' },
-          { status: 500 }
-        )
-      }
-
-      try {
-        const token = await getServiceToken()
-        const leadRes = await fetch(`${admissionsBaseUrl()}/api/admissions/applications/dynamic`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-            'X-Tenant-ID': tenantId(),
-          },
-          body: JSON.stringify({
-            process_id: processId,
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            modality,
-            payload: JSON.stringify(payloadData),
-            utm_source: (data.utm_source as string) || 'nodepress',
-            utm_medium: (data.utm_medium as string) || 'form',
-            utm_campaign: (data.utm_campaign as string) || form.postTitle,
-            referred_by: '00000000-0000-0000-0000-000000000000',
-          }),
-        })
-
-        if (!leadRes.ok) {
-          const text = await leadRes.text()
-          console.error('Failed to create admissions lead:', leadRes.status, text)
-          return NextResponse.json(
-            { error: 'Não foi possível registrar sua candidatura no momento. Tente novamente.' },
-            { status: 502 }
-          )
-        }
-      } catch (err: any) {
-        console.error('Failed to reach admissions service:', err)
-        return NextResponse.json(
-          { error: 'Não foi possível registrar sua candidatura no momento. Tente novamente.' },
-          { status: 502 }
-        )
-      }
-    }
-
-    return NextResponse.json({ success: true, submissionId: submission.id })
-  } catch (error: any) {
-    console.error("Form submission error:", error)
-    return NextResponse.json({ error: 'Internal Server Error', message: error.message }, { status: 500 })
+    return json({
+      success: true,
+      submissionId: result.submission.id,
+      leadId: result.leadId,
+      deliveryStatus: result.deliveryStatus,
+    }, result.outcome === 'deliveryPending' ? 202 : 200, responseHeaders)
+  } catch (error) {
+    if (error instanceof LegacyFormMappingError) return json({ error: 'Legacy form cannot be migrated', message: error.message }, 422, headers)
+    console.error('Legacy form submission error:', error instanceof Error ? error.message : error)
+    return json({ error: 'Internal Server Error' }, 500, headers)
   }
+}
+
+function deprecationHeaders(canonicalFormId?: string): HeadersInit {
+  return {
+    Deprecation: 'true',
+    Sunset: process.env.FORMS_LEGACY_SUNSET || 'Thu, 31 Dec 2026 23:59:59 GMT',
+    Link: `</api/forms/${canonicalFormId || '{canonical-id}'}/submissions>; rel="successor-version"`,
+  }
+}
+
+function json(body: unknown, status: number, headers: HeadersInit): NextResponse {
+  return NextResponse.json(body, { status, headers })
+}
+
+function isRecord(value: unknown): value is Record<string, any> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
