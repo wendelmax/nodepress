@@ -20,15 +20,17 @@ export async function GET(request: Request) {
     if (includeMediaValue !== null && includeMediaValue !== 'true' && includeMediaValue !== 'false') {
       return NextResponse.json({ error: 'Invalid includeMedia' }, { status: 400 })
     }
-    const service = await getBackupService()
-    const pkg = await service.export({ sections, includeMedia: includeMediaValue === null ? true : includeMediaValue === 'true' })
-    recordAuditEvent(request, {
-      action: 'backup.exported',
-      resourceType: 'backup',
-      actorUserId: Number((session.user as { id?: string | number }).id) || undefined,
-      success: true,
-      metadata: { checksum: pkg.manifest.packageChecksum, scope: pkg.manifest.scope },
+    const service = await getBackupService({
+      audit: (event) => recordAuditEvent(request, {
+        action: event.action,
+        resourceType: 'backup',
+        resourceId: event.operationId,
+        actorUserId: Number((session.user as { id?: string | number }).id) || undefined,
+        success: event.success,
+        metadata: { stage: event.stage, ...event.details },
+      }),
     })
+    const pkg = await service.export({ sections, includeMedia: includeMediaValue === null ? true : includeMediaValue === 'true' })
     const date = new Date().toISOString().slice(0, 10)
     return new NextResponse(JSON.stringify(pkg, null, 2), {
       status: 200,

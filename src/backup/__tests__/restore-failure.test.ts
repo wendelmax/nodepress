@@ -119,4 +119,21 @@ describe('backup restore safety', () => {
     expect(database.committed).toBe(true)
     expect(media.deleted).toHaveLength(0)
   })
+
+  it('reports export progress and audit events', async () => {
+    const progress: string[] = []
+    const audit: string[] = []
+    const service = new BackupService({
+      currentVersion: '0.4.7',
+      provider,
+      database: new FakeDatabase(),
+      onProgress: (event) => { progress.push(event.stage) },
+      audit: (event) => { audit.push(event.action) },
+    })
+
+    await service.export({ sections: ['posts'], includeMedia: false })
+
+    expect(progress).toEqual(['export', 'complete'])
+    expect(audit).toEqual(['backup.export.started', 'backup.export.completed'])
+  })
 })

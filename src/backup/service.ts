@@ -20,14 +20,14 @@ export interface BackupMediaStorage {
 
 export interface BackupProgress {
   operationId: string
-  stage: 'validation' | 'media' | 'database' | 'complete' | 'failed'
+  stage: 'export' | 'validation' | 'media' | 'database' | 'complete' | 'failed'
   completed: number
   total: number
 }
 
 export interface BackupAuditEvent {
   operationId: string
-  action: 'backup.restore.started' | 'backup.restore.completed' | 'backup.restore.failed'
+  action: 'backup.export.started' | 'backup.export.completed' | 'backup.export.failed' | 'backup.restore.started' | 'backup.restore.completed' | 'backup.restore.failed'
   stage: BackupProgress['stage']
   success: boolean
   details?: Record<string, unknown>
@@ -63,8 +63,20 @@ export class BackupService {
     this.exporter = new BackupExporter(dependencies.provider, dependencies.currentVersion)
   }
 
-  export(options?: BackupExportOptions): Promise<NodePressBackupPackage> {
-    return this.exporter.export(options)
+  async export(options?: BackupExportOptions): Promise<NodePressBackupPackage> {
+    const operationId = randomUUID()
+    await this.audit({ operationId, action: 'backup.export.started', stage: 'export', success: true })
+    await this.progress({ operationId, stage: 'export', completed: 0, total: 1 })
+    try {
+      const pkg = await this.exporter.export(options)
+      await this.audit({ operationId, action: 'backup.export.completed', stage: 'complete', success: true, details: { checksum: pkg.manifest.packageChecksum } })
+      await this.progress({ operationId, stage: 'complete', completed: 1, total: 1 })
+      return pkg
+    } catch (error) {
+      await this.audit({ operationId, action: 'backup.export.failed', stage: 'failed', success: false, details: { error: error instanceof Error ? error.message : 'export failed' } })
+      await this.progress({ operationId, stage: 'failed', completed: 0, total: 1 })
+      throw error
+    }
   }
 
   async dryRun(pkg: NodePressBackupPackage, options: RestoreOptions = {}): Promise<RestoreResult> {

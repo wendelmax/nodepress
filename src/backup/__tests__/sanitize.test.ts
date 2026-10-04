@@ -4,8 +4,8 @@ import { sanitizeBackupData } from '@/backup/sanitize'
 describe('backup sanitization', () => {
   it('removes credentials and secret options while preserving public data', () => {
     const result = sanitizeBackupData({
-      users: [{ id: 7, userLogin: 'admin', userPass: 'hash', userActivationKey: 'token', displayName: 'Admin' }],
-      posts: [{ id: 1, postTitle: 'Protected', postPassword: 'content-secret' }],
+      users: [{ id: 7, userLogin: 'admin', userPass: 'hash', userActivationKey: 'token', displayName: 'Admin', userRegistered: new Date('2026-10-04T00:00:00.000Z') }],
+      posts: [{ id: 1, postTitle: 'Protected', postPassword: 'content-secret', meta: [{ metaKey: 'api_key', metaValue: 'nested-secret' }, { metaKey: 'caption', metaValue: 'safe' }], authToken: 'nested-token' }],
       options: [
         { optionName: 'blogname', optionValue: 'NodePress' },
         { optionName: 's3_secret_key', optionValue: 'secret' },
@@ -13,8 +13,8 @@ describe('backup sanitization', () => {
       ],
     })
 
-    expect(result.users).toEqual([{ id: 7, userLogin: 'admin', displayName: 'Admin' }])
-    expect(result.posts).toEqual([{ id: 1, postTitle: 'Protected' }])
+    expect(result.users).toEqual([{ id: 7, userLogin: 'admin', displayName: 'Admin', userRegistered: '2026-10-04T00:00:00.000Z' }])
+    expect(result.posts).toEqual([{ id: 1, postTitle: 'Protected', meta: [{ metaKey: 'caption', metaValue: 'safe' }] }])
     expect(result.options).toEqual([{ optionName: 'blogname', optionValue: 'NodePress' }])
   })
 

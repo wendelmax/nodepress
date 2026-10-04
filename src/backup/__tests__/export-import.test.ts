@@ -59,4 +59,11 @@ describe('backup export and import planning', () => {
 
     expect(() => planImport(invalid)).toThrow(/unsupported|section/i)
   })
+
+  it('does not package media when posts are outside the selected scope', async () => {
+    const pkg = await new BackupExporter(provider(), '0.4.6').export({ sections: ['options'], includeMedia: true })
+
+    expect(pkg.media).toEqual([])
+    expect(pkg.manifest.scope).toEqual({ sections: ['options'], includeMedia: false })
+  })
 })

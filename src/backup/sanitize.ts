@@ -9,7 +9,8 @@ const SENSITIVE_OPTION_KEYS = new Set([
 ])
 
 function looksSensitive(key: string): boolean {
-  return /(^|_)(password|pass|secret|token|api_?key|private_?key|authorization|cookie)$/i.test(key)
+  const normalized = key.replace(/[A-Z]/g, (character) => `_${character.toLowerCase()}`)
+  return /(^|_)(password|pass|secret|token|authorization|cookie|api_key|access_key|private_key|auth_token|client_secret)$/.test(normalized)
 }
 
 export function sanitizeBackupData<T extends Record<string, unknown>>(data: T): T {
@@ -53,6 +54,12 @@ export function sanitizeBackupData<T extends Record<string, unknown>>(data: T): 
     result.extensions = { theme, plugins }
   }
 
+  for (const [key, value] of Object.entries(result)) {
+    const safeValue = sanitizeNested(value)
+    if (safeValue === undefined) delete result[key]
+    else result[key] = safeValue
+  }
+
   return result as T
 }
 
@@ -61,4 +68,20 @@ function pickVersionedIdentity(value: Record<string, unknown>): Record<string, u
   if (typeof value.id === 'string') result.id = value.id
   if (typeof value.version === 'string') result.version = value.version
   return result
+}
+
+function sanitizeNested(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizeNested).filter((item) => item !== undefined)
+  if (value instanceof Date) return value.toISOString()
+  if (!value || typeof value !== 'object') return value
+
+  const record = value as Record<string, unknown>
+  if (typeof record.metaKey === 'string' && looksSensitive(record.metaKey)) return undefined
+  const safe: Record<string, unknown> = {}
+  for (const [key, item] of Object.entries(record)) {
+    if (looksSensitive(key)) continue
+    const safeItem = sanitizeNested(item)
+    if (safeItem !== undefined) safe[key] = safeItem
+  }
+  return safe
 }

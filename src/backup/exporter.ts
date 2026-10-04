@@ -21,9 +21,10 @@ export class BackupExporter {
   ) {}
 
   async export(options: BackupExportOptions = {}): Promise<NodePressBackupPackage> {
+    const sections = [...new Set(options.sections ?? ALL_SECTIONS)]
     const scope: BackupScope = {
-      sections: [...new Set(options.sections ?? ALL_SECTIONS)],
-      includeMedia: options.includeMedia ?? true,
+      sections,
+      includeMedia: (options.includeMedia ?? true) && sections.includes('posts'),
     }
     const database = sanitizeBackupData(await this.provider.exportSections(scope.sections)) as Record<string, unknown[]>
     const media = scope.includeMedia ? (await this.provider.exportMedia()).map(toPackageMedia) : []
