@@ -49,6 +49,11 @@ const ALLOWED_OPTIONS = [
   'search_enabled',
   'search_page_size',
   'search_max_page_size',
+  'forms_consent_required',
+  'forms_consent_policy_version',
+  'forms_rate_limit_attempts',
+  'forms_rate_limit_window_ms',
+  'forms_captcha_required',
 ]
 
 const OPTIONS_CACHE_TTL_MS = 30_000
