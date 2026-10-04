@@ -42,11 +42,33 @@ export interface ThemeRenderOptions {
   themeActionSlotsVersion?: number
 }
 
+export type ThemeSingleTemplate = React.ComponentType<{
+  post: any
+  categories?: any[]
+  tags?: any[]
+  initialComments?: any[]
+  options?: ThemeRenderOptions
+}>
+
+export type ThemePageTemplate = React.ComponentType<{
+  post: any
+  options?: ThemeRenderOptions
+}>
+
+export type ThemeArchiveTemplate = React.ComponentType<{
+  posts: any[]
+  title?: string
+  options?: ThemeRenderOptions
+  postType?: string
+}>
+
 export interface NodePressTheme {
   meta: ThemeMeta
   supportsPluginMenus?: boolean
-  SinglePost: React.ComponentType<{ post: any, categories?: any[], tags?: any[], initialComments?: any[], options?: ThemeRenderOptions }>
-  SinglePage: React.ComponentType<{ post: any, options?: ThemeRenderOptions }>
-  Archive: React.ComponentType<{ posts: any[], title?: string, options?: ThemeRenderOptions }>
+  SinglePost: ThemeSingleTemplate
+  SinglePage: ThemePageTemplate
+  Archive: ThemeArchiveTemplate
+  [key: `Single_${string}`]: ThemeSingleTemplate | undefined
+  [key: `Archive_${string}`]: ThemeArchiveTemplate | undefined
   NotFound?: React.ComponentType<{ options?: ThemeRenderOptions }>
 }

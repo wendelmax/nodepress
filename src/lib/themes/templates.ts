@@ -36,6 +36,12 @@ export interface ThemeTemplateResolutionContext {
   taxonomies?: Array<{ taxonomy: string; slug: string }>
 }
 
+const TEMPLATE_IDENTIFIER_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
+export function isSafeTemplateIdentifier(value: unknown): value is string {
+  return typeof value === 'string' && TEMPLATE_IDENTIFIER_PATTERN.test(value)
+}
+
 type TemplateDocumentResult =
   | { valid: true; document: BuilderDocument }
   | { valid: false; reason: string }
@@ -52,6 +58,8 @@ function matchesConditions(
   conditions: ThemeTemplateConditions,
   context: ThemeTemplateResolutionContext,
 ): boolean {
+  if (conditions.postType && !isSafeTemplateIdentifier(conditions.postType)) return false
+  if (conditions.slug && !isSafeTemplateIdentifier(conditions.slug)) return false
   if (conditions.context && conditions.context !== context.context) return false
   if (conditions.postType && conditions.postType !== context.postType) return false
   if (conditions.slug && conditions.slug !== context.slug) return false
@@ -114,7 +122,7 @@ export function parseThemeTemplateDraft(input: unknown, componentIds: ReadonlySe
   if (Object.keys(conditions).some((key) => !allowedConditionKeys.includes(key))) return { valid: false, reason: 'template conditions contain unknown keys' }
   if (conditions.context !== undefined && !['home', 'post', 'page', 'archive', '404'].includes(String(conditions.context))) return { valid: false, reason: 'template context is invalid' }
   for (const key of ['postType', 'slug']) {
-    if (conditions[key] !== undefined && (typeof conditions[key] !== 'string' || conditions[key].length > 200)) return { valid: false, reason: `template ${key} condition is invalid` }
+    if (conditions[key] !== undefined && (typeof conditions[key] !== 'string' || !isSafeTemplateIdentifier(conditions[key]))) return { valid: false, reason: `template ${key} condition is invalid` }
   }
   if (conditions.taxonomy !== undefined) {
     if (!isRecord(conditions.taxonomy) || typeof conditions.taxonomy.taxonomy !== 'string' || typeof conditions.taxonomy.slug !== 'string') return { valid: false, reason: 'template taxonomy condition is invalid' }

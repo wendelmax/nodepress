@@ -69,6 +69,18 @@ describe('theme template contracts', () => {
 
     expect(result).toBeNull()
   })
+
+  it('ignores slug and post type conditions with unsafe identifiers', () => {
+    const result = resolveThemeTemplate([
+      template({ id: 'fallback', conditions: {} }),
+      template({ id: 'unsafe-slug', conditions: { slug: '../secret' }, priority: 100 }),
+      template({ id: 'unsafe-post-type', conditions: { postType: 'animal/../post' }, priority: 100 }),
+    ], {
+      themeSlug: 'default', area: 'single', context: 'post', postType: 'animal/../post', slug: '../secret',
+    })
+
+    expect(result?.id).toBe('fallback')
+  })
 })
 
 describe('theme slots', () => {
