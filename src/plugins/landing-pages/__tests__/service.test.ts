@@ -113,4 +113,17 @@ describe('LandingPageService', () => {
     expect((await service.findPreviewById(page.id, preview.token))?.id).toBe(page.id)
     expect(await service.findPreviewById('other-page', preview.token)).toBeUndefined()
   })
+
+  it('keeps private landing pages out of the public resolver while allowing preview', async () => {
+    const service = makeService()
+    const page = await service.create({
+      title: 'Privada',
+      status: 'private',
+      document: { content: [], root: {} },
+    })
+    const preview = service.createPreviewToken(page.id)
+
+    expect(await service.findPublicBySlug(page.slug)).toBeUndefined()
+    expect((await service.findPreviewById(page.id, preview.token))?.status).toBe('private')
+  })
 })

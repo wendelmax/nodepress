@@ -12,6 +12,7 @@ Ative `landing-pages` na tela de plugins ou pela API administrativa existente. P
 - `POST /api/admin/landing-pages` cria uma página com `title`, `slug`, `document`, `publishAt`, `timezone` e `seo`.
 - `PUT /api/admin/landing-pages/:id` atualiza o conteúdo.
 - `POST /api/admin/landing-pages/:id/publish` publica ou agenda a página.
+- `POST /api/admin/landing-pages/:id/rollback` restaura uma revisão informando `revisionId`.
 - `DELETE /api/admin/landing-pages/:id` arquiva a página.
 - `POST /api/admin/landing-pages/:id/preview` gera token temporário.
 

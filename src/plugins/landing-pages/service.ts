@@ -3,6 +3,7 @@ import type { ContentRecord, ContentRepository } from '@/modules/content'
 import {
   createPreviewToken as signPreviewToken,
   isLandingPagePublished,
+  parsePublicationInstant,
   verifyPreviewToken,
 } from './domain'
 
@@ -12,7 +13,7 @@ export interface LandingPageInput {
   title: string
   slug?: string
   document: Record<string, unknown>
-  status?: 'draft' | 'publish' | 'archived'
+  status?: 'draft' | 'publish' | 'private' | 'archived'
   publishAt?: string | null
   timezone?: string
   seo?: Record<string, unknown>
@@ -182,8 +183,8 @@ function normalizeInput(input: LandingPageInput): Required<Pick<LandingPageInput
   const slug = normalizeSlug(input.slug || title)
   if (!slug) throw new Error('Landing page slug is required')
   const timezone = input.timezone?.trim() || 'UTC'
-  if (input.publishAt !== undefined && input.publishAt !== null && Number.isNaN(new Date(input.publishAt).getTime())) {
-    throw new Error('Landing page publishAt must be a valid date')
+  if (input.publishAt !== undefined && input.publishAt !== null && !parsePublicationInstant(input.publishAt, timezone)) {
+    throw new Error('Landing page publishAt must be a valid date and timezone')
   }
   if (input.seo !== undefined && (!input.seo || typeof input.seo !== 'object' || Array.isArray(input.seo))) {
     throw new Error('Landing page SEO must be an object')

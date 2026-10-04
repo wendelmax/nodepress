@@ -3,7 +3,7 @@ import { evaluatePublicAccess, isLandingPagesActive, parseMaintenanceAllowlist }
 
 describe('public access policy', () => {
   it('keeps administrative and authentication paths available during maintenance', () => {
-    for (const pathname of ['/login', '/admin/posts', '/api/health', '/setup-config']) {
+    for (const pathname of ['/login', '/admin/posts', '/api/health', '/api/auth/session', '/setup-config']) {
       expect(evaluatePublicAccess(pathname, { maintenance: true })).toEqual({ allowed: true })
     }
   })

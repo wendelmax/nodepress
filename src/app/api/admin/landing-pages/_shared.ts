@@ -13,7 +13,7 @@ export function parseLandingPageInput(body: Record<string, unknown>): LandingPag
     title: typeof body.title === 'string' ? body.title : '',
     slug: typeof body.slug === 'string' ? body.slug : undefined,
     document: (body.document ?? {}) as Record<string, unknown>,
-    status: body.status === 'publish' || body.status === 'archived' ? body.status : 'draft',
+    status: body.status === 'publish' || body.status === 'private' || body.status === 'archived' ? body.status : 'draft',
     publishAt: body.publishAt === null || typeof body.publishAt === 'string' ? body.publishAt : undefined,
     timezone: typeof body.timezone === 'string' ? body.timezone : undefined,
     seo: body.seo && typeof body.seo === 'object' && !Array.isArray(body.seo)
