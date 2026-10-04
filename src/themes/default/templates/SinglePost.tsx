@@ -31,8 +31,10 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
   })
   const structuredData = await SeoService.jsonLdForPost(post, `/${post.postName}`)
   const contentSlot = getBuilderContentSlot(post)
+  const beforePostContent = await ThemeService.renderActionSlot('before_post_content', { post, options })
+  const afterPostContent = await ThemeService.renderActionSlot('after_post_content', { post, options })
   if (template && contentSlot) {
-    return <div className="min-h-screen bg-background text-text font-sans"><SeoStructuredData data={structuredData} /><Header context="post" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="single" context="post" postType={post.postType} slug={post.postName} taxonomies={categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug })))} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="post" /></div>
+    return <div className="min-h-screen bg-background text-text font-sans"><SeoStructuredData data={structuredData} /><Header context="post" /><main className="max-w-6xl mx-auto py-12 px-6">{beforePostContent.map((slot, index) => <React.Fragment key={`before-post-content-${index}`}>{slot}</React.Fragment>)}<ThemeTemplateRenderer area="single" context="post" postType={post.postType} slug={post.postName} taxonomies={categories.map((category: any) => ({ taxonomy: 'category', slug: category.slug })).concat(tags.map((tag: any) => ({ taxonomy: 'post_tag', slug: tag.slug })))} slots={{ content: contentSlot }} fallback={null} />{afterPostContent.map((slot, index) => <React.Fragment key={`after-post-content-${index}`}>{slot}</React.Fragment>)}</main><Footer context="post" /></div>
   }
 
   if (post.meta) {
@@ -115,7 +117,9 @@ export default async function SinglePost({ post, categories = [], tags = [], ini
             </header>
 
             <div className="text-text-secondary leading-relaxed text-lg">
+              {beforePostContent.map((slot, index) => <React.Fragment key={`before-post-content-${index}`}>{slot}</React.Fragment>)}
               <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+              {afterPostContent.map((slot, index) => <React.Fragment key={`after-post-content-${index}`}>{slot}</React.Fragment>)}
             </div>
 
             {customFieldsToDisplay.length > 0 && (

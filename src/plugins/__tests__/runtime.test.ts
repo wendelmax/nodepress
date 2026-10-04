@@ -4,6 +4,7 @@ import { eventRegistry } from '@/core/events/registry'
 import { jobRegistry } from '../runtime-registries'
 import { NodePressPluginRuntime } from '../runtime'
 import type { NodePressPlugin } from '../types'
+import { ThemeService } from '@/services/theme.service'
 
 describe('plugin extension registrars', () => {
   beforeEach(() => {
@@ -56,5 +57,25 @@ describe('plugin extension registrars', () => {
     await expect(runtime.activate(plugin)).rejects.toThrow('registration failed')
 
     expect(contentTypeRegistry.get('broken-content')).toBeUndefined()
+  })
+
+  it('allows plugins to register standard theme action slots and cleans them up', async () => {
+    const plugin: NodePressPlugin = {
+      id: 'theme-actions',
+      name: 'Theme actions',
+      version: '1.0.0',
+      register({ hooks }) {
+        hooks.addAction('theme_head', (context: { locale: string }) => `head:${context.locale}`, 10)
+      },
+    }
+    const runtime = new NodePressPluginRuntime()
+
+    await runtime.activate(plugin)
+    await expect(ThemeService.renderActionSlot('theme_head', { locale: 'pt-BR' }))
+      .resolves.toEqual(['head:pt-BR'])
+
+    runtime.deactivate(plugin.id)
+    await expect(ThemeService.renderActionSlot('theme_head', { locale: 'pt-BR' }))
+      .resolves.toEqual([])
   })
 })
