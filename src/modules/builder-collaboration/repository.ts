@@ -71,7 +71,7 @@ export interface BuilderRepository {
   listComments(targetId: string): Promise<BuilderCommentRecord[]>
   updateComment(id: string, input: Pick<BuilderCommentRecord, 'status' | 'resolvedById' | 'resolvedAt'>): Promise<BuilderCommentRecord | null>
   createAuditEvent(input: Omit<BuilderAuditEventRecord, 'id' | 'createdAt'>): Promise<BuilderAuditEventRecord>
-  transaction<T>(work: (repository: BuilderRepository) => Promise<T>): Promise<T>
+  transaction<T>(work: (repository: BuilderRepository, source?: BuilderSourceAdapter) => Promise<T>): Promise<T>
 }
 
 export interface BuilderSourceAdapter {
@@ -165,7 +165,7 @@ export class InMemoryBuilderRepository implements BuilderRepository {
     return clone(record)
   }
 
-  async transaction<T>(work: (repository: BuilderRepository) => Promise<T>): Promise<T> {
+  async transaction<T>(work: (repository: BuilderRepository, source?: BuilderSourceAdapter) => Promise<T>): Promise<T> {
     return work(this)
   }
 }
@@ -185,7 +185,7 @@ export class InMemoryBuilderSourceAdapter implements BuilderSourceAdapter {
   }
 }
 
-type PrismaLikeClient = {
+export type PrismaLikeClient = {
   builderTarget: any
   builderRevision: any
   builderComment: any
@@ -361,8 +361,14 @@ export class PrismaBuilderRepository implements BuilderRepository {
     }
   }
 
-  async transaction<T>(work: (repository: BuilderRepository) => Promise<T>): Promise<T> {
-    return this.client.$transaction((client) => work(new PrismaBuilderRepository(client)))
+  async transaction<T>(work: (repository: BuilderRepository, source?: BuilderSourceAdapter) => Promise<T>): Promise<T> {
+    return this.client.$transaction((client) => {
+      const transactionClient = client as PrismaLikeClient
+      return work(
+        new PrismaBuilderRepository(transactionClient),
+        new PrismaBuilderSourceAdapter(transactionClient),
+      )
+    })
   }
 }
 

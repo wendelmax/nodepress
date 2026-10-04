@@ -152,7 +152,7 @@ export class BuilderService {
     const policyResult = assertBuilderChange(current.document, document, actor, input.mode ?? 'editor', target)
     if (!policyResult.ok) throw new BuilderForbiddenError(policyResult.code, policyResult.reason)
 
-    return this.options.repository.transaction(async (repository) => {
+    return this.options.repository.transaction(async (repository, source = this.options.source) => {
       const latest = await repository.getTarget(target)
       if (!latest || latest.version !== input.expectedVersion) throw new BuilderConflictError()
       const version = latest.version + 1
@@ -169,7 +169,7 @@ export class BuilderService {
         createdById: actor.id,
         note: input.note,
       })
-      await this.options.source.write(target, serializeBuilderDocument(document))
+      await source.write(target, serializeBuilderDocument(document))
       await repository.createAuditEvent({
         targetId: latest.id,
         action: 'builder.save',
@@ -217,7 +217,7 @@ export class BuilderService {
     const policyResult = assertBuilderChange(current.document, selected.document, actor, 'editor', target)
     if (!policyResult.ok) throw new BuilderForbiddenError(policyResult.code, policyResult.reason)
 
-    return this.options.repository.transaction(async (repository) => {
+    return this.options.repository.transaction(async (repository, source = this.options.source) => {
       const latest = await repository.getTarget(target)
       if (!latest || latest.version !== expectedVersion) throw new BuilderConflictError()
       const version = latest.version + 1
@@ -235,7 +235,7 @@ export class BuilderService {
         restoredFromRevisionId: selected.id,
         note: `Restored revision ${selected.version}`,
       })
-      await this.options.source.write(target, serializeBuilderDocument(selected.document as BuilderDocument))
+      await source.write(target, serializeBuilderDocument(selected.document as BuilderDocument))
       await repository.createAuditEvent({
         targetId: latest.id,
         action: 'builder.restore',
