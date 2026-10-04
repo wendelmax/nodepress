@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { SubmissionSecurityService } from './submission-security.service'
+import { InMemorySubmissionRateLimiter } from './in-memory-rate-limiter'
 import type {
   CaptchaVerifier,
   RateLimitDecision,
@@ -110,5 +111,23 @@ describe('SubmissionSecurityService', () => {
     expect(JSON.stringify(result)).not.toContain('captcha-token')
     expect(JSON.stringify(result)).not.toContain('origin-key')
     expect(JSON.stringify(result)).not.toContain('identity-key')
+  })
+
+  it('returns safe rate-limit feedback from the configured limiter', async () => {
+    const service = new SubmissionSecurityService({
+      rateLimiter: new InMemorySubmissionRateLimiter({ now: () => 0 }),
+    })
+    const oneAttemptPolicy = {
+      ...policy,
+      rateLimit: { maxAttempts: 1, windowMs: 60_000 },
+    }
+
+    await expect(service.protect(validInput, oneAttemptPolicy)).resolves.toMatchObject({ allowed: true })
+    await expect(service.protect({ ...validInput, identityKey: 'another-identity' }, oneAttemptPolicy)).resolves.toEqual({
+      allowed: false,
+      code: 'RATE_LIMITED',
+      message: 'Too many submissions. Please try again later.',
+      retryAfterSeconds: 60,
+    })
   })
 })
