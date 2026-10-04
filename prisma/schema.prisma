@@ -294,3 +294,28 @@ model PayloadImportRecord {
   @@index([targetType, targetId])
   @@map("np_import_records")
 }
+
+model SearchDocument {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  sourceKey   String    @unique @map("source_key") @db.VarChar(255)
+  kind        String    @db.VarChar(30)
+  type        String    @db.VarChar(100)
+  sourceId    String    @map("source_id") @db.VarChar(100)
+  tenantId    String?   @map("tenant_id") @db.VarChar(100)
+  title       String    @db.Text
+  slug        String    @db.VarChar(255)
+  body        String    @db.Text
+  excerpt     String    @db.Text
+  url         String    @db.VarChar(500)
+  status      String    @db.VarChar(20)
+  authorId    Int?      @map("author_id")
+  categories  Json
+  tags        Json
+  publishedAt DateTime? @map("published_at")
+  indexedAt   DateTime  @default(now()) @updatedAt @map("indexed_at")
+
+  @@index([tenantId])
+  @@index([kind, type, status])
+  @@index([sourceId])
+  @@map("np_search_documents")
+}

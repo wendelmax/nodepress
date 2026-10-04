@@ -35,6 +35,10 @@ const ALLOWED_OPTIONS = [
   's3_endpoint',
   's3_public_url',
   'optimize_webp',
+  'search_adapter',
+  'search_enabled',
+  'search_page_size',
+  'search_max_page_size',
 ]
 
 const OPTIONS_CACHE_TTL_MS = 30_000
