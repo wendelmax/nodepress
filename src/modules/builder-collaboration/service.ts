@@ -41,7 +41,7 @@ export interface BuilderTargetView {
   capabilities: readonly BuilderPermission[]
 }
 
-export interface BuilderRevisionView extends BuilderRevisionRecord {}
+export type BuilderRevisionView = BuilderRevisionRecord
 
 export interface BuilderSaveInput {
   document: unknown
