@@ -7,6 +7,8 @@ import { getBackupArchiveStorage } from '@/backup/factory'
 import { runScheduledBackupIfDue } from '@/backup/scheduler'
 import { recordAuditEvent } from '@/audit/record'
 import { createLeadDeliveryWorker } from '@/modules/delivery'
+import prisma from '@/lib/prisma'
+import { pruneLeadsByRetention, type LeadRetentionStore } from '@/modules/leads'
 
 export async function GET(request: Request) {
   try {
@@ -38,6 +40,16 @@ export async function GET(request: Request) {
     const deliverySummary = await createLeadDeliveryWorker().process({
       limit: boundedInteger(process.env.FORMS_DELIVERY_BATCH_SIZE, 50),
     })
+    const retentionOptions = await OptionService.getOptions(['lgpd_retention_days'])
+    let prunedLeadCount = 0
+    try {
+      prunedLeadCount = await pruneLeadsByRetention(prisma.leadRecord as unknown as LeadRetentionStore, {
+        retentionDays: Number(retentionOptions.lgpd_retention_days),
+        batchSize: 100,
+      })
+    } catch (error) {
+      console.error('Lead retention cleanup failed:', error instanceof Error ? error.message : error)
+    }
 
     // 4. Revalidate cache if something changed
     if (publishedCount > 0) {
@@ -73,6 +85,7 @@ export async function GET(request: Request) {
       message: `Cron executed successfully. Published ${publishedCount} scheduled posts.`,
       scheduledBackup,
       deliverySummary,
+      prunedLeadCount,
       timestamp: new Date().toISOString()
     })
 
