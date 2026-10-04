@@ -1,7 +1,7 @@
 import type { NodePressContext } from '@/core/context'
 import type { ContentFieldDefinition, ContentTypeRegistry } from './content-type-registry'
 
-export type ContentStatus = 'draft' | 'publish' | 'archived'
+export type ContentStatus = 'draft' | 'publish' | 'private' | 'archived'
 
 export interface ContentRecord {
   id: string

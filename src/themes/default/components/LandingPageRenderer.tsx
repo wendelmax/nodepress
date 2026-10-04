@@ -6,7 +6,7 @@ export default async function LandingPageRenderer({ record }: { record: ContentR
 
   return (
     <main data-landing-page={record.slug} className="min-h-screen bg-surface text-text">
-      <BlockRenderer content={JSON.stringify(document)} context="page" />
+      <BlockRenderer content={JSON.stringify(document)} context="landing" />
     </main>
   )
 }

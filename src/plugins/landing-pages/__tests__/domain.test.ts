@@ -26,6 +26,19 @@ describe('landing page publication rules', () => {
       timezone: 'Invalid/Timezone',
     }, now)).toBe(false)
   })
+  it('interprets a timezone-less schedule in the configured timezone', () => {
+    expect(isLandingPagePublished({
+      status: 'publish',
+      publishAt: '2026-09-27T09:00:00',
+      timezone: 'Asia/Tokyo',
+    }, new Date('2026-09-26T23:59:59.000Z'))).toBe(false)
+
+    expect(isLandingPagePublished({
+      status: 'publish',
+      publishAt: '2026-09-27T09:00:00',
+      timezone: 'Asia/Tokyo',
+    }, new Date('2026-09-27T00:00:00.000Z'))).toBe(true)
+  })
 })
 
 describe('landing page preview tokens', () => {
