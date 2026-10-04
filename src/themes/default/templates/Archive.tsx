@@ -7,12 +7,12 @@ import Image from 'next/image'
 import ThemeTemplateRenderer from '../components/ThemeTemplateRenderer'
 import { ThemeService } from '@/services/theme.service'
 
-export default async function Archive({ posts, title, options }: { posts: any[], title?: string, options?: any }) {
+export default async function Archive({ posts, title, options, postType = 'post' }: { posts: any[], title?: string, options?: any, postType?: string }) {
   const isHomePage = !title
   const hasPosts = posts && posts.length > 0
-  const template = await ThemeService.resolveTemplate({ area: 'archive', context: isHomePage ? 'home' : 'archive' })
+  const template = await ThemeService.resolveTemplate({ area: 'archive', context: isHomePage ? 'home' : 'archive', postType })
   if (template) {
-    return <div className="min-h-screen bg-background text-text font-sans"><Header context={isHomePage ? 'home' : 'archive'} /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="archive" context={isHomePage ? 'home' : 'archive'} slots={{ posts }} fallback={null} /></main><Footer context={isHomePage ? 'home' : 'archive'} /></div>
+    return <div className="min-h-screen bg-background text-text font-sans"><Header context={isHomePage ? 'home' : 'archive'} /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="archive" context={isHomePage ? 'home' : 'archive'} postType={postType} slots={{ posts }} fallback={null} /></main><Footer context={isHomePage ? 'home' : 'archive'} /></div>
   }
   
   // Se for a home page e tiver posts, o primeiro post ganha destaque (Hero)

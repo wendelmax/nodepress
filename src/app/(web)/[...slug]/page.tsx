@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import React from "react"
 import { notFound, permanentRedirect, redirect } from "next/navigation"
 import Link from "next/link"
@@ -13,6 +14,7 @@ import { getPublicAccess, isLandingPagesActive } from '@/lib/public-access'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 import LandingPageRenderer from '@/themes/default/components/LandingPageRenderer'
 import { SeoService } from '@/plugins/seo-optimizer/service'
+import { resolveArchiveTemplate, resolveSingleTemplate } from '@/themes/template-loader'
 
 export const dynamic = 'force-dynamic'
 // export const dynamic = 'force-static' // Not strictly needed if we don't have dynamic functions, and generateStaticParams will tell it to be static anyway.
@@ -85,7 +87,7 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
       permalink: generatePermalink(p, structure)
     }))
 
-    return <Theme.Archive posts={posts} title={post.postTitle} options={themeOptions} />
+    return createElement(resolveArchiveTemplate(Theme, 'post'), { posts, postType: 'post', title: post.postTitle, options: themeOptions })
   }
 
   const isPage = post.postType === 'page'
@@ -105,13 +107,11 @@ export default async function SinglePostPage({ params }: { params: Promise<{ slu
     return <Theme.SinglePage post={post} options={themeOptions} />
   }
 
-  return (
-    <Theme.SinglePost 
-      post={post} 
-      categories={categories} 
-      tags={tags} 
-      initialComments={initialComments} 
-      options={themeOptions}
-    />
-  )
+  return createElement(resolveSingleTemplate(Theme, post.postType), {
+    post,
+    categories,
+    tags,
+    initialComments,
+    options: themeOptions,
+  })
 }

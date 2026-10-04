@@ -2,9 +2,30 @@ import { OptionService } from './option.service'
 import { themes } from '@/themes/registry'
 import { ensureActivePluginsLoaded } from '@/services/plugin-factory'
 import { MenuService } from '@/services/menu.service'
-import type { NodePressTheme, ThemeRenderOptions } from '@/themes/types'
+import { HookService } from './hook.service'
+import { isValidElement, type ReactNode } from 'react'
+import {
+  isThemeActionSlot,
+  THEME_ACTION_SLOTS,
+  THEME_ACTION_SLOTS_VERSION,
+  type NodePressTheme,
+  type ThemeActionSlot,
+  type ThemeRenderOptions,
+} from '@/themes/types'
 import { themeTemplateService } from './theme-template.service'
 import type { ThemeTemplateDefinition, ThemeTemplateResolutionContext } from '@/lib/themes/templates'
+
+export type ThemeActionSlotContext = Record<string, unknown>
+
+function isSafeThemeActionResult(value: unknown): value is ReactNode {
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+    return true
+  }
+  if (Array.isArray(value)) return value.every(isSafeThemeActionResult)
+
+  return isValidElement(value)
+}
 
 export class ThemeService {
   static async getActiveThemeSlug(): Promise<string> {
@@ -35,7 +56,27 @@ export class ThemeService {
       menus,
       themeTokens: theme.meta.tokens ?? {},
       themeSlots: theme.meta.slots ?? [],
+      themeActionSlots: theme.meta.actionSlots ?? THEME_ACTION_SLOTS,
+      themeActionSlotsVersion: theme.meta.actionSlotsVersion ?? THEME_ACTION_SLOTS_VERSION,
     }
+  }
+
+  static async renderActionSlot(
+    slot: ThemeActionSlot,
+    context: ThemeActionSlotContext = {},
+  ): Promise<ReactNode[]> {
+    if (!isThemeActionSlot(slot)) return []
+
+    await ensureActivePluginsLoaded()
+    const results = await HookService.doAction(slot, context)
+    return results.filter(isSafeThemeActionResult)
+  }
+
+  static async renderSlot(
+    slot: ThemeActionSlot,
+    context: ThemeActionSlotContext = {},
+  ): Promise<ReactNode[]> {
+    return this.renderActionSlot(slot, context)
   }
 
   static async resolveTemplate(context: Omit<ThemeTemplateResolutionContext, 'themeSlug'>): Promise<ThemeTemplateDefinition | null> {

@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import { checkInstallation } from "@/lib/install"
 import { PostService } from "@/services/post.service"
 import { OptionService } from "@/services/option.service"
@@ -7,6 +8,7 @@ import type { Metadata } from "next"
 import { getPublicAccess } from '@/lib/public-access'
 import { MaintenanceScreen } from '@/components/public/MaintenanceScreen'
 import { SeoService } from '@/plugins/seo-optimizer/service'
+import { resolveArchiveTemplate } from '@/themes/template-loader'
 
 // The home page depends on runtime-only configuration and database state.
 // Static generation can capture the setup redirect before the container loads
@@ -65,6 +67,6 @@ export default async function HomePage() {
     permalink: generatePermalink(post, structure)
   }))
 
-  return <Theme.Archive posts={posts} options={themeOptions} />
+  return createElement(resolveArchiveTemplate(Theme, 'post'), { posts, postType: 'post', options: themeOptions })
 }
 

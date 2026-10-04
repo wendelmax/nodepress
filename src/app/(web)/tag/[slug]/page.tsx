@@ -1,3 +1,4 @@
+import { createElement } from 'react'
 import { notFound } from "next/navigation"
 import { checkInstallation } from "@/lib/install"
 import { TaxonomyService } from "@/services/taxonomy.service"
@@ -7,6 +8,7 @@ import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
 import { getPublicAccess } from "@/lib/public-access"
 import { MaintenanceScreen } from "@/components/public/MaintenanceScreen"
+import { resolveArchiveTemplate } from '@/themes/template-loader'
 
 export default async function TagPage({ params }: { params: Promise<{ slug: string }> }) {
   await checkInstallation()
@@ -35,5 +37,5 @@ export default async function TagPage({ params }: { params: Promise<{ slug: stri
   const Theme = await ThemeService.getActiveTheme()
   const themeOptions = await ThemeService.getRenderOptions(options)
 
-  return <Theme.Archive posts={posts} title={`Tag: ${term.name}`} options={themeOptions} />
+  return createElement(resolveArchiveTemplate(Theme, 'post'), { posts, postType: 'post', title: `Tag: ${term.name}`, options: themeOptions })
 }

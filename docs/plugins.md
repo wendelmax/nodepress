@@ -35,6 +35,34 @@ export const reportsPlugin: NodePressPlugin = {
 
 `register` recebe o ID do plugin, registradores reversíveis de hooks e registradores de menus. O runtime remove hooks e menus ao desativar o plugin. Se um hook precisar ser removido antes, guarde a função retornada por `addAction` ou `addFilter` e chame-a.
 
+### Slots públicos do tema
+
+Plugins podem participar do tema ativo usando os slots de ação versionados,
+sem alterar os templates do tema:
+
+```tsx
+register({ hooks }) {
+  hooks.addAction('theme_head', ({ locale }) => (
+    <meta name="x-plugin-locale" content={locale} />
+  ), 20)
+
+  hooks.addAction('after_post_content', ({ post }) => (
+    <aside>Mais de {post.postTitle}</aside>
+  ))
+}
+```
+
+Os slots públicos são `theme_head`, `theme_footer`, `before_post_content` e
+`after_post_content`. Os handlers são executados no servidor em ordem crescente
+de prioridade (o padrão é `10`); retornos `undefined` e valores que não são nós
+React são ignorados. Um slot sem handlers não produz conteúdo. O runtime remove
+os handlers quando o plugin é desativado.
+
+`theme_head` e `theme_footer` são renderizados pelo layout público. Os slots de
+conteúdo aparecem antes e depois do conteúdo de posts e páginas, inclusive no
+fallback de conteúdo legado; o contrato não expõe Prisma ou registries ao
+plugin.
+
 ## Menus e capabilities
 
 Use `menus.addAdmin` para a navegação do painel e `menus.addPublic` para a navegação pública do tema. Cada item tem `id`, `label`, `href` opcional, `position`, `icon`, `capability` e `parentId` opcional. Filhos podem ser declarados em `children` ou registrados separadamente com `parentId`.

@@ -19,8 +19,10 @@ export default async function SinglePage({ post, options = {} }: { post: any, op
 
   const template = await ThemeService.resolveTemplate({ area: 'page', context: 'page', postType: post.postType, slug: post.postName })
   const contentSlot = getBuilderContentSlot(post)
+  const beforePostContent = await ThemeService.renderActionSlot('before_post_content', { post, options })
+  const afterPostContent = await ThemeService.renderActionSlot('after_post_content', { post, options })
   if (template && contentSlot) {
-    return <div className="min-h-screen bg-background text-text font-sans"><Header context="page" /><main className="max-w-6xl mx-auto py-12 px-6"><ThemeTemplateRenderer area="page" context="page" postType={post.postType} slug={post.postName} slots={{ content: contentSlot }} fallback={null} /></main><Footer context="page" /></div>
+    return <div className="min-h-screen bg-background text-text font-sans"><Header context="page" /><main className="max-w-6xl mx-auto py-12 px-6">{beforePostContent.map((slot, index) => <React.Fragment key={`before-post-content-${index}`}>{slot}</React.Fragment>)}<ThemeTemplateRenderer area="page" context="page" postType={post.postType} slug={post.postName} slots={{ content: contentSlot }} fallback={null} />{afterPostContent.map((slot, index) => <React.Fragment key={`after-post-content-${index}`}>{slot}</React.Fragment>)}</main><Footer context="page" /></div>
   }
 
   if (post.meta) {
@@ -63,7 +65,9 @@ export default async function SinglePage({ post, options = {} }: { post: any, op
             </header>
 
             <div className="text-text-secondary leading-relaxed">
+              {beforePostContent.map((slot, index) => <React.Fragment key={`before-post-content-${index}`}>{slot}</React.Fragment>)}
               <BlockRenderer content={await HookService.applyFilters('the_content', post.postContent, post)} />
+              {afterPostContent.map((slot, index) => <React.Fragment key={`after-post-content-${index}`}>{slot}</React.Fragment>)}
             </div>
 
             {customFieldsToDisplay.length > 0 && (

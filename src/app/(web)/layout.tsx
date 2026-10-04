@@ -3,6 +3,7 @@ import { Fragment, type ReactNode } from "react"
 import { OptionService } from "@/services/option.service"
 import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
 import { HookService } from "@/services/hook.service"
+import { ThemeService } from "@/services/theme.service"
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,6 +29,14 @@ export default async function RootLayout({
 }>) {
   const options = await OptionService.getOptions(['analytics_ga4_id', 'site_language'])
   const analyticsId = options['analytics_ga4_id']
+  const themeHeadSlots = await ThemeService.renderActionSlot('theme_head', {
+    locale: options['site_language'] || 'pt-BR',
+    analyticsId,
+  })
+  const themeFooterSlots = await ThemeService.renderActionSlot('theme_footer', {
+    locale: options['site_language'] || 'pt-BR',
+    analyticsId,
+  })
   let consentSlots: ReactNode[] = []
   if (process.env.DATABASE_URL) {
     try {
@@ -43,8 +52,12 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        {themeHeadSlots.map((slot, index) => <Fragment key={`theme-head-slot-${index}`}>{slot}</Fragment>)}
+      </head>
       <body>
         {children}
+        {themeFooterSlots.map((slot, index) => <Fragment key={`theme-footer-slot-${index}`}>{slot}</Fragment>)}
         {consentSlots.map((slot, index) => <Fragment key={`public-slot-${index}`}>{slot}</Fragment>)}
       </body>
     </html>

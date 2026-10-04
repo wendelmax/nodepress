@@ -1,4 +1,4 @@
-import { NodePressTheme } from '../types'
+import { NodePressTheme, THEME_ACTION_SLOTS, THEME_ACTION_SLOTS_VERSION } from '../types'
 import SinglePost from './templates/SinglePost'
 import SinglePage from './templates/SinglePage'
 import Archive from './templates/Archive'
@@ -11,6 +11,8 @@ const DefaultTheme: NodePressTheme = {
     version: "1.0.0",
     slug: "default",
     slots: ['header', 'footer', 'content', 'sidebar'],
+    actionSlots: THEME_ACTION_SLOTS,
+    actionSlotsVersion: THEME_ACTION_SLOTS_VERSION,
     tokens: {
       '--nodepress-color-primary': '#3b82f6',
       '--nodepress-color-surface': '#111827',
