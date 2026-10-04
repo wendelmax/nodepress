@@ -64,6 +64,7 @@ export default function FooterEditorPage() {
           <PuckBuilder 
             initialData={footerData} 
             onPublish={handlePublish} 
+            collaborationTarget={{ type: 'option', key: 'site_footer_content' }}
           />
         )}
       </Card>

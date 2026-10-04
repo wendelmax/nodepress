@@ -1,4 +1,4 @@
-const SUPPORTED_ROLES = new Set(["admin", "editor", "author", "contributor", "subscriber"])
+const SUPPORTED_ROLES = new Set(["admin", "editor", "author", "contributor", "client", "subscriber"])
 
 export function normalizeRole(value) {
   const role = String(value || "").trim().toLowerCase()

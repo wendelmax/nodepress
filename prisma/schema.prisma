@@ -295,6 +295,84 @@ model PayloadImportRecord {
   @@map("np_import_records")
 }
 
+model BuilderTarget {
+  id          String   @id @default(cuid()) @db.VarChar(30)
+  targetType  String   @map("target_type") @db.VarChar(20)
+  targetKey   String   @map("target_key") @db.VarChar(191)
+  document    Json
+  version     Int      @default(0)
+  updatedById Int?     @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  revisions   BuilderRevision[]
+  comments    BuilderComment[]
+  auditEvents BuilderAuditEvent[]
+
+  @@unique([targetType, targetKey])
+  @@index([targetType, targetKey])
+  @@map("np_builder_targets")
+}
+
+model BuilderRevision {
+  id                   String         @id @default(cuid()) @db.VarChar(30)
+  targetId             String         @map("target_id") @db.VarChar(30)
+  version              Int
+  document             Json
+  createdById          Int            @map("created_by_id")
+  note                 String?        @db.Text
+  restoredFromRevisionId String?      @map("restored_from_revision_id") @db.VarChar(30)
+  createdAt            DateTime       @default(now()) @map("created_at")
+
+  target               BuilderTarget  @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  comments             BuilderComment[]
+
+  @@unique([targetId, version])
+  @@index([targetId, createdAt])
+  @@map("np_builder_revisions")
+}
+
+model BuilderComment {
+  id          String          @id @default(cuid()) @db.VarChar(30)
+  targetId    String          @map("target_id") @db.VarChar(30)
+  revisionId  String?         @map("revision_id") @db.VarChar(30)
+  anchor      String?         @db.VarChar(255)
+  body        String          @db.Text
+  status      String          @default("open") @db.VarChar(20)
+  createdById Int             @map("created_by_id")
+  resolvedById Int?          @map("resolved_by_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  resolvedAt  DateTime?       @map("resolved_at")
+
+  target      BuilderTarget   @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  revision    BuilderRevision? @relation(fields: [revisionId], references: [id], onDelete: SetNull)
+
+  @@index([targetId, status, createdAt])
+  @@index([revisionId])
+  @@map("np_builder_comments")
+}
+
+model BuilderAuditEvent {
+  id           String         @id @default(cuid()) @db.VarChar(30)
+  targetId     String?        @map("target_id") @db.VarChar(30)
+  action       String         @db.VarChar(80)
+  actorId      Int?           @map("actor_id")
+  fromVersion  Int?           @map("from_version")
+  toVersion    Int?           @map("to_version")
+  revisionId   String?        @map("revision_id") @db.VarChar(30)
+  commentId    String?        @map("comment_id") @db.VarChar(30)
+  requestId    String         @map("request_id") @db.VarChar(100)
+  metadata     Json
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  target       BuilderTarget? @relation(fields: [targetId], references: [id], onDelete: SetNull)
+
+  @@index([targetId, createdAt])
+  @@index([action, createdAt])
+  @@map("np_builder_audit_events")
+}
+
 model BuilderPattern {
   id            String                  @id @default(cuid()) @db.VarChar(30)
   slug          String                  @unique @db.VarChar(120)
