@@ -42,6 +42,10 @@ const ALLOWED_OPTIONS = [
   'optimize_webp',
   'backup_schedule',
   'backup_last_run_at',
+  'search_adapter',
+  'search_enabled',
+  'search_page_size',
+  'search_max_page_size',
 ]
 
 const OPTIONS_CACHE_TTL_MS = 30_000
