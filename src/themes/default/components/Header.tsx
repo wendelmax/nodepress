@@ -3,8 +3,9 @@ import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
 import { OptionService } from "@/services/option.service"
 import type { MenuNode } from "@/services/menu.types"
 import HeaderClient from "./HeaderClient"
+import ThemeTemplateRenderer from './ThemeTemplateRenderer'
 
-export default async function Header() {
+export default async function Header({ context = 'home' }: { context?: 'home' | 'post' | 'page' | 'archive' }) {
   // 1. Fetch site options
   const options = await OptionService.getOptions(['blogname', 'blogdescription'])
   const siteTitle = options['blogname'] || 'NodePress'
@@ -27,10 +28,14 @@ export default async function Header() {
   ].sort((a, b) => a.order - b.order || String(a.id).localeCompare(String(b.id)))
 
   return (
-    <HeaderClient 
+    <ThemeTemplateRenderer
+      area="header"
+      context={context}
+      fallback={<HeaderClient
       siteTitle={siteTitle} 
       tagline={tagline} 
       menuItems={mergedMenuItems}
+    />}
     />
   )
 }

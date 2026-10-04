@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { getPluginService } from '@/services/plugin-factory'
+import { auditLogService } from '@/audit/service'
 
 export async function requireAdmin() {
   const session = await auth()
@@ -7,5 +8,9 @@ export async function requireAdmin() {
   if (role !== 'admin') {
     return { response: Response.json({ error: 'Forbidden' }, { status: 403 }) }
   }
-  return { service: await getPluginService() }
+  return {
+    service: await getPluginService(),
+    auditLogService,
+    actorUserId: Number((session?.user as { id?: string | number } | undefined)?.id) || undefined,
+  }
 }

@@ -21,6 +21,7 @@ NodePress é um CMS inspirado no WordPress para publicação e gestão de sites.
 - Integração opcional com o serviço Admissions.
 - Interface administrativa em inglês e português do Brasil.
 - Autenticação administrativa local, Keycloak/Navant ID ou híbrida usando Auth.js.
+- Audit log administrativo append-only com redaction de segredos, filtros e exportação JSON/CSV.
 
 ## Stack
 
@@ -127,8 +128,33 @@ O arquivo [`env.example`](env.example) contém todos os nomes de variáveis espe
 | `TENANT_ID` | Apenas Admissions | Tenant usado na integração |
 | `INTERNAL_SERVICE_CLIENT_ID` | Apenas Admissions | Cliente de serviço |
 | `INTERNAL_SERVICE_CLIENT_SECRET` | Apenas Admissions | Secret do cliente de serviço |
+| `AUDIT_LOG_RETENTION_DAYS` | Não | Retenção do audit log em dias; padrão `90`, máximo `3650` |
 
 Não comite `.env` nem secrets reais.
+
+### Audit log administrativo
+
+O NodePress registra eventos de autenticação e mutações administrativas de posts,
+usuários, configurações, plugins e temas na tabela `np_audit_logs`. O registro é
+append-only: a API administrativa permite somente leitura e exportação, nunca
+alteração ou exclusão manual.
+
+Consulte os eventos como administrador em:
+
+```text
+GET /api/admin/audit-logs
+```
+
+Filtros disponíveis: `page`, `pageSize`, `action`, `resourceType`, `resourceId`,
+`actorUserId`, `success`, `from` e `to` em ISO-8601. Use `format=csv` para
+download; o formato padrão é JSON. `pageSize` é limitado a 100.
+
+O serviço mascara IPv4 para a rede `/24` e reduz IPv6 aos primeiros grupos. As
+metadata são sanitizadas recursivamente: senhas, tokens, cookies, segredos,
+chaves privadas e credenciais são substituídos por `[REDACTED]`, e valores muito
+grandes são truncados. A retenção padrão é de 90 dias e pode ser ajustada por
+`AUDIT_LOG_RETENTION_DAYS` entre 1 e 3650 dias. A limpeza deve chamar
+`auditLogService.pruneByRetention()` a partir do executor de jobs da instalação.
 
 ## PostgreSQL com Docker
 

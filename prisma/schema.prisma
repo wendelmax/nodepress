@@ -295,6 +295,98 @@ model PayloadImportRecord {
   @@map("np_import_records")
 }
 
+model BuilderPattern {
+  id            String                  @id @default(cuid()) @db.VarChar(30)
+  slug          String                  @unique @db.VarChar(120)
+  name          String                  @db.VarChar(120)
+  description   String                  @db.Text
+  kind          String                  @db.VarChar(20)
+  category      String                  @db.VarChar(80)
+  tags          Json
+  engine        String                  @db.VarChar(50)
+  schemaVersion Int                     @map("schema_version")
+  version       Int                     @default(1)
+  document      Json
+  archivedAt    DateTime?               @map("archived_at")
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+  versions      BuilderPatternVersion[]
+
+  @@index([kind, category, archivedAt])
+  @@index([archivedAt])
+  @@map("np_builder_patterns")
+}
+
+model BuilderPatternVersion {
+  id            String        @id @default(cuid()) @db.VarChar(30)
+  patternId     String        @map("pattern_id") @db.VarChar(30)
+  version       Int
+  manifest      Json
+  document      Json
+  createdAt     DateTime      @default(now()) @map("created_at")
+  pattern       BuilderPattern @relation(fields: [patternId], references: [id], onDelete: Cascade)
+
+  @@unique([patternId, version])
+  @@index([patternId, version])
+  @@map("np_builder_pattern_versions")
+}
+
+model ThemeTemplate {
+  id          String                @id @default(cuid()) @db.VarChar(30)
+  slug        String                @db.VarChar(120)
+  themeSlug   String                @map("theme_slug") @db.VarChar(80)
+  area        String                @db.VarChar(20)
+  name        String                @db.VarChar(120)
+  conditions  Json
+  priority    Int                   @default(0)
+  enabled     Boolean               @default(false)
+  version     Int                   @default(1)
+  document    Json
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  versions    ThemeTemplateVersion[]
+
+  @@unique([themeSlug, slug])
+  @@index([themeSlug, area, enabled])
+  @@map("np_theme_templates")
+}
+
+model ThemeTemplateVersion {
+  id         String        @id @default(cuid()) @db.VarChar(30)
+  templateId String        @map("template_id") @db.VarChar(30)
+  version    Int
+  document   Json
+  createdAt  DateTime      @default(now()) @map("created_at")
+  template   ThemeTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, version])
+  @@index([templateId, version])
+  @@map("np_theme_template_versions")
+}
+
+model AuditLog {
+  id            Int      @id @default(autoincrement())
+  actorUserId   Int?     @map("actor_user_id")
+  tenantId      String?  @map("tenant_id") @db.VarChar(100)
+  action        String   @db.VarChar(120)
+  resourceType  String   @map("resource_type") @db.VarChar(80)
+  resourceId    String?  @map("resource_id") @db.VarChar(120)
+  success       Boolean  @default(true)
+  correlationId String?  @map("correlation_id") @db.VarChar(128)
+  ipSummary     String?  @map("ip_summary") @db.VarChar(80)
+  metadata      Json?
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([occurredAt, id])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([actorUserId])
+  @@index([tenantId])
+  @@index([success])
+  @@map("np_audit_logs")
+}
+
 model SearchDocument {
   id          String    @id @default(cuid()) @db.VarChar(30)
   sourceKey   String    @unique @map("source_key") @db.VarChar(255)

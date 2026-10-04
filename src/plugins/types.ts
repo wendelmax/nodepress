@@ -5,6 +5,8 @@ import type { PluginCommandDefinition, PluginJobDefinition, PluginRouteDefinitio
 import type { PuckComponents } from '@/lib/puck/types'
 import type { PluginCapabilities } from './capabilities'
 import type { PluginStorage } from './storage'
+import type { PluginSettings, PluginSecretDefinition, PluginSecrets, PluginSettingDefinition } from './config'
+import type { PluginAdminPageRegistrar, PluginSlotRegistrar } from './slots'
 
 export type PluginSurface = 'admin' | 'public'
 export type PluginCapability = string
@@ -63,6 +65,14 @@ export interface PluginCommandRegistrar {
   add(definition: PluginCommandDefinition): () => void
 }
 
+export type PluginHealthStatus = 'healthy' | 'degraded' | 'unhealthy'
+
+export interface PluginHealth {
+  status: PluginHealthStatus
+  message?: string
+  checkedAt?: string
+}
+
 export interface PluginContext {
   pluginId: string
   capabilities: PluginCapabilities
@@ -74,6 +84,10 @@ export interface PluginContext {
   jobs: PluginJobRegistrar
   routes: PluginRouteRegistrar
   commands: PluginCommandRegistrar
+  settings: PluginSettings
+  secrets: PluginSecrets
+  slots: PluginSlotRegistrar
+  adminPages: PluginAdminPageRegistrar
 }
 
 export interface NodePressPlugin {
@@ -89,6 +103,9 @@ export interface NodePressPlugin {
   engine?: { nodepress: string }
   dependencies?: Record<string, string>
   permissions?: PluginCapability[]
+  settings?: readonly PluginSettingDefinition[]
+  secrets?: readonly PluginSecretDefinition[]
+  health?: () => PluginHealth | Promise<PluginHealth>
   migrations?: PluginMigration[]
   register(context: PluginContext): void | Promise<void>
 }

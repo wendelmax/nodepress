@@ -1,11 +1,17 @@
 import Link from 'next/link'
 import { ThemeService } from '@/services/theme.service'
 import { OptionService } from '@/services/option.service'
+import ThemeTemplateRenderer from '@/themes/default/components/ThemeTemplateRenderer'
 
 export default async function NotFound() {
   const Theme = await ThemeService.getActiveTheme()
   const options = await OptionService.getOptions(['blogname'])
   const themeOptions = await ThemeService.getRenderOptions(options)
+  const template = await ThemeService.resolveTemplate({ area: '404', context: '404' })
+
+  if (template) {
+    return <div className="min-h-screen bg-background text-text"><ThemeTemplateRenderer area="404" context="404" fallback={null} /></div>
+  }
 
   // Se o tema ativo possui uma página 404 personalizada, usamos ela
   if (Theme.NotFound) {
