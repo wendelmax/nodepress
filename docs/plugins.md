@@ -133,6 +133,34 @@ Documentos contêm somente dados declarativos. Não inclua JavaScript, funções
 imports ou markup executável no JSON do Builder; extensões devem ser fornecidas
 por componentes client-safe registrados no contrato Puck.
 
+### Blocos de layout responsivo
+
+O catálogo base inclui quatro blocos semânticos para composição de páginas:
+
+- `Section`: seção de largura total com fundo, overlay, borda, raio, padding e
+  slot `content`.
+- `Container`: área centralizada com largura máxima, alinhamento, padding e
+  slot `content`.
+- `Columns`: duas a quatro colunas independentes (`column1` a `column4`),
+  gap e opção de empilhamento em telas pequenas.
+- `Stack`: agrupamento em linha/coluna com gap, alinhamento, wrap e slot
+  `content`.
+
+Os slots são os slots nativos do Puck, portanto blocos podem ser aninhados no
+editor e no renderer público. Propriedades responsivas aceitam `desktop`,
+`tablet` e `mobile`; `desktop` é obrigatório quando a forma responsiva é usada,
+e os demais breakpoints herdam o valor de desktop quando omitidos. Os limites
+fixos são desktop acima de `1024px`, tablet entre `641px` e `1024px`, e mobile
+até `640px`.
+
+O schema aceita somente tokens e valores controlados: espaçamento de `0` a
+`256px`, gap de `0` a `128px`, larguras `full`, `sm`, `md`, `lg`, `xl`, `2xl` e
+`screen`, além de cores tokenizadas ou hexadecimais. CSS, HTML, `className`,
+`style` e URLs de stylesheet não fazem parte do contrato. O editor bloqueia a
+publicação de props inválidas e o renderer público usa fallback seguro. Plugins
+que criem blocos compatíveis devem manter o mesmo princípio client-safe e não
+acessar APIs server-only no componente Puck.
+
 O filtro de componentes está detalhado em
 [`2026-09-24-puck-component-filter-design.md`](superpowers/specs/2026-09-24-puck-component-filter-design.md).
 ## Rotas, jobs e comandos

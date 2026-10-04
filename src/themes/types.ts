@@ -7,6 +7,8 @@ export interface ThemeMeta {
   author: string
   version: string
   slug: string
+  slots?: string[]
+  tokens?: Record<string, string>
 }
 
 export interface ThemeRenderContext {
@@ -17,6 +19,8 @@ export interface ThemeRenderContext {
 export interface ThemeRenderOptions {
   [key: string]: unknown
   menus: MenuNode[]
+  themeTokens?: Record<string, string>
+  themeSlots?: string[]
 }
 
 export interface NodePressTheme {
