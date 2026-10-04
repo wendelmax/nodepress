@@ -61,6 +61,9 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
     console.warn('Puck builder received incompatible initial content', parsedInitialData.kind)
     return createEmptyBuilderDocument()
   }, [parsedInitialData])
+  const initialDiagnostic = parsedInitialData.kind === 'invalid'
+    ? parsedInitialData.reason
+    : undefined
   const canPublish = isBuilderPublishAllowed(initialData, new Set(Object.keys(config.components)))
   const invalidLayout = parsedInitialData.kind === 'puck'
     && !validateBuilderLayoutDocument(parsedInitialData.document).valid
@@ -96,9 +99,12 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
       )}
       {!canPublish && (
         <div className="bg-red-100 px-4 py-2 text-sm text-red-950" role="status">
-          {invalidLayout
+          {initialDiagnostic
+            ? `Documento inválido: ${initialDiagnostic}. `
+            : invalidLayout
             ? 'O layout contém valores inválidos; a publicação está bloqueada até a correção.'
             : 'O conteúdo inicial é incompatível; a publicação está bloqueada para preservar a versão publicada.'}
+          {!initialDiagnostic && !invalidLayout && ' A publicação está bloqueada para preservar a versão publicada.'}
         </div>
       )}
       <Puck

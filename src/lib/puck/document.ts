@@ -2,6 +2,7 @@ import type {
   BuilderDocument,
   BuilderParseResult,
 } from './types'
+import { hasUnsafeBuilderCode } from './security'
 import { validateBuilderLayoutDocument } from './layout/schema'
 
 export const MAX_BUILDER_DOCUMENT_BYTES = 1_000_000
@@ -21,6 +22,7 @@ function byteLength(value: string): number {
 
 function exceedsDepth(value: unknown): boolean {
   const pending: Array<{ value: unknown; depth: number }> = [{ value, depth: 0 }]
+  const seen = new WeakSet<object>()
 
   while (pending.length > 0) {
     const current = pending.pop()
@@ -28,10 +30,14 @@ function exceedsDepth(value: unknown): boolean {
     if (current.depth > MAX_BUILDER_DOCUMENT_DEPTH) return true
 
     if (Array.isArray(current.value)) {
+      if (seen.has(current.value)) continue
+      seen.add(current.value)
       for (const child of current.value) {
         pending.push({ value: child, depth: current.depth + 1 })
       }
     } else if (isRecord(current.value)) {
+      if (seen.has(current.value)) continue
+      seen.add(current.value)
       for (const child of Object.values(current.value)) {
         pending.push({ value: child, depth: current.depth + 1 })
       }
@@ -172,6 +178,7 @@ export function parseBuilderDocument(value: unknown): BuilderParseResult {
   }
 
   if (!hasPuckShape(object)) return invalid('builder document format is unsupported')
+  if (hasUnsafeBuilderCode(object)) return invalid('builder document contains executable code')
   return parsePuckDocument(object)
 }
 

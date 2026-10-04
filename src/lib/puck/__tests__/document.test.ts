@@ -48,6 +48,16 @@ describe('builder document contract', () => {
     expect(parseBuilderDocument({ version: 1, root: {}, content: 'bad' }).kind).toBe('invalid')
   })
 
+  it('rejects executable values in Puck documents by default', () => {
+    expect(parseBuilderDocument({
+      root: {},
+      content: [{ type: 'CustomCode', props: { script: 'alert(1)' } }],
+    })).toEqual({
+      kind: 'invalid',
+      reason: 'builder document contains executable code',
+    })
+  })
+
   it('rejects oversized or excessively deep documents before rendering', () => {
     expect(parseBuilderDocument('x'.repeat(MAX_BUILDER_DOCUMENT_BYTES + 1)).kind).toBe('invalid')
     expect(parseBuilderDocument(makeNestedValue(MAX_BUILDER_DOCUMENT_DEPTH + 1)).kind).toBe('invalid')
