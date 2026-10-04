@@ -130,7 +130,9 @@ export function ConsentManager({ locale, analyticsId }: { locale: string; analyt
   const cookieRef = useRef(cookie)
   const listenersRef = useRef(new Set<() => void>())
 
-  cookieRef.current = cookie
+  useEffect(() => {
+    cookieRef.current = cookie
+  }, [cookie])
 
   useEffect(() => {
     let active = true
