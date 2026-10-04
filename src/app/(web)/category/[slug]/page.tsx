@@ -5,10 +5,13 @@ import { PostService } from "@/services/post.service"
 import { OptionService } from "@/services/option.service"
 import { ThemeService } from "@/services/theme.service"
 import { generatePermalink } from "@/lib/permalinks"
+import { getPublicAccess } from "@/lib/public-access"
+import { MaintenanceScreen } from "@/components/public/MaintenanceScreen"
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   await checkInstallation()
   const { slug } = await params
+  if (!(await getPublicAccess(`/category/${slug}`)).allowed) return <MaintenanceScreen />
 
   // 1. Fetch term info
   const term = await TaxonomyService.getTermBySlug(slug, 'category')

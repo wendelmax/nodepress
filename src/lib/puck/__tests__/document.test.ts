@@ -90,6 +90,46 @@ describe('builder document contract', () => {
     expect(validateBuilderComponents(result.document, new Set())).toEqual({ valid: true })
   })
 
+  it('validates component types nested inside layout slots', () => {
+    const result = parseBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Section',
+        props: {
+          content: [{ type: 'NestedRemovedCard', props: {} }],
+        },
+      }, {
+        type: 'Columns',
+        props: {
+          column2: [{ type: 'NestedUnknownWidget', props: {} }],
+        },
+      }],
+    })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set(['Section', 'Columns']))).toEqual({
+      valid: false,
+      unknownTypes: ['NestedRemovedCard', 'NestedUnknownWidget'],
+    })
+  })
+
+  it('does not treat arbitrary prop metadata with a type key as a component', () => {
+    const result = parseBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Widget',
+        props: { metadata: { type: 'not-a-component' } },
+      }],
+    })
+
+    expect(result.kind).toBe('puck')
+    if (result.kind !== 'puck') return
+
+    expect(validateBuilderComponents(result.document, new Set(['Widget']))).toEqual({ valid: true })
+  })
+
   it('adapts published Puck data to a canonical document without losing its tree', () => {
     const document = createBuilderDocument({
       root: { title: 'Home' },
@@ -107,5 +147,24 @@ describe('builder document contract', () => {
     expect(canPublishBuilderDocument('{"root":')).toBe(false)
     expect(canPublishBuilderDocument({ blocks: [] })).toBe(false)
     expect(canPublishBuilderDocument('<p>legacy</p>')).toBe(false)
+  })
+
+  it('blocks publishing a Puck document with invalid layout props', () => {
+    expect(canPublishBuilderDocument({
+      root: {},
+      content: [{
+        type: 'Section',
+        props: {
+          content: [],
+          as: 'section',
+          padding: { desktop: 999 },
+          background: 'surface',
+          overlay: 'transparent',
+          border: 'none',
+          radius: { desktop: 0 },
+          visibility: { desktop: true },
+        },
+      }],
+    })).toBe(false)
   })
 })

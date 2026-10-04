@@ -1,98 +1,52 @@
 import { NextResponse } from 'next/server'
-import { auth } from "@/auth"
-import prisma from '@/lib/prisma'
+import { auth } from '@/auth'
+import { getBackupService } from '@/backup/factory'
+import type { BackupSection } from '@/backup/types'
+import { errorResponse } from '@/core/errors'
+import { recordAuditEvent } from '@/audit/record'
 
-// Keeps memory/query pressure balanced during full-export scans.
-const DEFAULT_BATCH_SIZE = 500
-const parsedBatchSize = Number(process.env.EXPORT_BATCH_SIZE ?? '')
-const BATCH_SIZE =
-  Number.isInteger(parsedBatchSize) && parsedBatchSize > 0
-    ? parsedBatchSize
-    : DEFAULT_BATCH_SIZE
+const VALID_SECTIONS = new Set<BackupSection>(['users', 'posts', 'taxonomies', 'options'])
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth()
-  
-  if (!session || !session.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const role = session?.user ? (session.user as { role?: string }).role : undefined
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   try {
-    // 1. Fetch essential data in batches
-    const posts: any[] = []
-    let lastPostId = 0
-    while (true) {
-      const batch = await prisma.post.findMany({
-        where: { id: { gt: lastPostId } },
-        orderBy: { id: 'asc' },
-        take: BATCH_SIZE,
-        include: { meta: true }
-      })
-      if (batch.length === 0) break
-      posts.push(...batch)
-      lastPostId = batch[batch.length - 1].id
+    const params = new URL(request.url).searchParams
+    const sections = parseSections(params.get('sections'))
+    const includeMediaValue = params.get('includeMedia')
+    if (includeMediaValue !== null && includeMediaValue !== 'true' && includeMediaValue !== 'false') {
+      return NextResponse.json({ error: 'Invalid includeMedia' }, { status: 400 })
     }
-
-    const users: any[] = []
-    let lastUserId = 0
-    while (true) {
-      const batch = await prisma.user.findMany({
-        where: { id: { gt: lastUserId } },
-        orderBy: { id: 'asc' },
-        take: BATCH_SIZE,
-        select: {
-          id: true,
-          userLogin: true,
-          userEmail: true,
-          displayName: true,
-          userRegistered: true,
-          meta: true
-        }
-      })
-      if (batch.length === 0) break
-      users.push(...batch)
-      lastUserId = batch[batch.length - 1].id
-    }
-
-    const taxonomies: any[] = []
-    let lastTermId = 0
-    while (true) {
-      const batch = await prisma.term.findMany({
-        where: { termId: { gt: lastTermId } },
-        orderBy: { termId: 'asc' },
-        take: BATCH_SIZE,
-        include: { taxonomies: true }
-      })
-      if (batch.length === 0) break
-      taxonomies.push(...batch)
-      lastTermId = batch[batch.length - 1].termId
-    }
-
-    const options = await prisma.option.findMany()
-
-    // 2. Build the export payload
-    const exportData = {
-      version: "1.0.0",
-      generated_at: new Date().toISOString(),
-      site_url: process.env.NEXT_PUBLIC_SITE_URL || '',
-      data: {
-        posts,
-        users,
-        taxonomies,
-        options
-      }
-    }
-
-    // 3. Return as downloadable JSON file
-    return new NextResponse(JSON.stringify(exportData, null, 2), {
+    const service = await getBackupService({
+      audit: (event) => recordAuditEvent(request, {
+        action: event.action,
+        resourceType: 'backup',
+        resourceId: event.operationId,
+        actorUserId: Number((session.user as { id?: string | number }).id) || undefined,
+        success: event.success,
+        metadata: { stage: event.stage, ...event.details },
+      }),
+    })
+    const pkg = await service.export({ sections, includeMedia: includeMediaValue === null ? true : includeMediaValue === 'true' })
+    const date = new Date().toISOString().slice(0, 10)
+    return new NextResponse(JSON.stringify(pkg, null, 2), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
-        'Content-Disposition': `attachment; filename="nodepress-export-${new Date().toISOString().slice(0,10)}.json"`
-      }
+        'content-type': 'application/json; charset=utf-8',
+        'content-disposition': `attachment; filename="nodepress-backup-${date}.json"`,
+      },
     })
   } catch (error) {
-    console.error("Export Error:", error)
-    return NextResponse.json({ error: 'Failed to generate export file.' }, { status: 500 })
+    return errorResponse(error, 'Backup export failed', { endpoint: 'backup-export' })
   }
+}
+
+function parseSections(value: string | null): BackupSection[] | undefined {
+  if (!value) return undefined
+  const sections = [...new Set(value.split(',').map((section) => section.trim()).filter(Boolean))]
+  if (sections.length === 0 || sections.some((section) => !VALID_SECTIONS.has(section as BackupSection))) throw new Error('Invalid backup sections')
+  return sections as BackupSection[]
 }

@@ -76,4 +76,20 @@ describe('plugin capabilities', () => {
     )
     expect(MenuService.getPluginMenuTree('admin', () => true)).toEqual([])
   })
+
+  it('protects settings, secrets and storage behind declared capabilities', async () => {
+    const plugin: NodePressPlugin = {
+      id: 'reports',
+      name: 'Reports',
+      version: '1.0.0',
+      settings: [{ id: 'enabled', label: 'Enabled', type: 'boolean', defaultValue: true }],
+      register: async ({ settings }) => {
+        await settings.get('enabled')
+      },
+    }
+
+    await expect(new NodePressPluginRuntime().activate(plugin)).rejects.toThrow(
+      'Plugin capability denied: reports -> settings.read',
+    )
+  })
 })

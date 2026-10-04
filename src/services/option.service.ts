@@ -16,9 +16,14 @@ const ALLOWED_OPTIONS = [
   'seo_meta_description',
   'seo_og_image',
   'seo_twitter_handle',
+  'seo_sitemap_enabled',
+  'seo_robots_disallow',
+  'seo_redirects',
   'analytics_ga4_id',
   'active_theme',
   'active_plugins',
+  'landing_pages_maintenance',
+  'landing_pages_allowlist',
   'cron_secret',
   'ai_provider',
   'ai_api_key',
@@ -35,6 +40,12 @@ const ALLOWED_OPTIONS = [
   's3_endpoint',
   's3_public_url',
   'optimize_webp',
+  'backup_schedule',
+  'backup_last_run_at',
+  'search_adapter',
+  'search_enabled',
+  'search_page_size',
+  'search_max_page_size',
 ]
 
 const OPTIONS_CACHE_TTL_MS = 30_000

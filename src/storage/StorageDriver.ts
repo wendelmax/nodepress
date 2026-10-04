@@ -6,6 +6,9 @@
  * StorageDriverFactory.get(), so it never needs to know which backend is used.
  */
 export interface StorageDriver {
+  /** Read a previously uploaded file by its public URL or storage key. */
+  read(fileUrl: string): Promise<Buffer | undefined>
+
   /**
    * Upload a file buffer and return its public URL.
    *
