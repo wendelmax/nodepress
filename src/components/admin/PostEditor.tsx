@@ -289,6 +289,7 @@ export default function PostEditor({ postId, postType = 'post', initialData, fie
               <PuckBuilder 
                 initialData={content} 
                 onPublish={(data) => setContent(data)}
+                collaborationTarget={postId ? { type: 'post', key: String(postId) } : undefined}
               />
             ) : (
               <div className="p-6 md:p-8 bg-transparent min-h-[400px]">
