@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { auth } from '@/auth'
 import { canManageUsers } from '@/lib/authorization.mjs'
+import { hasAnalyticsConsent } from '@/plugins/lgpd-consent/proxy-consent'
 
 const SESSION_COOKIE = 'np_sid'
 const SESSION_TTL_SECONDS = 30 * 60
@@ -62,16 +63,18 @@ export async function proxy(request: NextRequest) {
     })
   }
 
-  const host = request.nextUrl.origin
-  fetch(`${host}/api/analytics/track`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      isNewVisitor,
-      path: pathname,
-      sessionId
-    }),
-  }).catch(() => { /* silently swallow network errors */ })
+  if (hasAnalyticsConsent(request.headers.get('cookie'))) {
+    const host = request.nextUrl.origin
+    fetch(`${host}/api/analytics/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        isNewVisitor,
+        path: pathname,
+        sessionId
+      }),
+    }).catch(() => { /* silently swallow network errors */ })
+  }
 
   return response
 }

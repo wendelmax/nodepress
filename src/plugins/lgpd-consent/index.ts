@@ -6,6 +6,7 @@ import { createConsentRepository } from './repository'
 import { createConsentRoutes } from './routes'
 import { createElement } from 'react'
 import { ConsentManager } from './ConsentManager'
+import { SettingsPage } from './SettingsPage'
 
 const CONFIG_KEYS = ['lgpd_policy_version', 'lgpd_policy_url', 'lgpd_retention_days']
 
@@ -48,6 +49,7 @@ export const lgpdConsentPlugin: NodePressPlugin = {
     hooks.addAction('public_body_end', ({ locale, analyticsId }: { locale?: string; analyticsId?: string }) => (
       createElement(ConsentManager, { locale: locale ?? 'pt-BR', analyticsId })
     ), 5)
+    hooks.addAction('admin_plugin_page_lgpd-consent', () => createElement(SettingsPage), 5)
     commands.add({
       id: 'lgpd-consent.cleanup',
       async handler() {
