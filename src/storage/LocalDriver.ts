@@ -1,4 +1,4 @@
-import { writeFile, unlink } from 'fs/promises'
+import { writeFile, unlink, readFile } from 'fs/promises'
 import { mkdirSync } from 'fs'
 import path from 'path'
 import type { StorageDriver } from './StorageDriver'
@@ -25,6 +25,16 @@ export class LocalDriver implements StorageDriver {
     const filePath = path.join(this.uploadDir, filename)
     await writeFile(filePath, buffer)
     return `/uploads/${filename}`
+  }
+
+  async read(fileUrl: string): Promise<Buffer | undefined> {
+    const filename = path.basename(fileUrl)
+    try {
+      return await readFile(path.join(this.uploadDir, filename))
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') return undefined
+      throw error
+    }
   }
 
   /**

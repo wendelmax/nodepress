@@ -205,6 +205,21 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron
 
 Configure esse endpoint em um cron externo ou no scheduler da sua plataforma de hospedagem.
 
+### Backup, restore e migração
+
+Administradores podem baixar um pacote seguro em `/api/export` pela tela de
+Ferramentas. O restore começa sempre em dry-run e só grava após confirmação
+explícita. O pacote é versionado, tem checksums SHA-256 e remove credenciais,
+hashes de senha, tokens e chaves de API. O escopo atual cobre posts, usuários
+sem credenciais, taxonomias, opções não sensíveis e mídia; temas/plugins são
+metadados de compatibilidade e não são instalados pelo backup.
+
+Para backups agendados, configure `backup_schedule` como `daily` ou `weekly` e
+continue chamando `/api/cron`. Use `BACKUP_LOCAL_ROOT` para arquivos locais ou
+as variáveis `BACKUP_S3_ACCESS_KEY`, `BACKUP_S3_SECRET_KEY`,
+`BACKUP_S3_BUCKET`, `BACKUP_S3_REGION` e opcionalmente `BACKUP_S3_ENDPOINT` para
+um bucket S3-compatible privado.
+
 ## Prisma e banco de dados
 
 O instalador inicial usa `npx prisma db push --accept-data-loss` para criar ou atualizar as tabelas. Use esse fluxo apenas em instalações iniciais e mantenha backups antes de qualquer alteração de schema. O schema atual está em [`prisma/schema.prisma`](prisma/schema.prisma).

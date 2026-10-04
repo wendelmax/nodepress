@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { PostService } from '@/services/post.service'
 import { OptionService } from '@/services/option.service'
+import { getBackupService } from '@/backup/factory'
+import { getBackupArchiveStorage } from '@/backup/factory'
+import { runScheduledBackupIfDue } from '@/backup/scheduler'
+import { recordAuditEvent } from '@/audit/record'
 
 export async function GET(request: Request) {
   try {
@@ -37,9 +41,33 @@ export async function GET(request: Request) {
       revalidateTag('posts')
     }
 
+    const backupOptions = await OptionService.getOptions(['backup_schedule', 'backup_last_run_at'])
+    const backupService = backupOptions.backup_schedule
+      ? await getBackupService()
+      : undefined
+    const scheduledBackup = backupService
+      ? await runScheduledBackupIfDue({
+        schedule: backupOptions.backup_schedule,
+        lastRunAt: backupOptions.backup_last_run_at,
+        service: backupService,
+        storage: getBackupArchiveStorage(),
+      })
+      : undefined
+    if (scheduledBackup) {
+      await OptionService.saveOptions({ backup_last_run_at: scheduledBackup.ranAt })
+      recordAuditEvent(undefined, {
+        action: 'backup.scheduled.completed',
+        resourceType: 'backup',
+        resourceId: scheduledBackup.key,
+        success: true,
+        metadata: { ranAt: scheduledBackup.ranAt },
+      })
+    }
+
     return NextResponse.json({
       success: true,
       message: `Cron executed successfully. Published ${publishedCount} scheduled posts.`,
+      scheduledBackup,
       timestamp: new Date().toISOString()
     })
 

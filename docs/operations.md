@@ -24,6 +24,29 @@ Rotate secrets through the deployment platform. Do not print them in CI logs or 
 
 Use a tested `pg_dump`/managed PostgreSQL backup before every migration batch. Keep backup retention independent of application releases and test restoration regularly.
 
+NodePress also provides an application-level backup package through the admin
+tools. `GET /api/export` creates a versioned `nodepress-backup` JSON envelope
+with SHA-256 checksums for the supported content sections and media. The admin
+restore flow always validates the manifest, compatibility and checksums first;
+the first import request is a dry-run and mutation requires an explicit
+confirmation. Imports are insert-only and database writes run in a transaction;
+media uploaded before a later failure is deleted again when the active storage
+driver supports it.
+
+The MVP exports users without password/identity credentials, posts and post
+metadata, taxonomies and non-sensitive options. It excludes plugin storage,
+secrets, API keys, password hashes and activation tokens. Active themes and
+plugins are compatibility metadata only; NodePress does not install code from a
+backup. URL migration can be requested by sending `fromUrl` and `toUrl` to the
+import endpoint.
+
+To enable an external cron provider to create scheduled application backups,
+set `backup_schedule` to `daily` or `weekly` in the options and call the
+existing `/api/cron` endpoint. Archives use `BACKUP_LOCAL_ROOT` by default, or
+private S3-compatible storage when `BACKUP_S3_ACCESS_KEY`,
+`BACKUP_S3_SECRET_KEY`, `BACKUP_S3_BUCKET` and `BACKUP_S3_REGION` are set.
+Credentials stay in environment configuration and never enter the package.
+
 Application image rollback is safe when the previous image is compatible with the already-applied schema. Destructive or non-backward-compatible migrations require an explicit rollback migration or a restore; do not roll back the image alone and assume the database will follow it.
 
 If `/api/health` reports `unhealthy`, stop traffic to the release, inspect structured logs by `requestId`/`pluginId`, and restore the previous image only when the schema compatibility boundary allows it.
