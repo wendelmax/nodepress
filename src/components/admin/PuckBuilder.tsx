@@ -60,6 +60,9 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
     console.warn('Puck builder received incompatible initial content', parsedInitialData.kind)
     return createEmptyBuilderDocument()
   }, [parsedInitialData])
+  const initialDiagnostic = parsedInitialData.kind === 'invalid'
+    ? parsedInitialData.reason
+    : undefined
   const canPublish = canPublishBuilderDocument(initialData)
 
   const unknownComponents = useMemo(() => {
@@ -93,7 +96,10 @@ export default function PuckBuilder({ initialData, onPublish }: PuckBuilderProps
       )}
       {!canPublish && (
         <div className="bg-red-100 px-4 py-2 text-sm text-red-950" role="status">
-          O conteúdo inicial é incompatível; a publicação está bloqueada para preservar a versão publicada.
+          {initialDiagnostic
+            ? `Documento inválido: ${initialDiagnostic}. `
+            : 'O conteúdo inicial é incompatível; '}
+          A publicação está bloqueada para preservar a versão publicada.
         </div>
       )}
       <Puck

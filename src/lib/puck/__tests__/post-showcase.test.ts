@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { puckConfig } from '../config'
 import { buildPostShowcaseUrl } from '../post-showcase'
 
@@ -33,5 +35,52 @@ describe('PostShowcase Puck contract', () => {
       showExcerpt: true,
       showDate: true,
     })
+  })
+
+  it('keeps showcase images lazy-loaded', () => {
+    const component = puckConfig.components.PostShowcase as { render: (props: any) => any }
+    const markup = renderToStaticMarkup(React.createElement(component.render, {
+      postType: 'post',
+      limit: 1,
+      category: '',
+      layout: 'grid',
+      showExcerpt: true,
+      showDate: true,
+      items: [{
+        id: 1,
+        title: 'Post',
+        slug: 'post',
+        excerpt: '',
+        date: '2026-09-26T00:00:00.000Z',
+        thumbnailUrl: 'https://cdn.example.test/photo.jpg',
+      }],
+    }))
+
+    expect(markup).toContain('loading="lazy"')
+    expect(markup).toContain('decoding="async"')
+  })
+
+  it('sanitizes showcase item links and thumbnails', () => {
+    const component = puckConfig.components.PostShowcase as { render: (props: any) => any }
+    const markup = renderToStaticMarkup(React.createElement(component.render, {
+      postType: 'post',
+      limit: 1,
+      category: '',
+      layout: 'grid',
+      showExcerpt: true,
+      showDate: false,
+      items: [{
+        id: 1,
+        title: 'Post',
+        slug: '//external.example.test',
+        excerpt: '',
+        date: '2026-09-26T00:00:00.000Z',
+        thumbnailUrl: 'javascript:alert(1)',
+      }],
+    }))
+
+    expect(markup).toContain('href="/external.example.test"')
+    expect(markup).not.toContain('javascript:')
+    expect(markup).not.toContain('<img')
   })
 })

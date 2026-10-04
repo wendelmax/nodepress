@@ -1,6 +1,7 @@
 import type { Config } from "@measured/puck";
 import React from "react";
 import { FormEmbed } from "@/components/FormEmbed";
+import { sanitizeUrl } from './security';
 import type { PostShowcaseProps } from './post-showcase';
 import { postShowcaseComponent } from './post-showcase';
 export type { PuckComponents } from './types';
@@ -147,7 +148,7 @@ export const puckConfig: Config<Props> = {
         }[variant];
         return (
           <div style={{ textAlign: align }} className="my-4 w-full">
-            <a href={href} className={`${baseClass} ${variantClass} no-underline`}>
+            <a href={sanitizeUrl(href) ?? '#'} className={`${baseClass} ${variantClass} no-underline`}>
               {label}
             </a>
           </div>
@@ -174,7 +175,16 @@ export const puckConfig: Config<Props> = {
       },
       render: ({ url, alt, objectFit }) => (
         <div className="w-full my-4 overflow-hidden rounded-2xl border border-border bg-surface">
-          <img src={url} alt={alt} style={{ objectFit }} className="w-full h-auto" />
+          {sanitizeUrl(url, 'src') && (
+            <img
+              src={sanitizeUrl(url, 'src')}
+              alt={alt}
+              loading="lazy"
+              decoding="async"
+              style={{ objectFit }}
+              className="w-full h-auto"
+            />
+          )}
         </div>
       ),
     },
