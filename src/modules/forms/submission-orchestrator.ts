@@ -77,6 +77,7 @@ export class FormSubmissionOrchestrator {
     const submission = await this.dependencies.forms.submit(input.formId, {
       values: input.values,
       ...(input.uploads ? { uploads: input.uploads } : {}),
+      ...(key ? { idempotencyKey: key } : {}),
     })
     const leadResult = await this.dependencies.leads.createFromSubmission({
       id: submission.id,

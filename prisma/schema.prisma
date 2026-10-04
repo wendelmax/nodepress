@@ -504,11 +504,47 @@ model FormDefinition {
 }
 
 model FormEngineSubmission {
-  id        String   @id @default(cuid()) @db.VarChar(30)
-  formId    String   @map("form_id") @db.VarChar(30)
-  payload   Json
-  createdAt DateTime @default(now()) @map("created_at")
+  id                  String   @id @default(cuid()) @db.VarChar(30)
+  formId              String   @map("form_id") @db.VarChar(30)
+  idempotencyKey      String?  @map("idempotency_key") @db.VarChar(191)
+  payload             Json
+  orchestrationResult Json?    @map("orchestration_result")
+  createdAt           DateTime @default(now()) @map("created_at")
 
   @@index([formId, createdAt])
+  @@unique([formId, idempotencyKey])
   @@map("np_form_engine_submissions")
+}
+
+model LeadRecord {
+  id                  String   @id @default(cuid()) @db.VarChar(30)
+  sourceSubmissionId  String   @unique @map("source_submission_id") @db.VarChar(80)
+  sourceFormId        String   @map("source_form_id") @db.VarChar(80)
+  formSlug            String?  @map("form_slug") @db.VarChar(120)
+  data                Json
+  status              String   @default("new") @db.VarChar(20)
+  version             Int      @default(1)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([sourceFormId, createdAt])
+  @@index([status, updatedAt])
+  @@map("np_leads")
+}
+
+model LeadDelivery {
+  id            String   @id @default(cuid()) @db.VarChar(30)
+  eventId       String   @map("event_id") @db.VarChar(80)
+  targetId      String   @map("target_id") @db.VarChar(120)
+  payload       Json
+  status        String   @default("pending") @db.VarChar(20)
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at")
+  lastError     String?  @map("last_error") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([eventId, targetId])
+  @@index([status, nextAttemptAt])
+  @@map("np_lead_deliveries")
 }

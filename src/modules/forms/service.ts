@@ -62,7 +62,11 @@ export class FormService {
     const form = await this.getForm(formId)
     if (form.status !== 'active') throw new FormUnavailableError(formId)
     const payload = await validateSubmission(form, input.values, input.uploads, this.uploadPort)
-    return this.repository.createSubmission({ formId, payload })
+    return this.repository.createSubmission({
+      formId,
+      payload,
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
+    })
   }
 
   async listSubmissions(formId: string): Promise<FormSubmission[]> {

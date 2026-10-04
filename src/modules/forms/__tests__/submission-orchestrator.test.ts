@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FormSubmissionOrchestrator, type FormSubmissionOrchestratorDependencies } from '../submission-orchestrator'
+import { FormSubmissionOrchestrator, type FormSubmissionOrchestratedResult, type FormSubmissionOrchestratorDependencies } from '../submission-orchestrator'
 import type { FormSubmission } from '../types'
 import type { SubmissionSecurityResult } from '@/security/submissions/contracts'
 import type { LeadEvent, Lead } from '@/modules/leads'
@@ -32,7 +32,7 @@ const event: LeadEvent = {
 
 function createDependencies(overrides: Partial<FormSubmissionOrchestratorDependencies> = {}) {
   let submitCalls = 0
-  const stored = new Map<string, ReturnType<FormSubmissionOrchestrator['submit']> extends Promise<infer T> ? T : never>()
+  const stored = new Map<string, FormSubmissionOrchestratedResult>()
   const dependencies: FormSubmissionOrchestratorDependencies = {
     forms: {
       async submit() {
@@ -60,7 +60,7 @@ function createDependencies(overrides: Partial<FormSubmissionOrchestratorDepende
         return stored.get(`${formId}:${key}`)
       },
       async set(formId, key, result) {
-        stored.set(`${formId}:${key}`, Promise.resolve(result))
+        stored.set(`${formId}:${key}`, result)
       },
     },
     securityPolicy: {
