@@ -489,3 +489,26 @@ model SearchDocument {
   @@index([sourceId])
   @@map("np_search_documents")
 }
+
+model FormDefinition {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  slug      String   @unique @db.VarChar(120)
+  name      String   @db.VarChar(180)
+  status    String   @default("active") @db.VarChar(20)
+  fields    Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@map("np_form_definitions")
+}
+
+model FormEngineSubmission {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  formId    String   @map("form_id") @db.VarChar(30)
+  payload   Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([formId, createdAt])
+  @@map("np_form_engine_submissions")
+}
