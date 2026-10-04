@@ -133,6 +133,14 @@ Documentos contêm somente dados declarativos. Não inclua JavaScript, funções
 imports ou markup executável no JSON do Builder; extensões devem ser fornecidas
 por componentes client-safe registrados no contrato Puck.
 
+O renderer público sanitiza HTML legado e campos HTML do Editor.js, valida URLs
+antes de usá-las e bloqueia chaves executáveis por padrão. A capability
+`builder.scripts` existe apenas como fronteira explícita para componentes
+confiáveis fornecidos por plugins revisados; ela não transforma um campo do
+documento em JavaScript executável nem libera scripts arbitrários persistidos.
+Imagens renderizadas pelo Builder usam lazy loading quando o componente suporta
+essa opção, preservando `alt`, SSR e a semântica acessível.
+
 ### Blocos de layout responsivo
 
 O catálogo base inclui quatro blocos semânticos para composição de páginas:

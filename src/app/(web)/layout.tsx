@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { Fragment, type ReactNode } from "react"
 import { OptionService } from "@/services/option.service"
+import { ensureActivePluginsLoaded } from "@/services/plugin-factory"
+import { HookService } from "@/services/hook.service"
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,14 +26,26 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const options = await OptionService.getOptions(['analytics_ga4_id'])
+  const options = await OptionService.getOptions(['analytics_ga4_id', 'site_language'])
   const analyticsId = options['analytics_ga4_id']
+  let consentSlots: ReactNode[] = []
+  if (process.env.DATABASE_URL) {
+    try {
+      await ensureActivePluginsLoaded()
+      consentSlots = await HookService.doAction('public_body_end', {
+        locale: options['site_language'] || 'pt-BR',
+        analyticsId,
+      })
+    } catch {
+      consentSlots = []
+    }
+  }
 
   return (
     <html lang="en">
       <body>
         {children}
-        {analyticsId && <GoogleAnalytics gaId={analyticsId} />}
+        {consentSlots.map((slot, index) => <Fragment key={`public-slot-${index}`}>{slot}</Fragment>)}
       </body>
     </html>
   );

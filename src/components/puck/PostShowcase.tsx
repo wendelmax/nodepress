@@ -6,6 +6,7 @@ import {
   type PostShowcaseItem,
   type PostShowcaseProps,
 } from '@/lib/puck/post-showcase'
+import { sanitizeUrl } from '@/lib/puck/security'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -28,14 +29,17 @@ function formatDate(date: string): string {
 }
 
 function itemHref(slug: string): string {
-  return slug.startsWith('/') ? slug : `/${slug}`
+  const localSlug = slug.trim().replace(/^\/+/, '')
+  return sanitizeUrl(`/${localSlug}`) ?? '#'
 }
 
 function ShowcaseCard({ item, showExcerpt, showDate }: Pick<PostShowcaseProps, 'showExcerpt' | 'showDate'> & { item: PostShowcaseItem }) {
+  const thumbnailUrl = sanitizeUrl(item.thumbnailUrl, 'src')
+
   return (
     <article className="overflow-hidden rounded-2xl border border-border bg-surface">
-      {item.thumbnailUrl ? (
-        <img src={item.thumbnailUrl} alt="" className="h-44 w-full object-cover" />
+      {thumbnailUrl ? (
+        <img src={thumbnailUrl} alt="" loading="lazy" decoding="async" className="h-44 w-full object-cover" />
       ) : null}
       <div className="space-y-2 p-4">
         {showDate ? <time className="text-xs text-text-secondary" dateTime={item.date}>{formatDate(item.date)}</time> : null}
