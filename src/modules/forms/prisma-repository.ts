@@ -30,6 +30,7 @@ export class PrismaFormRepository implements FormRepository {
     const row = await prisma.formEngineSubmission.create({
       data: {
         formId: input.formId,
+        ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
         payload: input.payload as Prisma.InputJsonValue,
       },
     })
@@ -68,12 +69,14 @@ function toFormDefinition(row: {
 function toFormSubmission(row: {
   id: string
   formId: string
+  idempotencyKey: string | null
   payload: Prisma.JsonValue
   createdAt: Date
 }): FormSubmission {
   return {
     id: row.id,
     formId: row.formId,
+    ...(row.idempotencyKey ? { idempotencyKey: row.idempotencyKey } : {}),
     payload: row.payload as Record<string, unknown>,
     createdAt: row.createdAt,
   }

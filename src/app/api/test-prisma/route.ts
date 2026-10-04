@@ -3,10 +3,10 @@ import prisma from '@/lib/prisma'
 
 export async function GET() {
   const keys = Object.keys(prisma)
-  const hasFormSubmission = !!(prisma as any).formSubmission
+  const hasCanonicalFormSubmission = !!(prisma as any).formEngineSubmission
   return NextResponse.json({ 
     keys, 
-    hasFormSubmission,
-    formSubmissionType: typeof (prisma as any).formSubmission
+    hasCanonicalFormSubmission,
+    formEngineSubmissionType: typeof (prisma as any).formEngineSubmission
   })
 }

@@ -1,49 +1,42 @@
 import { NextResponse } from 'next/server'
-import { auth } from "@/auth"
-import prisma from '@/lib/prisma'
+import { auth } from '@/auth'
 import { hasAdminAccess } from '@/lib/access-control.mjs'
+import { PrismaLeadRepository, redactLeadData } from '@/modules/leads'
 
 export async function GET(request: Request) {
   const session = await auth()
-  
-  // Check authorization
-  if (!session || !session.user || !hasAdminAccess((session.user as any).role)) {
+  if (!session?.user || !hasAdminAccess((session.user as { role?: string }).role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { searchParams } = new URL(request.url)
   const formId = searchParams.get('formId')
   const status = searchParams.get('status')
+  const canonicalFormId = formId && /^\d+$/.test(formId) ? `legacy-${formId}` : formId
+  let leads = await new PrismaLeadRepository().list()
+  if (formId) leads = leads.filter(lead => lead.sourceFormId === formId || lead.sourceFormId === canonicalFormId)
+  if (status) leads = leads.filter(lead => lead.status === status)
 
-  const where: any = {}
-  if (formId) where.formId = formId
-  if (status) where.status = status
-
-  const submissions = await prisma.formSubmission.findMany({
-    where,
-    orderBy: { createdAt: 'desc' }
-  })
-
-  // Prepare CSV
   let csv = 'ID,Date,FormId,Status,Email,Payload\n'
-  
-  for (const sub of submissions) {
-    let payload = {}
-    let email = ''
-    try {
-      payload = JSON.parse(sub.payload)
-      email = (payload as any).email || ''
-    } catch (e) {}
-
-    const date = new Date(sub.createdAt).toISOString()
-    const safePayload = JSON.stringify(payload).replace(/"/g, '""')
-    
-    csv += `${sub.id},"${date}","${sub.formId}","${sub.status}","${email}","${safePayload}"\n`
+  for (const lead of leads) {
+    const payload = redactLeadData(lead.data) as Record<string, unknown>
+    csv += [
+      lead.id,
+      lead.createdAt.toISOString(),
+      lead.sourceFormId,
+      lead.status,
+      typeof payload.email === 'string' ? payload.email : '',
+      JSON.stringify(payload),
+    ].map(escapeCsv).join(',') + '\n'
   }
 
-  const headers = new Headers()
-  headers.set('Content-Type', 'text/csv')
-  headers.set('Content-Disposition', `attachment; filename="leads_export_${new Date().toISOString().split('T')[0]}.csv"`)
-
+  const headers = new Headers({
+    'Content-Type': 'text/csv; charset=utf-8',
+    'Content-Disposition': `attachment; filename="leads_export_${new Date().toISOString().split('T')[0]}.csv"`,
+  })
   return new NextResponse(csv, { status: 200, headers })
+}
+
+function escapeCsv(value: string): string {
+  return `"${String(value).replace(/"/g, '""')}"`
 }

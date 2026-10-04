@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react"
 
 export function FormEmbed({ formId }: { formId: string }) {
   const [fields, setFields] = useState<any[]>([])
+  const [canonicalFormId, setCanonicalFormId] = useState(formId)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
@@ -12,13 +13,12 @@ export function FormEmbed({ formId }: { formId: string }) {
   // Fetch form structure
   useEffect(() => {
     if (!formId) return
-    fetch(`/api/posts/${formId}`)
+    fetch(`/api/forms/${formId}`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.postType === 'form' && data.postContent) {
-          try {
-            setFields(JSON.parse(data.postContent))
-          } catch(e) {}
+        if (data && Array.isArray(data.fields)) {
+          setCanonicalFormId(data.id || formId)
+          setFields(data.fields)
         }
         setLoading(false)
       })
@@ -36,20 +36,27 @@ export function FormEmbed({ formId }: { formId: string }) {
     setStatus(null)
 
     const formData = new FormData(e.currentTarget)
-    const data = Object.fromEntries(formData.entries())
+    const data: Record<string, unknown> = {}
+    for (const field of fields) {
+      if (field.type === 'boolean' || field.type === 'checkbox') {
+        data[field.name] = formData.get(field.name) !== null
+        continue
+      }
+      const value = formData.get(field.name)
+      if (value !== null) data[field.name] = field.type === 'number' ? Number(value) : value
+    }
 
     const urlParams = new URLSearchParams(window.location.search)
-    const utm: Record<string, string> = {}
     for (const key of ['utm_source', 'utm_medium', 'utm_campaign']) {
       const val = urlParams.get(key)
-      if (val) utm[key] = val
+      if (val && fields.some(field => field.name === key)) data[key] = val
     }
 
     try {
-      const res = await fetch('/api/forms/submit', {
+      const res = await fetch(`/api/forms/${canonicalFormId}/submissions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId, ...data, ...utm })
+        body: JSON.stringify({ values: data })
       })
 
       if (res.ok) {
@@ -84,7 +91,7 @@ export function FormEmbed({ formId }: { formId: string }) {
                 rows={4}
                 className="w-full bg-white/[0.03] border border-border rounded-xl px-4 py-3 text-sm text-text outline-none focus:border-primary/50 transition-all resize-y"
               />
-            ) : field.type === 'checkbox' ? (
+            ) : field.type === 'checkbox' || field.type === 'boolean' ? (
               <div className="flex items-center gap-2 mt-1">
                 <input 
                   type="checkbox" 

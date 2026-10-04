@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { formService } from '@/modules/forms'
+import { formService, getFormSubmissionOrchestrator } from '@/modules/forms'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -14,8 +14,45 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!isRecord(body) || !isRecord(body.values)) return invalidRequest('Submission values are required')
 
   try {
-    const submission = await formService.submit(id, { values: body.values })
-    return NextResponse.json(submission, { status: 201 })
+    const securityBody = isRecord(body.security) ? body.security : {}
+    const orchestrator = await getFormSubmissionOrchestrator()
+    const result = await orchestrator.submit({
+      formId: id,
+      values: body.values,
+      ...(isRecord(body.uploads) ? { uploads: body.uploads as never } : {}),
+      ...(typeof body.idempotencyKey === 'string' ? { idempotencyKey: body.idempotencyKey } : {}),
+      security: {
+        originKey: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+          || request.headers.get('x-real-ip')
+          || 'unknown',
+        identityKey: request.headers.get('x-user-id') || undefined,
+        honeypotValue: securityBody.honeypotValue,
+        captchaToken: typeof securityBody.captchaToken === 'string' ? securityBody.captchaToken : undefined,
+        consent: isRecord(securityBody.consent)
+          ? {
+              accepted: securityBody.consent.accepted === true,
+              ...(typeof securityBody.consent.policyVersion === 'string' ? { policyVersion: securityBody.consent.policyVersion } : {}),
+            }
+          : undefined,
+      },
+    })
+
+    if (result.outcome === 'securityFailure') {
+      const status = result.security.code === 'RATE_LIMITED' ? 429 : 400
+      const response = NextResponse.json({ code: result.security.code, message: result.security.message }, { status })
+      if (result.security.retryAfterSeconds !== undefined) response.headers.set('Retry-After', String(result.security.retryAfterSeconds))
+      return response
+    }
+    if (result.outcome === 'duplicate') {
+      return NextResponse.json({ success: true, duplicate: true, ...result.original }, { status: 200 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      submissionId: result.submission.id,
+      leadId: result.leadId,
+      deliveryStatus: result.deliveryStatus,
+    }, { status: result.outcome === 'deliveryPending' ? 202 : 201 })
   } catch (error) {
     if (isInvalidRequestError(error)) return invalidRequest(error instanceof Error ? error.message : 'Invalid submission')
     if (error instanceof Error && error.name === 'FormNotFoundError') {

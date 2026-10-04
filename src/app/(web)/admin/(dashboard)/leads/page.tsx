@@ -1,8 +1,9 @@
 import { Metadata } from 'next'
 import prisma from '@/lib/prisma'
 import { Card } from '@/components/admin/Card'
-import { Users, Mail, Clock, ChevronRight, Download } from 'lucide-react'
+import { Users, Mail, Clock, Download } from 'lucide-react'
 import Link from 'next/link'
+import { PrismaLeadRepository } from '@/modules/leads'
 // @ts-ignore - TS Server cache issue in VS Code
 import { LeadsActions } from './LeadsActions'
 
@@ -13,23 +14,14 @@ export const metadata: Metadata = {
 export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ formId?: string, status?: string }> }) {
   const { formId, status } = await searchParams
 
-  const where: any = {}
-  if (formId) where.formId = formId
-  if (status) where.status = status
-
-  let submissions: any[] = []
+  let leads: Awaited<ReturnType<PrismaLeadRepository['list']>> = []
   try {
-    // @ts-ignore - Prisma Client Types Sync Issue in IDE
-    if (!prisma.formSubmission) {
-      console.error('[LeadsPage] prisma.formSubmission is undefined! Keys:', Object.keys(prisma))
-    } else {
-      // @ts-ignore - Prisma Client Types Sync Issue in IDE
-      submissions = await prisma.formSubmission.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: 500 // Increased limit for export
-      })
+    leads = await new PrismaLeadRepository().list()
+    if (formId) {
+      const canonicalFormId = /^\d+$/.test(formId) ? `legacy-${formId}` : formId
+      leads = leads.filter(lead => lead.sourceFormId === formId || lead.sourceFormId === canonicalFormId)
     }
+    if (status) leads = leads.filter(lead => lead.status === status)
   } catch (err) {
     console.error('[LeadsPage] Prisma Error:', err)
   }
@@ -41,7 +33,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     select: { id: true, postTitle: true }
   })
 
-  const formMap = new Map(forms.map(f => [f.id.toString(), f.postTitle]))
+  const canonicalForms = await prisma.formDefinition.findMany({ select: { id: true, name: true } })
+  const formMap = new Map<string, string>(forms.flatMap(f => [[f.id.toString(), f.postTitle], [`legacy-${f.id}`, f.postTitle]] as [string, string][]))
+  for (const form of canonicalForms) formMap.set(form.id, form.name)
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto">
@@ -70,7 +64,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </div>
           <div>
             <p className="text-sm text-text-muted">Leads Encontrados</p>
-            <p className="text-2xl font-bold text-text">{submissions.length}</p>
+            <p className="text-2xl font-bold text-text">{leads.length}</p>
           </div>
         </Card>
         
@@ -93,32 +87,31 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {submissions.length === 0 ? (
+              {leads.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-text-muted">
                     Nenhum lead encontrado.
                   </td>
                 </tr>
               ) : (
-                submissions.map(sub => {
-                  let payload: any = {}
-                  try { payload = JSON.parse(sub.payload) } catch (e) {}
+                leads.map(lead => {
+                  const payload = lead.data
 
                   return (
-                    <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-text">
                           <Clock size={14} className="text-text-muted" />
-                          {new Date(sub.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          {new Date(lead.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </td>
                       <td className="px-6 py-4 font-medium text-text">
-                        {formMap.get(sub.formId) || `Form #${sub.formId}`}
+                        {formMap.get(lead.sourceFormId) || `Form #${lead.sourceFormId}`}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Mail size={14} className="text-text-muted" />
-                          {payload.email || '-'}
+                          {typeof payload.email === 'string' ? payload.email : '-'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -130,8 +123,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${sub.status === 'unread' ? 'bg-warning/10 text-warning border border-warning/20' : 'bg-success/10 text-success border border-success/20'}`}>
-                          {sub.status === 'unread' ? 'Não Lido' : 'Lido'}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${lead.status === 'new' ? 'bg-warning/10 text-warning border border-warning/20' : 'bg-success/10 text-success border border-success/20'}`}>
+                          {lead.status}
                         </span>
                       </td>
                     </tr>

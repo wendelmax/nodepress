@@ -69,11 +69,13 @@ export interface FormUploadPort {
 export interface FormSubmissionInput {
   values: Record<string, unknown>
   uploads?: Record<string, IncomingFormUpload>
+  idempotencyKey?: string
 }
 
 export interface FormSubmission {
   id: string
   formId: string
+  idempotencyKey?: string
   payload: Record<string, unknown>
   createdAt: Date
 }

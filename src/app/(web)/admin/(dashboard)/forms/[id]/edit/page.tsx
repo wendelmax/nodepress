@@ -1,7 +1,7 @@
-import prisma from "@/lib/prisma"
 import { PostService } from "@/services/post.service"
 import { notFound } from "next/navigation"
 import FormEditor from "@/components/admin/FormEditor"
+import { PrismaLeadRepository } from "@/modules/leads"
 
 export default async function EditFormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -11,14 +11,15 @@ export default async function EditFormPage({ params }: { params: Promise<{ id: s
     return notFound()
   }
 
-  // Real submissions live in FormSubmission (keyed by formId), never as
-  // Post rows -- this used to query Post.getChildren(form.id,
-  // 'form_submission'), which nothing ever wrote to, so it always
-  // returned an empty array.
-  const submissions = await prisma.formSubmission.findMany({
-    where: { formId: String(form.id) },
-    orderBy: { createdAt: 'desc' }
-  })
+  const leads = await new PrismaLeadRepository().list()
+  const submissions = leads
+    .filter(lead => lead.sourceFormId === `legacy-${form.id}` || lead.sourceFormId === String(form.id))
+    .map(lead => ({
+      id: lead.id,
+      payload: JSON.stringify(lead.data),
+      createdAt: lead.createdAt,
+      status: lead.status === 'new' ? 'unread' : 'read',
+    }))
 
   return <FormEditor form={form} submissions={submissions} />
 }
