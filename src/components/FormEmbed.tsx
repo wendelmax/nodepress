@@ -13,7 +13,6 @@ export function FormEmbed({ formId }: { formId: string }) {
   // Fetch form structure
   useEffect(() => {
     if (!formId) return
-    setCanonicalFormId(formId)
     fetch(`/api/forms/${formId}`)
       .then(res => res.json())
       .then(data => {

@@ -24,6 +24,7 @@ export interface EnqueueDeliveryInput {
 interface LeadDeliveryClient {
   upsert(args: unknown): Promise<unknown>
   findMany(args: unknown): Promise<unknown[]>
+  update?(args: unknown): Promise<unknown>
 }
 
 export class PrismaDeliveryRepository {
@@ -58,6 +59,26 @@ export class PrismaDeliveryRepository {
       take: limit,
     })
     return rows.map(toDelivery)
+  }
+
+  async markDelivered(id: string): Promise<void> {
+    await this.update({ where: { id }, data: { status: 'delivered', lastError: null } })
+  }
+
+  async markRetryable(id: string, nextAttemptAt: Date, lastError: string): Promise<void> {
+    await this.update({
+      where: { id },
+      data: { status: 'retryable', attempts: { increment: 1 }, nextAttemptAt, lastError },
+    })
+  }
+
+  async markFailed(id: string, lastError: string): Promise<void> {
+    await this.update({ where: { id }, data: { status: 'failed', attempts: { increment: 1 }, lastError } })
+  }
+
+  private async update(args: unknown): Promise<void> {
+    if (!this.client.update) throw new Error('Delivery repository does not support state updates')
+    await this.client.update(args)
   }
 }
 

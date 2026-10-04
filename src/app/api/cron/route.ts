@@ -6,6 +6,7 @@ import { getBackupService } from '@/backup/factory'
 import { getBackupArchiveStorage } from '@/backup/factory'
 import { runScheduledBackupIfDue } from '@/backup/scheduler'
 import { recordAuditEvent } from '@/audit/record'
+import { createLeadDeliveryWorker } from '@/modules/delivery'
 
 export async function GET(request: Request) {
   try {
@@ -34,6 +35,9 @@ export async function GET(request: Request) {
 
     // 3. Execute Background Task
     const publishedCount = await PostService.publishScheduledPosts()
+    const deliverySummary = await createLeadDeliveryWorker().process({
+      limit: boundedInteger(process.env.FORMS_DELIVERY_BATCH_SIZE, 50),
+    })
 
     // 4. Revalidate cache if something changed
     if (publishedCount > 0) {
@@ -68,6 +72,7 @@ export async function GET(request: Request) {
       success: true,
       message: `Cron executed successfully. Published ${publishedCount} scheduled posts.`,
       scheduledBackup,
+      deliverySummary,
       timestamp: new Date().toISOString()
     })
 
@@ -75,4 +80,9 @@ export async function GET(request: Request) {
     console.error('CRON Error:', error)
     return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 })
   }
+}
+
+function boundedInteger(value: string | undefined, fallback: number): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 500 ? parsed : fallback
 }
